@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIME CERTO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Condensed:wght@400;700&display=swap');
+
+        body {
+            background-color: #0f172a;
+            font-family: 'Roboto Condensed', sans-serif;
+            color: #f1f5f9;
+        }
+
+        /* Formato do Card FIFA */
+        .fifa-card {
+            position: relative;
+            width: 210px; /* Aumentado para dar mais respiro */
+            height: 300px;
+            clip-path: polygon(50% 0%, 100% 12%, 100% 88%, 50% 100%, 0% 88%, 0% 12%); /* Ângulos mais suaves para não cortar texto lateral */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Transição mais fluida e com efeito elástico */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* Centraliza todo o conteúdo verticalmente no card */
+            padding: 20px 10px 10px 10px; /* Mais padding superior para empurrar o conteúdo ligeiramente para baixo */
+            color: #1a1a1a;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+            overflow: hidden; /* Garante que os efeitos de luz não saiam das bordas */
+        }
+
+        /* Efeito de Luz Estática (Vidro Premium) */
+        .fifa-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.05) 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Garantir que o conteúdo do card fica acima do brilho estático */
+        .fifa-card > div {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Efeito de Raio de Luz Animado (Varredura) */
+        .fifa-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%;
+            width: 60%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            transition: all 0.6s ease;
+            pointer-events: none;
+            z-index: 20; /* Fica por cima de tudo na animação */
+        }
+
+        /* Interações ao passar o rato no Card */
+        .group:hover .fifa-card {
+            transform: translateY(-8px) scale(1.02);
+        }
+        .group:hover .fifa-card::after {
+            left: 200%;
+        }
+
+        /* Cores Dinâmicas por Níveis e Brilho Colorido Exterior */
+        .card-nivel4 { background: linear-gradient(135deg, #eab308 0%, #ca8a04 50%, #713f12 100%); border: 4px solid #fde047; color: #2e1a05; }
+        .group:hover .card-nivel4 { box-shadow: 0 15px 35px rgba(234, 179, 8, 0.65); border-color: #fef08a; }
+        
+        .card-nivel3 { background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #14532d 100%); border: 4px solid #4ade80; color: white; }
+        .group:hover .card-nivel3 { box-shadow: 0 15px 35px rgba(34, 197, 94, 0.65); border-color: #bbf7d0; }
+        
+        .card-nivel2 { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 50%, #4c1d95 100%); border: 4px solid #c084fc; color: white; }
+        .group:hover .card-nivel2 { box-shadow: 0 15px 35px rgba(168, 85, 247, 0.65); border-color: #e9d5ff; }
+        
+        .card-nivel1 { background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #7f1d1d 100%); border: 4px solid #f87171; color: white; }
+        .group:hover .card-nivel1 { box-shadow: 0 15px 35px rgba(239, 68, 68, 0.65); border-color: #fecaca; }
+
+        .overall { font-family: 'Oswald', sans-serif; font-size: 58px; font-weight: 700; line-height: 0.9; margin-top: 0; }
+        
+        .player-name {
+            font-family: 'Oswald', sans-serif; font-size: 16px; text-transform: uppercase;
+            margin-top: 6px; text-align: center; width: 95%; border-bottom: 2px solid currentColor;
+            padding-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+        }
+
+        /* Grid de Habilidades (Adaptado para agrupar ao centro e afastar das bordas) */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: max-content max-content; /* Usa apenas o espaço necessário */
+            justify-content: center; /* Centra as colunas no meio do card */
+            gap: 6px 24px; /* 6px vertical, 24px horizontal entre as duas colunas */
+            margin-top: 8px; 
+            width: 100%; 
+        }
+
+        .stat-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 4px;
+            white-space: nowrap; /* Evita que o número e a sigla quebrem a linha */
+        }
+
+        .stat-value { font-weight: 700; font-size: 15px; }
+        .stat-label { font-weight: 400; opacity: 0.8; font-size: 10px; }
+
+        .nav-btn.active { background-color: #334155; color: #22c55e; border-bottom: 2px solid #22c55e; }
+        .hidden-view { display: none !important; }
+
+        /* Estilo do Ranking */
+        .ranking-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            transition: all 0.3s ease;
+        }
+        .ranking-item:hover {
+            background: rgba(30, 41, 59, 0.8);
+            transform: scale(1.02);
+        }
+
+        /* Ajustes Otimizados para Telemóvel */
+        @media (max-width: 640px) {
+            .fifa-card {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 210 / 300;
+                padding: 16% 4% 8% 4%; 
+            }
+            .overall { font-size: 42px; }
+            .player-name { font-size: 12px; margin-top: 4px; width: 98%; border-bottom-width: 1px; padding-bottom: 2px; }
+            .stat-value { font-size: 13px; }
+            .stat-label { font-size: 8px; }
+            .stats-grid { gap: 4px 16px; margin-top: 6px; } /* Ajuste do gap horizontal para o telemóvel */
+            .stat-item { gap: 3px; }
+        }
+
+        .loader {
+            border: 4px solid #1e293b; border-top: 4px solid #22c55e;
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 flex justify-between items-center h-16">
+            <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="switchView('public'); window.scrollTo({ top: 0, behavior: 'smooth' });">
+                <div class="bg-green-500 p-1.5 rounded-lg">
+                    <i data-lucide="volleyball" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-900"></i>
+                </div>
+                <span class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic">TIME<span class="text-green-500">CERTO</span></span>
+            </div>
+            <div class="flex gap-1">
+                <button onclick="switchView('public')" id="btn-public" class="nav-btn active px-2 sm:px-4 py-2 rounded-t-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2">
+                    <i data-lucide="layout-grid" class="w-3 h-3 sm:w-4 sm:h-4"></i> Público
+                </button>
+                <button onclick="switchView('placar')" id="btn-placar" class="nav-btn px-2 sm:px-4 py-2 rounded-t-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2">
+                    <i data-lucide="monitor-play" class="w-3 h-3 sm:w-4 sm:h-4"></i> Placar
+                </button>
+                <button onclick="switchView('admin')" id="btn-admin" class="nav-btn px-2 sm:px-4 py-2 rounded-t-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2">
+                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Admin
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center">
+        <div class="loader mb-4"></div>
+        <p class="text-slate-400 animate-pulse">Carregando Jogadores...</p>
+    </div>
+
+    <main class="max-w-7xl mx-auto w-full p-2 sm:p-4 md:p-8 flex-1">
+        <!-- VISTA PÚBLICA -->
+        <section id="view-public" class="animate-in fade-in duration-500">
+            <header class="mb-6 sm:mb-10 text-center mt-4">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">TURMA DO VÔLEI</h2>
+                <p class="text-sm sm:text-base text-slate-400">Estatísticas atualizadas</p>
+            </header>
+
+            <div id="publicGrid" class="flex flex-col w-full gap-4 justify-center mb-16"></div>
+            
+            <div id="publicTeamsSection" class="border-t border-slate-800 pt-8 sm:pt-12 hidden">
+                <header class="mb-6 sm:mb-10 text-center">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center gap-3">
+                        <i data-lucide="users" class="text-green-500 w-6 h-6 sm:w-8 sm:h-8"></i> Times Sorteados
+                    </h2>
+                </header>
+                <div id="publicTeamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-16"></div>
+            </div>
+
+            <!-- Seção de Ranking (Hall da Fama) movida para o final -->
+            <div id="rankingSection" class="mt-8 sm:mt-12 border-t border-slate-800 pt-8 sm:pt-12 max-w-4xl mx-auto">
+                <header class="mb-6 sm:mb-10 text-center">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center gap-2 sm:gap-3 text-yellow-500">
+                        <i data-lucide="trophy" class="w-6 h-6 sm:w-8 sm:h-8"></i> Ranking de Vitórias
+                    </h2>
+                    <p class="text-sm sm:text-base text-slate-400">Os maiores vencedores da Turma do Vôlei</p>
+                </header>
+
+                <div id="rankingList" class="bg-slate-800/40 p-3 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-700">
+                    <!-- Ranking e Pódio injetados via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- LOGIN ADMIN -->
+        <section id="view-login" class="hidden-view flex justify-center py-12 sm:py-20 px-2">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <i data-lucide="lock" class="w-10 h-10 sm:w-12 sm:h-12 text-green-500 mx-auto mb-4"></i>
+                    <h2 class="text-xl sm:text-2xl font-bold">Acesso Admin</h2>
+                </div>
+                <div class="space-y-4">
+                    <input type="text" id="loginUser" placeholder="Usuário" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
+                    <input type="password" id="loginPass" placeholder="Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
+                    <button onclick="handleLogin()" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg">ENTRAR</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAINEL ADMIN -->
+        <section id="view-admin" class="hidden-view animate-in slide-in-from-bottom-4">
+            <div id="admin-form-anchor" class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 sm:mb-8 gap-4 mt-4">
+                <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5 sm:w-6 sm:h-6 text-green-500"></i> Gestão do Clube</h2>
+                <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto items-stretch sm:items-center">
+                    <select id="draftStrategy" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto">
+                        <option value="DENTRO">Estratégia: Dentro Forte</option>
+                        <option value="FORA">Estratégia: Fora Forte</option>
+                    </select>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="drawTeams(3)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> SORTEAR (3)</button>
+                        <button onclick="drawTeams(4)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> SORTEAR (4)</button>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto justify-between sm:justify-start mt-2 sm:mt-0">
+                        <button onclick="clearTeams()" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-red-500/30">LIMPAR EQUIPES</button>
+                        <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2"><i data-lucide="log-out" class="w-4 h-4"></i> SAIR</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                <div class="lg:col-span-1">
+                    <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-slate-700 lg:sticky top-24">
+                        <h2 id="formTitle" class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center gap-2 text-green-400"><i data-lucide="user-plus" class="w-4 h-4 sm:w-5 sm:h-5"></i> Novo Atleta</h2>
+                        <input type="hidden" id="editId" value="">
+                        <div class="space-y-4">
+                            <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm sm:text-base outline-none focus:ring-2 focus:ring-green-500">
+                            
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">ATQ</label><input type="number" id="statAtk" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">REC</label><input type="number" id="statRec" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">BLQ</label><input type="number" id="statBlq" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">SAQ</label><input type="number" id="statSaq" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">VEL</label><input type="number" id="statVel" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">LEV</label><input type="number" id="statLev" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div class="col-span-2 sm:col-span-3">
+                                    <label class="text-[10px] sm:text-xs text-yellow-500 font-bold uppercase tracking-wider">Número de Vitórias</label>
+                                    <input type="number" id="statVit" value="0" class="w-full bg-slate-900 border border-yellow-500/30 rounded-lg p-2 sm:p-3 text-base sm:text-lg font-bold text-yellow-500">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-[10px] sm:text-sm font-medium text-slate-400 mb-1 mt-2">Ícone</label>
+                                <select id="playerIcon" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 sm:p-3 outline-none focus:ring-2 focus:ring-green-500 text-xs sm:text-sm">
+                                    <option value="user">👤 Usuário</option>
+                                    <option value="zap">⚡ Raio</option>
+                                    <option value="flame">🔥 Fogo</option>
+                                    <option value="shield">🛡️ Escudo</option>
+                                    <option value="star">⭐ Estrela</option>
+                                    <option value="target">🎯 Alvo</option>
+                                    <option value="rocket">🚀 Foguete</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center bg-slate-900/50 p-2 sm:p-3 rounded-lg border border-slate-700 cursor-pointer" onclick="document.getElementById('playerDestaque').click()">
+                                <input type="checkbox" id="playerDestaque" class="w-4 h-4 sm:w-5 sm:h-5 accent-yellow-500 cursor-pointer pointer-events-none">
+                                <label class="ml-2 sm:ml-3 text-xs sm:text-sm font-bold text-yellow-500 flex items-center gap-1 sm:gap-2 cursor-pointer pointer-events-none">
+                                    <i data-lucide="crown" class="w-4 h-4 sm:w-5 sm:h-5"></i> Destaque (Coroa)
+                                </label>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button onclick="savePlayer()" id="btnSave" class="flex-1 bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base"><i data-lucide="save" class="w-4 h-4 sm:w-5 sm:h-5"></i> SALVAR</button>
+                                <button onclick="resetForm()" id="btnCancel" class="hidden px-3 sm:px-4 bg-slate-700 rounded-lg"><i data-lucide="rotate-ccw" class="w-4 h-4 sm:w-5 sm:h-5"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 space-y-6 sm:space-y-8">
+                    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
+                        <div class="p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
+                            <h2 class="text-lg sm:text-xl font-bold">Jogadores</h2>
+                            <span id="playerCount" class="text-xs sm:text-sm text-slate-400 bg-slate-900 px-2 sm:px-3 py-1 rounded-full">0</span>
+                        </div>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left min-w-[500px]">
+                                <thead class="bg-slate-900/50 text-slate-400 text-xs sm:text-sm">
+                                    <tr>
+                                        <th class="px-2 sm:px-4 py-3 sm:py-4 w-8 sm:w-10 text-center"><input type="checkbox" id="selectAll" onclick="toggleAllPlayers(this.checked)" class="w-3 h-3 sm:w-4 sm:h-4 accent-green-500 cursor-pointer"></th>
+                                        <th class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
+                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">OVR</th>
+                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Vitórias</th>
+                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminTableBody" class="divide-y divide-slate-700 text-xs sm:text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="adminTeamsSection" class="hidden animate-in fade-in">
+                         <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
+                            <div class="p-4 sm:p-6 border-b border-slate-700 bg-green-500/10"><h2 class="text-lg sm:text-xl font-bold text-green-400">Equipes Atuais</h2></div>
+                            <div id="adminTeamsGrid" class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TELA DE PLACAR -->
+        <section id="view-placar" class="hidden-view animate-in zoom-in-95 duration-500">
+            <div class="max-w-5xl mx-auto bg-slate-800/40 p-4 sm:p-6 md:p-12 rounded-3xl border border-slate-700 shadow-2xl text-center">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6 sm:mb-10 flex items-center justify-center gap-2 sm:gap-3 text-white">
+                    <i data-lucide="monitor-play" class="w-6 h-6 sm:w-8 sm:h-8 text-green-500"></i> Placar do Jogo
+                </h2>
+
+                <div class="flex flex-col md:flex-row gap-4 sm:gap-8 justify-center items-stretch md:items-center">
+                    <!-- TIME 1 (AZUL) -->
+                    <div class="flex-1 w-full bg-blue-900/20 border-2 border-blue-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 flex flex-col items-center relative">
+                        <div class="w-full relative mb-4 sm:mb-6">
+                            <select id="team1Select" style="text-align-last: center;" class="text-lg sm:text-2xl md:text-3xl font-bold text-blue-400 uppercase tracking-widest bg-transparent outline-none focus:border-b border-blue-500 w-full transition-colors cursor-pointer appearance-none pb-2 text-center text-ellipsis overflow-hidden">
+                                <option value="" class="bg-slate-800 text-sm text-slate-300">SELECIONE</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-blue-400">
+                                <i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                            </div>
+                        </div>
+                        <span id="score1" class="text-6xl sm:text-8xl md:text-9xl font-black text-white mb-4 sm:mb-8 font-['Oswald'] drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all leading-none">0</span>
+                        <div class="flex gap-2 sm:gap-4 w-full">
+                            <button onclick="updateScore(1, -1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xl sm:text-2xl transition-all border border-slate-600 active:scale-95">-1</button>
+                            <button onclick="updateScore(1, 1)" class="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl text-3xl sm:text-4xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95">+1</button>
+                        </div>
+                    </div>
+
+                    <!-- VS -->
+                    <div class="text-3xl sm:text-4xl md:text-6xl font-black text-slate-600 italic font-['Oswald'] py-1 sm:py-4">VS</div>
+
+                    <!-- TIME 2 (VERMELHO) -->
+                    <div class="flex-1 w-full bg-red-900/20 border-2 border-red-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 flex flex-col items-center relative">
+                        <div class="w-full relative mb-4 sm:mb-6">
+                            <select id="team2Select" style="text-align-last: center;" class="text-lg sm:text-2xl md:text-3xl font-bold text-red-400 uppercase tracking-widest bg-transparent outline-none focus:border-b border-red-500 w-full transition-colors cursor-pointer appearance-none pb-2 text-center text-ellipsis overflow-hidden">
+                                <option value="" class="bg-slate-800 text-sm text-slate-300">SELECIONE</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-red-400">
+                                <i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                            </div>
+                        </div>
+                        <span id="score2" class="text-6xl sm:text-8xl md:text-9xl font-black text-white mb-4 sm:mb-8 font-['Oswald'] drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all leading-none">0</span>
+                        <div class="flex gap-2 sm:gap-4 w-full">
+                            <button onclick="updateScore(2, -1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xl sm:text-2xl transition-all border border-slate-600 active:scale-95">-1</button>
+                            <button onclick="updateScore(2, 1)" class="flex-[2] bg-red-600 hover:bg-red-500 text-white font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl text-3xl sm:text-4xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95">+1</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="resetScore()" class="mt-8 sm:mt-12 bg-slate-700 hover:bg-slate-600 text-slate-300 px-6 sm:px-8 py-3 rounded-full text-sm sm:text-base font-bold inline-flex items-center justify-center gap-2 transition-colors border border-slate-600 active:scale-95">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4 sm:w-5 sm:h-5"></i> ZERAR PLACAR
+                </button>
+            </div>
+        </section>
+
+        <!-- MODAL DE VITÓRIA -->
+        <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center transform transition-all scale-100">
+                <i data-lucide="trophy" class="w-16 h-16 sm:w-20 sm:h-20 text-yellow-400 mb-4 animate-bounce"></i>
+                <h2 class="text-2xl sm:text-3xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
+                <p class="text-slate-300 mb-4 sm:mb-6 text-base sm:text-lg">A equipe vencedora é:</p>
+                <div id="victoryTeamName" class="text-2xl sm:text-4xl font-black text-yellow-400 mb-6 sm:mb-8 px-4 sm:px-6 py-3 bg-slate-900 rounded-2xl border border-yellow-500/30 w-full truncate">EQUIPE 1</div>
+                <button onclick="closeVictoryModal()" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 sm:py-4 rounded-xl text-base sm:text-lg transition-all active:scale-95">
+                    NOVO JOGO
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTÃO VOLTAR AO TOPO -->
+    <div class="w-full flex justify-center pb-8 pt-4">
+        <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 transition-all border border-slate-700 shadow-lg active:scale-95">
+            <i data-lucide="arrow-up" class="w-4 h-4"></i> VOLTAR AO TOPO
+        </button>
+    </div>
+
+    <!-- RODAPÉ DE CRÉDITOS -->
+    <footer class="w-full py-6 sm:py-8 mt-auto border-t border-slate-800 text-center text-slate-500 text-xs sm:text-sm">
+        Desenvolvido por <span class="text-slate-300 font-bold">JLDesigner</span> e <span class="text-slate-300 font-bold">RenatoEng</span>
+    </footer>
+
+    <div id="toast" class="fixed bottom-5 right-5 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-2xl transform translate-y-24 transition-transform duration-300 flex items-center gap-2 sm:gap-3 z-[60] text-sm sm:text-base max-w-[90vw]">
+        <i id="toastIcon" data-lucide="info" class="w-4 h-4 sm:w-5 sm:h-5 shrink-0"></i>
+        <span id="toastMsg" class="truncate"></span>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWjwuRy4BVliXYUog-_qy6I8vWEPJBbHk",
+            authDomain: "app-volei-34f53.firebaseapp.com",
+            projectId: "app-volei-34f53",
+            storageBucket: "app-volei-34f53.firebasestorage.app",
+            messagingSenderId: "290138844370",
+            appId: "1:290138844370:web:19a4c9b36fc8297668d10b"
+        };
+        const appId = 'app-volei-34f53'; 
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const playersRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+        const teamsRef = collection(db, 'artifacts', appId, 'public', 'data', 'teams');
+
+        let players = [];
+        let drawnTeams = [];
+        let selectedPlayerIds = new Set();
+        let isFirstLoad = true;
+        let isAuthenticated = false;
+        let currentUser = null;
+        let showAllRanking = false;
+        
+        // Variáveis do Placar
+        let score1 = 0;
+        let score2 = 0;
+
+        // Função de Apoio para Mapear Níveis baseados no OVR
+        const getLevelInfo = (overall) => {
+            if (overall <= 50) return { type: 'nivel1', label: 'NÍVEL 1', bg: 'bg-red-500/20', text: 'text-red-400', dot: 'bg-red-500' };
+            if (overall <= 77) return { type: 'nivel2', label: 'NÍVEL 2', bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', dot: 'bg-fuchsia-500' };
+            if (overall <= 89) return { type: 'nivel3', label: 'NÍVEL 3', bg: 'bg-green-500/20', text: 'text-green-400', dot: 'bg-green-500' };
+            return { type: 'nivel4', label: 'NÍVEL 4', bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500' };
+        };
+
+        // Função de Apoio para Extrair o Nome do Time (Cabeça de Chave)
+        const getTeamName = (team) => {
+            if (!team.players || team.players.length === 0) return `EQUIPE ${team.label}`;
+            const headPlayer = team.players.reduce((max, p) => p.overall > max.overall ? p : max, team.players[0]);
+            const firstName = headPlayer.name.split(' ')[0].toUpperCase();
+            return `TIME DE ${firstName}`;
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) { document.getElementById('loading-overlay').classList.add('hidden'); setupSync(); }
+        });
+        signInAnonymously(auth);
+
+        const setupSync = () => {
+            onSnapshot(playersRef, (snapshot) => {
+                players = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (isFirstLoad) {
+                    players.forEach(p => selectedPlayerIds.add(p.id));
+                    isFirstLoad = false;
+                }
+                renderAll();
+            });
+            onSnapshot(teamsRef, (snapshot) => {
+                drawnTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAll();
+            });
+        };
+
+        window.togglePlayerSelection = (id, isChecked) => {
+            if (isChecked) selectedPlayerIds.add(id);
+            else selectedPlayerIds.delete(id);
+            const allSelected = players.length > 0 && players.every(p => selectedPlayerIds.has(p.id));
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if(selectAllCheckbox) selectAllCheckbox.checked = allSelected;
+        };
+
+        window.toggleAllPlayers = (isChecked) => {
+            if (isChecked) players.forEach(p => selectedPlayerIds.add(p.id));
+            else selectedPlayerIds.clear();
+            renderAdmin();
+        };
+
+        window.savePlayer = async () => {
+            const name = document.getElementById('playerName').value.trim();
+            const atk = parseInt(document.getElementById('statAtk').value);
+            const rec = parseInt(document.getElementById('statRec').value);
+            const blq = parseInt(document.getElementById('statBlq').value);
+            const saq = parseInt(document.getElementById('statSaq').value);
+            const vel = parseInt(document.getElementById('statVel').value);
+            const lev = parseInt(document.getElementById('statLev').value);
+            const vitorias = parseInt(document.getElementById('statVit').value) || 0;
+            const icon = document.getElementById('playerIcon').value || 'user';
+            const destaque = document.getElementById('playerDestaque').checked;
+            const editId = document.getElementById('editId').value;
+
+            if (!name) { showToast("Preencha o nome!", "error"); return; }
+            
+            // Novo cálculo de OVR com pesos específicos para Vôlei
+            const overall = Math.round((atk * 0.25) + (rec * 0.20) + (blq * 0.10) + (saq * 0.15) + (vel * 0.15) + (lev * 0.15));
+            const lvlInfo = getLevelInfo(overall);
+            
+            const playerObj = { 
+                name, atk, rec, blq, saq, vel, lev, overall, icon, destaque, vitorias,
+                type: lvlInfo.type,
+                updatedAt: Date.now() 
+            };
+
+            try {
+                if (editId) {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', editId), playerObj);
+                    showToast("Atleta atualizado!");
+                } else {
+                    const docRef = await addDoc(playersRef, playerObj);
+                    selectedPlayerIds.add(docRef.id);
+                    showToast("Atleta cadastrado!");
+                }
+                resetForm();
+            } catch (e) { showToast("Erro ao salvar", "error"); }
+        };
+
+        window.deletePlayer = async (id) => {
+            if(confirm("Excluir permanentemente?")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', id));
+                showToast("Atleta removido.", "error");
+            }
+        };
+
+        window.editPlayer = (id) => {
+            const p = players.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('playerName').value = p.name;
+            document.getElementById('statAtk').value = p.atk || 80;
+            document.getElementById('statRec').value = p.rec || 80;
+            document.getElementById('statBlq').value = p.blq || 80;
+            document.getElementById('statSaq').value = p.saq || 80;
+            document.getElementById('statVel').value = p.vel || 80;
+            document.getElementById('statLev').value = p.lev || 80;
+            document.getElementById('statVit').value = p.vitorias || 0;
+            document.getElementById('playerIcon').value = p.icon || 'user';
+            document.getElementById('playerDestaque').checked = !!p.destaque;
+            document.getElementById('editId').value = id;
+            document.getElementById('formTitle').innerHTML = `<i data-lucide="edit-3"></i> Editar Atleta`;
+            document.getElementById('btnSave').innerText = "ATUALIZAR";
+            document.getElementById('btnCancel').classList.remove('hidden');
+            lucide.createIcons();
+            document.getElementById('admin-form-anchor').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.resetForm = () => {
+            document.getElementById('playerName').value = '';
+            document.getElementById('editId').value = '';
+            document.getElementById('statAtk').value = '80';
+            document.getElementById('statRec').value = '80';
+            document.getElementById('statBlq').value = '80';
+            document.getElementById('statSaq').value = '80';
+            document.getElementById('statVel').value = '80';
+            document.getElementById('statLev').value = '80';
+            document.getElementById('statVit').value = '0';
+            document.getElementById('playerIcon').value = 'user';
+            document.getElementById('playerDestaque').checked = false;
+            document.getElementById('formTitle').innerHTML = `<i data-lucide="user-plus"></i> Novo Atleta`;
+            document.getElementById('btnSave').innerText = "SALVAR";
+            document.getElementById('btnCancel').classList.add('hidden');
+            lucide.createIcons();
+        };
+
+        window.drawTeams = async (size) => {
+            const activePlayers = players.filter(p => selectedPlayerIds.has(p.id));
+            if (activePlayers.length === 0) { showToast("Selecione os atletas para o jogo!", "error"); return; }
+            
+            const numTeams = Math.floor(activePlayers.length / size);
+            if (numTeams === 0) { showToast(`Selecione pelo menos ${size} jogadores para formar uma equipe!`, "error"); return; }
+
+            const strategy = document.getElementById('draftStrategy').value;
+            let result;
+
+            if (strategy === 'FORA') {
+                result = balanceStrongOutside(activePlayers, size);
+            } else {
+                result = balanceStrongInside(activePlayers, size);
+            }
+
+            for (const t of drawnTeams) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id));
+
+            for (let i = 0; i < result.teams.length; i++) {
+                await addDoc(teamsRef, { label: (i + 1).toString(), players: result.teams[i] });
+            }
+            
+            if (result.waitlist.length > 0) {
+                await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: result.waitlist });
+                showToast(`Equipes geradas! ${result.waitlist.length} atleta(s) na espera.`);
+            } else {
+                showToast("Equipes perfeitamente equilibradas geradas!");
+            }
+        };
+
+        // --- LÓGICA DO TEAM BALANCER (Adaptada do Kotlin) ---
+        function balanceStrongInside(activePlayers, playersPerTeam) {
+            const numberOfTeams = Math.floor(activePlayers.length / playersPerTeam);
+            if (numberOfTeams === 0) return { teams: [], waitlist: [...activePlayers] };
+
+            let sortedPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+            sortedPlayers.sort((a, b) => b.overall - a.overall);
+
+            const activeCount = numberOfTeams * playersPerTeam;
+            const drafted = sortedPlayers.slice(0, activeCount);
+            const waitlist = sortedPlayers.slice(activeCount);
+
+            const teams = Array.from({ length: numberOfTeams }, () => []);
+            let dir = 1;
+            let cur = 0;
+
+            for (const player of drafted) {
+                teams[cur].push(player);
+                cur += dir;
+                if (cur >= numberOfTeams) {
+                    dir = -1;
+                    cur = numberOfTeams - 1;
+                } else if (cur < 0) {
+                    dir = 1;
+                    cur = 0;
+                }
+            }
+
+            return { teams, waitlist };
+        }
+
+        function balanceStrongOutside(activePlayers, playersPerTeam) {
+            const numberOfTeams = Math.floor(activePlayers.length / playersPerTeam);
+            const waitlistSize = activePlayers.length % playersPerTeam;
+
+            if (numberOfTeams === 0) return { teams: [], waitlist: [...activePlayers] };
+
+            let sortedPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+            sortedPlayers.sort((a, b) => b.overall - a.overall);
+
+            const teams = Array.from({ length: numberOfTeams }, () => []);
+            const waitlist = [];
+
+            const buckets = [...teams];
+            if (waitlistSize > 0) buckets.push(waitlist);
+
+            const capacities = buckets.map((_, i) => i < numberOfTeams ? playersPerTeam : waitlistSize);
+            const draftOrder = [];
+            const currentCaps = new Array(buckets.length).fill(0);
+            let dir = 1;
+            let cur = 0;
+
+            // Serpentina em todos os buckets (incluindo espera)
+            while (draftOrder.length < activePlayers.length) {
+                if (currentCaps[cur] < capacities[cur]) {
+                    draftOrder.push(cur);
+                    currentCaps[cur]++;
+                }
+                const next = cur + dir;
+                if (next >= buckets.length || next < 0) {
+                    dir *= -1;
+                } else {
+                    cur = next;
+                }
+            }
+
+            sortedPlayers.forEach((player, index) => {
+                const bucketIndex = draftOrder[index];
+                buckets[bucketIndex].push(player);
+            });
+
+            // Lógica de balanceamento aleatório pós-sorteio
+            if (waitlist.length > 0 && teams.length >= 2) {
+                let attempts = 0;
+                while (attempts < 5) {
+                    let minSum = Infinity, maxSum = -Infinity;
+                    let weakestTeam = null, strongestTeam = null;
+
+                    teams.forEach(t => {
+                        const sum = t.reduce((acc, p) => acc + p.overall, 0);
+                        if (sum < minSum) { minSum = sum; weakestTeam = t; }
+                        if (sum > maxSum) { maxSum = sum; strongestTeam = t; }
+                    });
+
+                    if (!weakestTeam || !strongestTeam) break;
+                    
+                    const diff = maxSum - minSum;
+                    if (diff <= 0) break;
+
+                    const weakestPlayer = weakestTeam.reduce((min, p) => p.overall < min.overall ? p : min, weakestTeam[0]);
+                    const maxWaitlistRating = Math.max(...waitlist.map(p => p.overall));
+
+                    // Filtra: tem que ser melhor que o fraco e NÃO pode ser a nota máxima da espera
+                    const candidates = waitlist.filter(p => p.overall > weakestPlayer.overall && p.overall !== maxWaitlistRating);
+
+                    if (candidates.length > 0) {
+                        const swapIn = candidates[Math.floor(Math.random() * candidates.length)];
+                        
+                        weakestTeam.splice(weakestTeam.indexOf(weakestPlayer), 1);
+                        waitlist.splice(waitlist.indexOf(swapIn), 1);
+
+                        weakestTeam.push(swapIn);
+                        waitlist.push(weakestPlayer);
+                    } else {
+                        break; // Sem candidatos válidos
+                    }
+                    attempts++;
+                }
+            }
+
+            return { teams, waitlist };
+        }
+
+        window.deleteTeam = async (id) => {
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', id));
+                showToast("Equipe removida.", "info");
+            } catch (e) { showToast("Erro ao excluir", "error"); }
+        };
+
+        window.clearTeams = async () => {
+            if(!confirm("Limpar tudo?")) return;
+            for (const t of drawnTeams) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id));
+        };
+
+        window.toggleRanking = () => {
+            showAllRanking = !showAllRanking;
+            renderRanking();
+        };
+
+        window.handleLogin = () => {
+            if (document.getElementById('loginUser').value === 'admin' && document.getElementById('loginPass').value === '12345') {
+                isAuthenticated = true; switchView('admin');
+            } else showToast("Acesso Negado!", "error");
+        };
+
+        window.handleLogout = () => { isAuthenticated = false; switchView('public'); };
+
+        window.switchView = (view) => {
+            ['public', 'login', 'admin', 'placar'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden-view'));
+            ['btn-public', 'btn-admin', 'btn-placar'].forEach(b => document.getElementById(b).classList.remove('active'));
+            
+            if (view === 'public') { 
+                document.getElementById('view-public').classList.remove('hidden-view'); 
+                document.getElementById('btn-public').classList.add('active'); 
+            } else if (view === 'placar') { 
+                document.getElementById('view-placar').classList.remove('hidden-view'); 
+                document.getElementById('btn-placar').classList.add('active'); 
+            } else { 
+                document.getElementById('btn-admin').classList.add('active'); 
+                isAuthenticated ? document.getElementById('view-admin').classList.remove('hidden-view') : document.getElementById('view-login').classList.remove('hidden-view'); 
+            }
+            renderAll();
+        };
+
+        // Funções do Placar
+        window.updateScore = (team, change) => {
+            if (team === 1) {
+                score1 = Math.max(0, score1 + change); // Impede pontuação negativa
+                document.getElementById('score1').innerText = score1;
+            } else {
+                score2 = Math.max(0, score2 + change);
+                document.getElementById('score2').innerText = score2;
+            }
+            checkWinCondition();
+        };
+
+        function checkWinCondition() {
+            // Lógica oficial: 21 pontos com pelo menos 2 pontos de vantagem
+            if ((score1 >= 21 || score2 >= 21) && Math.abs(score1 - score2) >= 2) {
+                let winnerName = "";
+                if (score1 > score2) {
+                    const select1 = document.getElementById('team1Select');
+                    winnerName = select1.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)";
+                } else {
+                    const select2 = document.getElementById('team2Select');
+                    winnerName = select2.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)";
+                }
+                
+                document.getElementById('victoryTeamName').innerText = winnerName;
+                document.getElementById('victoryModal').classList.remove('hidden');
+                document.getElementById('victoryModal').classList.add('flex');
+                lucide.createIcons();
+            }
+        }
+
+        window.closeVictoryModal = () => {
+            document.getElementById('victoryModal').classList.add('hidden');
+            document.getElementById('victoryModal').classList.remove('flex');
+            // Zera automaticamente o placar para iniciar um novo jogo
+            score1 = 0;
+            score2 = 0;
+            document.getElementById('score1').innerText = score1;
+            document.getElementById('score2').innerText = score2;
+        };
+
+        window.resetScore = () => {
+            if (confirm("Deseja realmente zerar o placar?")) {
+                score1 = 0;
+                score2 = 0;
+                document.getElementById('score1').innerText = score1;
+                document.getElementById('score2').innerText = score2;
+                document.getElementById('team1Select').value = '';
+                document.getElementById('team2Select').value = '';
+                showToast("Placar zerado!", "info");
+            }
+        };
+
+        function renderAll() { renderPublic(); renderAdmin(); renderTeams(); renderRanking(); renderPlacarTeams(); }
+
+        function renderPlacarTeams() {
+            const select1 = document.getElementById('team1Select');
+            const select2 = document.getElementById('team2Select');
+
+            if (!select1 || !select2) return;
+
+            const val1 = select1.value;
+            const val2 = select2.value;
+
+            let optionsHTML1 = '<option value="" class="bg-slate-800 text-sm text-slate-400">SELECIONE</option>';
+            let optionsHTML2 = '<option value="" class="bg-slate-800 text-sm text-slate-400">SELECIONE</option>';
+
+            const validTeams = drawnTeams.filter(t => !t.isWaitlist).sort((a,b) => parseInt(a.label) - parseInt(b.label));
+
+            validTeams.forEach(t => {
+                const teamName = getTeamName(t);
+                const opt = `<option value="${t.label}" class="bg-slate-800 text-sm text-white">${teamName}</option>`;
+                optionsHTML1 += opt;
+                optionsHTML2 += opt;
+            });
+
+            select1.innerHTML = optionsHTML1;
+            select2.innerHTML = optionsHTML2;
+
+            if (validTeams.find(t => t.label === val1)) select1.value = val1;
+            if (validTeams.find(t => t.label === val2)) select2.value = val2;
+        }
+
+        function renderRanking() {
+            const list = document.getElementById('rankingList');
+            const sortedPlayers = [...players].sort((a,b) => (b.vitorias || 0) - (a.vitorias || 0));
+            
+            if (sortedPlayers.length === 0) { 
+                list.innerHTML = `<p class="opacity-50 text-sm text-center py-4">Aguardando resultados dos jogos...</p>`; 
+                return; 
+            }
+
+            const top3 = sortedPlayers.slice(0, 3);
+            const rest = sortedPlayers.slice(3);
+
+            let podiumHTML = '<div class="flex justify-center items-end gap-1 sm:gap-6 mb-8 mt-6">';
+            const positions = [1, 0, 2]; 
+
+            positions.forEach(pos => {
+                if (top3[pos]) {
+                    const p = top3[pos];
+                    const heightClass = pos === 0 ? 'h-32 sm:h-40' : (pos === 1 ? 'h-24 sm:h-32' : 'h-20 sm:h-28');
+                    const isGold = pos === 0;
+                    const isSilver = pos === 1;
+                    
+                    const bgClass = isGold ? 'bg-gradient-to-t from-yellow-600/20 to-yellow-500/40 border-yellow-500' :
+                                  (isSilver ? 'bg-gradient-to-t from-slate-500/20 to-slate-400/40 border-slate-400' :
+                                              'bg-gradient-to-t from-amber-700/20 to-amber-600/40 border-amber-600');
+                    const borderColor = isGold ? 'border-yellow-500' : (isSilver ? 'border-slate-400' : 'border-amber-600');
+                    const textColor = isGold ? 'text-yellow-500' : (isSilver ? 'text-slate-300' : 'text-amber-600');
+                    const medal = isGold ? '🥇' : (isSilver ? '🥈' : '🥉');
+
+                    podiumHTML += `
+                    <div class="flex flex-col items-center w-20 sm:w-32 relative group">
+                        <div class="relative mb-2 sm:mb-3 flex flex-col items-center transition-transform group-hover:-translate-y-2">
+                            <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-slate-900 flex items-center justify-center border-2 ${borderColor} shadow-[0_0_15px_currentColor] ${textColor} z-10">
+                                <i data-lucide="${p.icon || 'user'}" class="w-5 h-5 sm:w-8 sm:h-8"></i>
+                            </div>
+                            <span class="font-bold text-[10px] sm:text-sm text-center mt-1 sm:mt-2 text-slate-200 truncate w-full px-1 flex items-center justify-center gap-1">${medal} <span class="truncate">${p.name}</span></span>
+                        </div>
+                        <div class="w-full ${heightClass} ${bgClass} border-t-4 rounded-t-lg flex flex-col items-center pt-2 sm:pt-4 shadow-[inset_0_10px_20px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                            <span class="text-2xl sm:text-4xl font-black ${textColor}">${p.vitorias || 0}</span>
+                            <span class="text-[8px] sm:text-[10px] uppercase font-bold text-slate-400 mt-1">VITÓRIAS</span>
+                        </div>
+                    </div>
+                    `;
+                }
+            });
+            podiumHTML += '</div>';
+
+            let restHTML = '';
+            if (rest.length > 0) {
+                const listItems = rest.map((p, index) => {
+                    const rank = index + 4;
+                    const lvlInfo = getLevelInfo(p.overall);
+                    return `
+                    <div class="p-3 sm:p-4 rounded-xl flex items-center justify-between border border-slate-700 bg-slate-800/50 hover:bg-slate-700/80 transition-colors">
+                        <div class="flex items-center gap-3 sm:gap-4">
+                            <span class="text-lg sm:text-xl w-8 text-center text-slate-500 font-bold">#${rank}</span>
+                            <div class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center border border-slate-600 shrink-0">
+                                <i data-lucide="${p.icon || 'user'}" class="w-5 h-5 text-slate-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-base sm:text-lg font-bold text-slate-300 truncate max-w-[120px] sm:max-w-none">
+                                    ${p.name}
+                                </p>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500">OVR ${p.overall} • ${lvlInfo.label}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl sm:text-2xl font-bold text-slate-300">${p.vitorias || 0}</span>
+                            <p class="text-[9px] uppercase font-bold text-slate-500">VITÓRIAS</p>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                restHTML = `
+                <div class="mt-8 text-center border-t border-slate-700/50 pt-6">
+                    <button onclick="toggleRanking()" class="text-xs sm:text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition-all border border-slate-600 rounded-full px-4 sm:px-6 py-2">
+                        ${showAllRanking ? 'OCULTAR LISTA' : 'VER TODOS (' + rest.length + ')'}
+                    </button>
+                </div>
+                <div class="flex flex-col gap-3 mt-4 sm:mt-6 ${showAllRanking ? 'animate-in fade-in slide-in-from-top-4' : 'hidden'}">
+                    ${listItems}
+                </div>
+                `;
+            }
+
+            list.innerHTML = podiumHTML + restHTML;
+            lucide.createIcons();
+        }
+
+        function renderPublic() {
+            const grid = document.getElementById('publicGrid');
+            if (players.length === 0) { grid.innerHTML = `<p class="opacity-50 text-center w-full">Nenhum atleta cadastrado.</p>`; return; }
+            
+            const nivel4 = players.filter(p => p.overall >= 90).sort((a,b) => b.overall - a.overall);
+            const nivel3 = players.filter(p => p.overall >= 78 && p.overall <= 89).sort((a,b) => b.overall - a.overall);
+            const nivel2 = players.filter(p => p.overall >= 51 && p.overall <= 77).sort((a,b) => b.overall - a.overall);
+            const nivel1 = players.filter(p => p.overall <= 50).sort((a,b) => b.overall - a.overall);
+
+            const renderGroup = (title, icon, colorClass, list) => {
+                if (list.length === 0) return '';
+                
+                const cardsHTML = list.map(p => {
+                    const lvlInfo = getLevelInfo(p.overall);
+                    return `
+                    <div class="relative flex justify-center w-full sm:w-[210px] group">
+                        ${p.destaque ? `<div class="absolute -top-2 -right-1 sm:-top-5 sm:-right-4 z-50 text-yellow-400 drop-shadow-[0_5px_15px_rgba(250,204,21,1)] rotate-[15deg] group-hover:scale-125 transition-transform"><i data-lucide="crown" class="w-7 h-7 sm:w-10 sm:h-10 fill-yellow-400"></i></div>` : ''}
+                        <div class="fifa-card card-${lvlInfo.type} w-full mx-auto">
+                            <div class="flex flex-col items-center justify-center">
+                                <span class="overall drop-shadow-md">${p.overall}</span>
+                                <span class="font-bold text-[9px] sm:text-[11px] opacity-90 tracking-[0.15em] mt-0.5 sm:mt-1">OVR</span>
+                            </div>
+                            <div class="w-9 h-9 sm:w-12 sm:h-12 my-1.5 sm:my-2 flex items-center justify-center bg-black/10 rounded-full border-2 ${p.destaque ? 'border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.3)] text-yellow-200' : 'border-black/10'} shrink-0"><i data-lucide="${p.icon || 'user'}" class="w-4 h-4 sm:w-6 sm:h-6 opacity-80"></i></div>
+                            <div class="player-name ${p.destaque ? 'text-yellow-100 drop-shadow-md' : ''}">${p.name}</div>
+                            <div class="stats-grid">
+                                <div class="stat-item"><span class="stat-value">${p.atk || 0}</span><span class="stat-label">ATQ</span></div>
+                                <div class="stat-item"><span class="stat-value">${p.rec || 0}</span><span class="stat-label">REC</span></div>
+                                <div class="stat-item"><span class="stat-value">${p.blq || 0}</span><span class="stat-label">BLQ</span></div>
+                                <div class="stat-item"><span class="stat-value">${p.saq || 0}</span><span class="stat-label">SAQ</span></div>
+                                <div class="stat-item"><span class="stat-value">${p.vel || 0}</span><span class="stat-label">VEL</span></div>
+                                <div class="stat-item"><span class="stat-value">${p.lev || 0}</span><span class="stat-label">LEV</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="w-full flex flex-col items-center mb-10">
+                        <h3 class="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2 ${colorClass} border-b border-slate-700/50 pb-2 px-8 uppercase tracking-wider">
+                            <i data-lucide="${icon}" class="w-5 h-5 sm:w-6 h-6"></i> ${title}
+                        </h3>
+                        <div class="grid grid-cols-[repeat(2,minmax(130px,180px))] sm:flex sm:flex-wrap gap-3 sm:gap-6 justify-center w-full max-w-[390px] sm:max-w-none mx-auto px-1 sm:px-0">
+                            ${cardsHTML}
+                        </div>
+                    </div>
+                `;
+            };
+
+            grid.innerHTML = 
+                renderGroup('Nível 4', 'sparkles', 'text-yellow-500', nivel4) +
+                renderGroup('Nível 3', 'chevrons-up', 'text-green-500', nivel3) +
+                renderGroup('Nível 2', 'minus', 'text-fuchsia-500', nivel2) +
+                renderGroup('Nível 1', 'chevrons-down', 'text-red-500', nivel1);
+
+            lucide.createIcons();
+        }
+
+        function renderAdmin() {
+            const tbody = document.getElementById('adminTableBody');
+            document.getElementById('playerCount').innerText = players.length;
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if(selectAllCheckbox) selectAllCheckbox.checked = players.length > 0 && players.every(p => selectedPlayerIds.has(p.id));
+
+            // Ordena os jogadores pelo Overral do maior para o menor na lista de admin
+            const sortedPlayersForAdmin = [...players].sort((a, b) => b.overall - a.overall);
+
+            tbody.innerHTML = sortedPlayersForAdmin.map(p => {
+                const lvlInfo = getLevelInfo(p.overall);
+                return `
+                <tr class="hover:bg-slate-700/30 transition-colors">
+                    <td class="px-2 sm:px-4 py-3 sm:py-4 text-center">
+                        <input type="checkbox" ${selectedPlayerIds.has(p.id) ? 'checked' : ''} onclick="togglePlayerSelection('${p.id}', this.checked)" class="w-3 h-3 sm:w-4 sm:h-4 accent-green-500 cursor-pointer">
+                    </td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 font-bold text-slate-200 flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                        <i data-lucide="${p.icon || 'user'}" class="w-3 h-3 sm:w-4 sm:h-4 opacity-50 shrink-0"></i>
+                        ${p.name}
+                        ${p.destaque ? `<i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400 shrink-0"></i>` : ''}
+                    </td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold whitespace-nowrap">${p.overall}</td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-yellow-500 whitespace-nowrap">${p.vitorias || 0}</td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
+                        <span class="px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-bold ${lvlInfo.bg} ${lvlInfo.text} border border-current opacity-70">${lvlInfo.label}</span>
+                    </td>
+                    <td class="px-3 sm:px-6 py-3 sm:py-4 text-right flex justify-end gap-1 sm:gap-2 whitespace-nowrap">
+                        <button onclick="editPlayer('${p.id}')" class="p-1.5 sm:p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg"><i data-lucide="edit-2" class="w-3 h-3 sm:w-4 sm:h-4"></i></button>
+                        <button onclick="deletePlayer('${p.id}')" class="p-1.5 sm:p-2 hover:bg-red-500/20 text-red-400 rounded-lg"><i data-lucide="trash-2" class="w-3 h-3 sm:w-4 sm:h-4"></i></button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function renderTeams() {
+            const adminGrid = document.getElementById('adminTeamsGrid');
+            const publicGrid = document.getElementById('publicTeamsGrid');
+            const sections = [document.getElementById('adminTeamsSection'), document.getElementById('publicTeamsSection')];
+            if (drawnTeams.length === 0) { sections.forEach(s => s.classList.add('hidden')); return; }
+            sections.forEach(s => s.classList.remove('hidden'));
+            
+            const content = drawnTeams.sort((a,b) => {
+                // Coloca a "Lista de Espera" por último
+                if (a.isWaitlist) return 1;
+                if (b.isWaitlist) return -1;
+                return parseInt(a.label) - parseInt(b.label);
+            }).map(t => {
+                const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 mb-1"></i> Lista de Espera' : getTeamName(t);
+                return `
+                <div class="team-container p-4 sm:p-5 rounded-xl border border-slate-700 relative shadow-lg ${t.isWaitlist ? 'bg-slate-800/40 border-slate-600' : ''}">
+                    ${isAuthenticated ? `<button onclick="deleteTeam('${t.id}')" class="absolute top-3 right-3 text-red-500 hover:scale-110 transition-all"><i data-lucide="x-circle" class="w-5 h-5"></i></button>` : ''}
+                    <h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase">${teamName}</h3>
+                    <div class="space-y-2">
+                        ${t.players.map(p => {
+                            const lvlInfo = getLevelInfo(p.overall);
+                            return `
+                            <div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0">
+                                <span class="flex items-center gap-1 sm:gap-2">
+                                    <span class="w-2 h-2 rounded-full ${lvlInfo.dot}"></span>
+                                    <i data-lucide="${p.icon || 'user'}" class="w-3 h-3 opacity-50 shrink-0"></i>
+                                    <span class="${lvlInfo.type === 'nivel4' || lvlInfo.type === 'nivel3' ? 'font-bold' : ''} ${p.destaque ? 'text-yellow-400' : 'text-slate-300'} truncate max-w-[120px] sm:max-w-[150px]">${p.name}</span>
+                                    ${p.destaque ? `<i data-lucide="crown" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0"></i>` : ''}
+                                </span>
+                                <span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${p.overall} OVR</span>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `}).join('');
+            adminGrid.innerHTML = publicGrid.innerHTML = content;
+            lucide.createIcons();
+        }
+
+        window.showToast = (msg, type = 'success') => {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.className = `fixed bottom-5 right-5 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-2xl transition-transform duration-300 flex items-center gap-2 sm:gap-3 z-[60] text-sm sm:text-base max-w-[90vw]`;
+            toast.classList.remove('translate-y-24');
+            setTimeout(() => toast.classList.add('translate-y-24'), 3500);
+        };
+    </script>
+</body>
+</html>
