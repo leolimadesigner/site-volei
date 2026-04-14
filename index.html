@@ -93,10 +93,10 @@
         /* Grid de Habilidades (Adaptado para agrupar ao centro e afastar das bordas) */
         .stats-grid { 
             display: grid; 
-            grid-template-columns: max-content max-content; /* Usa apenas o espaço necessário */
+            grid-template-columns: repeat(3, max-content); /* Alterado para 3 colunas */
             justify-content: center; /* Centra as colunas no meio do card */
-            gap: 6px 24px; /* 6px vertical, 24px horizontal entre as duas colunas */
-            margin-top: 8px; 
+            gap: 6px 16px; /* Ajuste do espaçamento horizontal para caberem 3 itens */
+            margin-top: 12px; 
             width: 100%; 
         }
 
@@ -137,7 +137,7 @@
             .player-name { font-size: 12px; margin-top: 4px; width: 98%; border-bottom-width: 1px; padding-bottom: 2px; }
             .stat-value { font-size: 13px; }
             .stat-label { font-size: 8px; }
-            .stats-grid { gap: 4px 16px; margin-top: 6px; } /* Ajuste do gap horizontal para o telemóvel */
+            .stats-grid { gap: 4px 8px; margin-top: 8px; } /* Ajuste do gap horizontal para o telemóvel */
             .stat-item { gap: 3px; }
         }
 
@@ -254,14 +254,11 @@
                         <div class="space-y-4">
                             <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm sm:text-base outline-none focus:ring-2 focus:ring-green-500">
                             
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                            <div class="grid grid-cols-3 gap-3 sm:gap-4">
                                 <div><label class="text-[10px] sm:text-xs text-slate-400">ATQ</label><input type="number" id="statAtk" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
-                                <div><label class="text-[10px] sm:text-xs text-slate-400">REC</label><input type="number" id="statRec" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
-                                <div><label class="text-[10px] sm:text-xs text-slate-400">BLQ</label><input type="number" id="statBlq" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
-                                <div><label class="text-[10px] sm:text-xs text-slate-400">SAQ</label><input type="number" id="statSaq" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
-                                <div><label class="text-[10px] sm:text-xs text-slate-400">VEL</label><input type="number" id="statVel" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
+                                <div><label class="text-[10px] sm:text-xs text-slate-400">DEF</label><input type="number" id="statDef" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
                                 <div><label class="text-[10px] sm:text-xs text-slate-400">LEV</label><input type="number" id="statLev" value="80" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm"></div>
-                                <div class="col-span-2 sm:col-span-3">
+                                <div class="col-span-3">
                                     <label class="text-[10px] sm:text-xs text-yellow-500 font-bold uppercase tracking-wider">Número de Vitórias</label>
                                     <input type="number" id="statVit" value="0" class="w-full bg-slate-900 border border-yellow-500/30 rounded-lg p-2 sm:p-3 text-base sm:text-lg font-bold text-yellow-500">
                                 </div>
@@ -497,10 +494,7 @@
         window.savePlayer = async () => {
             const name = document.getElementById('playerName').value.trim();
             const atk = parseInt(document.getElementById('statAtk').value);
-            const rec = parseInt(document.getElementById('statRec').value);
-            const blq = parseInt(document.getElementById('statBlq').value);
-            const saq = parseInt(document.getElementById('statSaq').value);
-            const vel = parseInt(document.getElementById('statVel').value);
+            const def = parseInt(document.getElementById('statDef').value);
             const lev = parseInt(document.getElementById('statLev').value);
             const vitorias = parseInt(document.getElementById('statVit').value) || 0;
             const icon = document.getElementById('playerIcon').value || 'user';
@@ -509,12 +503,12 @@
 
             if (!name) { showToast("Preencha o nome!", "error"); return; }
             
-            // Novo cálculo de OVR com pesos específicos para Vôlei
-            const overall = Math.round((atk * 0.25) + (rec * 0.20) + (blq * 0.10) + (saq * 0.15) + (vel * 0.15) + (lev * 0.15));
+            // O OVR é calculado pela média simples dos 3 atributos
+            const overall = Math.round((atk + def + lev) / 3);
             const lvlInfo = getLevelInfo(overall);
             
             const playerObj = { 
-                name, atk, rec, blq, saq, vel, lev, overall, icon, destaque, vitorias,
+                name, atk, def, lev, overall, icon, destaque, vitorias,
                 type: lvlInfo.type,
                 updatedAt: Date.now() 
             };
@@ -544,10 +538,7 @@
             if (!p) return;
             document.getElementById('playerName').value = p.name;
             document.getElementById('statAtk').value = p.atk || 80;
-            document.getElementById('statRec').value = p.rec || 80;
-            document.getElementById('statBlq').value = p.blq || 80;
-            document.getElementById('statSaq').value = p.saq || 80;
-            document.getElementById('statVel').value = p.vel || 80;
+            document.getElementById('statDef').value = p.def || 80;
             document.getElementById('statLev').value = p.lev || 80;
             document.getElementById('statVit').value = p.vitorias || 0;
             document.getElementById('playerIcon').value = p.icon || 'user';
@@ -564,10 +555,7 @@
             document.getElementById('playerName').value = '';
             document.getElementById('editId').value = '';
             document.getElementById('statAtk').value = '80';
-            document.getElementById('statRec').value = '80';
-            document.getElementById('statBlq').value = '80';
-            document.getElementById('statSaq').value = '80';
-            document.getElementById('statVel').value = '80';
+            document.getElementById('statDef').value = '80';
             document.getElementById('statLev').value = '80';
             document.getElementById('statVit').value = '0';
             document.getElementById('playerIcon').value = 'user';
@@ -586,13 +574,9 @@
             if (numTeams === 0) { showToast(`Selecione pelo menos ${size} jogadores para formar uma equipe!`, "error"); return; }
 
             const strategy = document.getElementById('draftStrategy').value;
-            let result;
-
-            if (strategy === 'FORA') {
-                result = balanceStrongOutside(activePlayers, size);
-            } else {
-                result = balanceStrongInside(activePlayers, size);
-            }
+            
+            // Chamada da nova função unificada e justa
+            const result = generateBalancedTeams(activePlayers, size, strategy);
 
             for (const t of drawnTeams) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id));
 
@@ -608,23 +592,67 @@
             }
         };
 
-        // --- LÓGICA DO TEAM BALANCER (Adaptada do Kotlin) ---
-        function balanceStrongInside(activePlayers, playersPerTeam) {
+        // --- NOVA LÓGICA DE SORTEIO E BALANCEAMENTO (Justo e Rotativo) ---
+        function generateBalancedTeams(activePlayers, playersPerTeam, strategy) {
             const numberOfTeams = Math.floor(activePlayers.length / playersPerTeam);
+            const waitlistSize = activePlayers.length % playersPerTeam;
+
             if (numberOfTeams === 0) return { teams: [], waitlist: [...activePlayers] };
 
-            let sortedPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
-            sortedPlayers.sort((a, b) => b.overall - a.overall);
+            let sortedPlayers = [...activePlayers].sort((a, b) => b.overall - a.overall);
+            let waitlist = [];
+            let playingPlayers = [...sortedPlayers];
 
-            const activeCount = numberOfTeams * playersPerTeam;
-            const drafted = sortedPlayers.slice(0, activeCount);
-            const waitlist = sortedPlayers.slice(activeCount);
+            // 1. Extrair a Lista de Espera de forma rotativa
+            if (waitlistSize > 0) {
+                // Cria um "pote" de candidatos para ficar de fora. 
+                // O tamanho do pote é a Lista de Espera + Número de Times (garante que roda entre os piores/melhores)
+                const poolSize = Math.min(sortedPlayers.length, waitlistSize + numberOfTeams);
+                let pool = [];
+
+                if (strategy === 'FORA') {
+                    // Fora Forte: Sorteia entre o pote dos MELHORES
+                    pool = sortedPlayers.slice(0, poolSize);
+                } else {
+                    // Dentro Forte: Sorteia entre o pote dos PIORES
+                    pool = sortedPlayers.slice(-poolSize);
+                }
+
+                // Embaralha o pote antes de escolher quem sai (Algoritmo Fisher-Yates)
+                for (let k = pool.length - 1; k > 0; k--) {
+                    const j = Math.floor(Math.random() * (k + 1));
+                    [pool[k], pool[j]] = [pool[j], pool[k]];
+                }
+                
+                // Pega os coitados que vão sobrar
+                waitlist = pool.slice(0, waitlistSize);
+                
+                // Mantém apenas os que vão jogar (filtra os da waitlist)
+                playingPlayers = sortedPlayers.filter(p => !waitlist.some(w => w.id === p.id));
+            }
+
+            // 2. Ordena os que VÃO JOGAR por OVR
+            playingPlayers.sort((a, b) => b.overall - a.overall);
 
             const teams = Array.from({ length: numberOfTeams }, () => []);
+            
+            // 3. Potes para balancear os times (Agrupa do mesmo nível e embaralha o grupo)
+            let randomizedPlayingPlayers = [];
+            for (let i = 0; i < playingPlayers.length; i += numberOfTeams) {
+                let pot = playingPlayers.slice(i, i + numberOfTeams);
+                
+                // Embaralha as pessoas do mesmo nível (ex: os 3 melhores mudam de ordem entre si)
+                for (let k = pot.length - 1; k > 0; k--) {
+                    const j = Math.floor(Math.random() * (k + 1));
+                    [pot[k], pot[j]] = [pot[j], pot[k]];
+                }
+                randomizedPlayingPlayers.push(...pot);
+            }
+
+            // 4. Distribuição Serpentina (Snake Draft) - Equilibra os times perfeitamente
             let dir = 1;
             let cur = 0;
-
-            for (const player of drafted) {
+            for (const player of randomizedPlayingPlayers) {
                 teams[cur].push(player);
                 cur += dir;
                 if (cur >= numberOfTeams) {
@@ -633,88 +661,6 @@
                 } else if (cur < 0) {
                     dir = 1;
                     cur = 0;
-                }
-            }
-
-            return { teams, waitlist };
-        }
-
-        function balanceStrongOutside(activePlayers, playersPerTeam) {
-            const numberOfTeams = Math.floor(activePlayers.length / playersPerTeam);
-            const waitlistSize = activePlayers.length % playersPerTeam;
-
-            if (numberOfTeams === 0) return { teams: [], waitlist: [...activePlayers] };
-
-            let sortedPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
-            sortedPlayers.sort((a, b) => b.overall - a.overall);
-
-            const teams = Array.from({ length: numberOfTeams }, () => []);
-            const waitlist = [];
-
-            const buckets = [...teams];
-            if (waitlistSize > 0) buckets.push(waitlist);
-
-            const capacities = buckets.map((_, i) => i < numberOfTeams ? playersPerTeam : waitlistSize);
-            const draftOrder = [];
-            const currentCaps = new Array(buckets.length).fill(0);
-            let dir = 1;
-            let cur = 0;
-
-            // Serpentina em todos os buckets (incluindo espera)
-            while (draftOrder.length < activePlayers.length) {
-                if (currentCaps[cur] < capacities[cur]) {
-                    draftOrder.push(cur);
-                    currentCaps[cur]++;
-                }
-                const next = cur + dir;
-                if (next >= buckets.length || next < 0) {
-                    dir *= -1;
-                } else {
-                    cur = next;
-                }
-            }
-
-            sortedPlayers.forEach((player, index) => {
-                const bucketIndex = draftOrder[index];
-                buckets[bucketIndex].push(player);
-            });
-
-            // Lógica de balanceamento aleatório pós-sorteio
-            if (waitlist.length > 0 && teams.length >= 2) {
-                let attempts = 0;
-                while (attempts < 5) {
-                    let minSum = Infinity, maxSum = -Infinity;
-                    let weakestTeam = null, strongestTeam = null;
-
-                    teams.forEach(t => {
-                        const sum = t.reduce((acc, p) => acc + p.overall, 0);
-                        if (sum < minSum) { minSum = sum; weakestTeam = t; }
-                        if (sum > maxSum) { maxSum = sum; strongestTeam = t; }
-                    });
-
-                    if (!weakestTeam || !strongestTeam) break;
-                    
-                    const diff = maxSum - minSum;
-                    if (diff <= 0) break;
-
-                    const weakestPlayer = weakestTeam.reduce((min, p) => p.overall < min.overall ? p : min, weakestTeam[0]);
-                    const maxWaitlistRating = Math.max(...waitlist.map(p => p.overall));
-
-                    // Filtra: tem que ser melhor que o fraco e NÃO pode ser a nota máxima da espera
-                    const candidates = waitlist.filter(p => p.overall > weakestPlayer.overall && p.overall !== maxWaitlistRating);
-
-                    if (candidates.length > 0) {
-                        const swapIn = candidates[Math.floor(Math.random() * candidates.length)];
-                        
-                        weakestTeam.splice(weakestTeam.indexOf(weakestPlayer), 1);
-                        waitlist.splice(waitlist.indexOf(swapIn), 1);
-
-                        weakestTeam.push(swapIn);
-                        waitlist.push(weakestPlayer);
-                    } else {
-                        break; // Sem candidatos válidos
-                    }
-                    attempts++;
                 }
             }
 
@@ -962,10 +908,7 @@
                             <div class="player-name ${p.destaque ? 'text-yellow-100 drop-shadow-md' : ''}">${p.name}</div>
                             <div class="stats-grid">
                                 <div class="stat-item"><span class="stat-value">${p.atk || 0}</span><span class="stat-label">ATQ</span></div>
-                                <div class="stat-item"><span class="stat-value">${p.rec || 0}</span><span class="stat-label">REC</span></div>
-                                <div class="stat-item"><span class="stat-value">${p.blq || 0}</span><span class="stat-label">BLQ</span></div>
-                                <div class="stat-item"><span class="stat-value">${p.saq || 0}</span><span class="stat-label">SAQ</span></div>
-                                <div class="stat-item"><span class="stat-value">${p.vel || 0}</span><span class="stat-label">VEL</span></div>
+                                <div class="stat-item"><span class="stat-value">${p.def || 0}</span><span class="stat-label">DEF</span></div>
                                 <div class="stat-item"><span class="stat-value">${p.lev || 0}</span><span class="stat-label">LEV</span></div>
                             </div>
                         </div>
