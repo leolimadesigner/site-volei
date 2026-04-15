@@ -199,7 +199,8 @@ export const drawTeams = async () => {
                 let sortedTeam = result.teams[i].sort((a, b) => {
                     const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                     if (catDiff !== 0) return catDiff;
-                    return (b.pontos || 0) - (a.pontos || 0);
+                    // Desempate usando o sistema de Elo
+                    return (b.eloRating ?? 150) - (a.eloRating ?? 150);
                 });
                 await addDoc(teamsRef, { label: (i + 1).toString(), players: sortedTeam });
             }
@@ -208,7 +209,7 @@ export const drawTeams = async () => {
                 let sortedWaitlist = result.waitlist.sort((a, b) => {
                     const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                     if (catDiff !== 0) return catDiff;
-                    return (b.pontos || 0) - (a.pontos || 0);
+                    return (b.eloRating ?? 150) - (a.eloRating ?? 150);
                 });
                 await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: sortedWaitlist });
                 showToast(`Sorteio concluído! ${result.waitlist.length} atleta(s) na espera.`);
@@ -425,7 +426,7 @@ export const createWaitlist = () => {
             const updatedWaitlist = [...currentWaitlistPlayers, ...newPlayersWithRounds].sort((a, b) => {
                 const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                 if (catDiff !== 0) return catDiff;
-                return (b.pontos || 0) - (a.pontos || 0);
+                return (b.eloRating ?? 150) - (a.eloRating ?? 150);
             });
             
             if (waitlistTeamDoc) {
@@ -483,7 +484,9 @@ export const confirmMovePlayer = async () => {
         if (destTeam.isWaitlist || sourceTeam.isWaitlist) {
             if (b.waitlistRounds !== a.waitlistRounds) return (b.waitlistRounds || 0) - (a.waitlistRounds || 0);
         }
-        return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+        if (catDiff !== 0) return catDiff;
+        return (b.eloRating ?? 150) - (a.eloRating ?? 150);
     };
 
     sourceTeam.players.sort(sortFn);
@@ -529,7 +532,7 @@ export const deleteTeam = (id) => {
     });
 };
 
-// --- Funções de Placar --- //
+// --- Funções de Placar e Sistema Elo --- //
 
 export function checkWinCondition() {
     const isTradicionalWin = (state.score1 >= 21 || state.score2 >= 21) && Math.abs(state.score1 - state.score2) >= 2;
@@ -572,6 +575,122 @@ export const resetScore = () => {
     });
 };
 
+// NOVA FUNÇÃO: Aplica a matemática do ELO System quando a partida é salva no placar
+export const saveAndCloseVictoryModal = async () => {
+    const select1 = document.getElementById('team1Select');
+    const select2 = document.getElementById('team2Select');
+
+    if (!select1.value || !select2.value || select1.value === select2.value) {
+        showToast("Selecione dois times válidos e diferentes no placar!", "error");
+        return;
+    }
+
+    const team1 = state.drawnTeams.find(t => t.label === select1.value);
+    const team2 = state.drawnTeams.find(t => t.label === select2.value);
+
+    if (!team1 || !team2) return;
+
+    const isTeam1Winner = state.score1 > state.score2;
+
+    // 1. Calcula a Força Base da Equipe (Média do EloRating)
+    const getTeamElo = (team) => {
+        if (team.players.length === 0) return 150;
+        const sum = team.players.reduce((acc, p) => acc + (p.eloRating !== undefined ? p.eloRating : 150), 0);
+        return sum / team.players.length;
+    };
+
+    const eloT1 = getTeamElo(team1);
+    const eloT2 = getTeamElo(team2);
+
+    // 2. Cálculo da Expectativa de Vitória (Fórmula Matemática do Elo)
+    const expectedT1 = 1 / (1 + Math.pow(10, (eloT2 - eloT1) / 400));
+    const expectedT2 = 1 / (1 + Math.pow(10, (eloT1 - eloT2) / 400));
+
+    // Fator de variação máximo por partida (K-Factor)
+    const K = 32; 
+
+    // 3. Resultado real (1 para vitória, 0 para derrota)
+    const actualT1 = isTeam1Winner ? 1 : 0;
+    const actualT2 = isTeam1Winner ? 0 : 1;
+
+    // Variação de pontos de Elo para cada time
+    const changeT1 = Math.round(K * (actualT1 - expectedT1));
+    const changeT2 = Math.round(K * (actualT2 - expectedT2));
+
+    const btnSave = document.getElementById('btnSaveResult');
+    btnSave.innerText = "SALVANDO...";
+    btnSave.disabled = true;
+
+    try {
+        const updatePromises = [];
+
+        // 4. Atualiza individualmente os jogadores do Team 1 no Banco de Dados
+        team1.players.forEach(p => {
+            const currentElo = p.eloRating !== undefined ? p.eloRating : 150;
+            const newElo = Math.max(0, currentElo + changeT1); 
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            if (dbPlayer) {
+                const partidas = (dbPlayer.partidas || 0) + 1;
+                const vitorias = (dbPlayer.vitorias || 0) + actualT1;
+                const streak = actualT1 === 1 ? 
+                    (dbPlayer.streak >= 0 ? dbPlayer.streak + 1 : 1) : 
+                    (dbPlayer.streak <= 0 ? dbPlayer.streak - 1 : -1);
+
+                updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
+                    eloRating: newElo,
+                    partidas: partidas,
+                    vitorias: vitorias,
+                    streak: streak,
+                    updatedAt: Date.now()
+                }));
+            }
+        });
+
+        // 5. Atualiza individualmente os jogadores do Team 2 no Banco de Dados
+        team2.players.forEach(p => {
+            const currentElo = p.eloRating !== undefined ? p.eloRating : 150;
+            const newElo = Math.max(0, currentElo + changeT2);
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            if (dbPlayer) {
+                const partidas = (dbPlayer.partidas || 0) + 1;
+                const vitorias = (dbPlayer.vitorias || 0) + actualT2;
+                const streak = actualT2 === 1 ? 
+                    (dbPlayer.streak >= 0 ? dbPlayer.streak + 1 : 1) : 
+                    (dbPlayer.streak <= 0 ? dbPlayer.streak - 1 : -1);
+
+                updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
+                    eloRating: newElo,
+                    partidas: partidas,
+                    vitorias: vitorias,
+                    streak: streak,
+                    updatedAt: Date.now()
+                }));
+            }
+        });
+
+        await Promise.all(updatePromises);
+        
+        const ptsGanhos = isTeam1Winner ? changeT1 : changeT2;
+        showToast(`Ranking Atualizado! Time vencedor faturou +${ptsGanhos} de Elo.`, "success");
+
+        document.getElementById('victoryModal').classList.add('hidden');
+        document.getElementById('victoryModal').classList.remove('flex');
+        
+        state.score1 = 0; state.score2 = 0; 
+        document.getElementById('score1').innerText = state.score1; 
+        document.getElementById('score2').innerText = state.score2;
+        document.getElementById('team1Select').value = ''; 
+        document.getElementById('team2Select').value = ''; 
+        
+    } catch (error) {
+        console.error(error);
+        showToast("Erro ao salvar resultado.", "error");
+    } finally {
+        btnSave.innerText = "SALVAR RANKING";
+        btnSave.disabled = false;
+    }
+};
+
 window.drawTeams = drawTeams;
 window.redrawTeamWithWaitlist = redrawTeamWithWaitlist;
 window.createWaitlist = createWaitlist;
@@ -580,3 +699,4 @@ window.deleteTeam = deleteTeam;
 window.updateScore = updateScore;
 window.resetScore = resetScore;
 window.confirmMovePlayer = confirmMovePlayer;
+window.saveAndCloseVictoryModal = saveAndCloseVictoryModal;
