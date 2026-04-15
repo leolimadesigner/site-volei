@@ -1,8 +1,6 @@
 import { state } from './state.js';
 import { db, appId, teamsRef, doc, addDoc, updateDoc, deleteDoc } from './firebase.js';
-import { showToast, openConfirmModal } from './ui.js';
-
-// --- Algoritmos de Balanceamento --- //
+import { showToast, openConfirmModal, closeMoveModal } from './ui.js';
 
 export function balanceStrongInside(playersList, playersPerTeam) {
     const numberOfTeams = Math.floor(playersList.length / playersPerTeam);
@@ -14,7 +12,7 @@ export function balanceStrongInside(playersList, playersPerTeam) {
     let sortedPlayers = shuffledPlayers.sort((a, b) => {
         const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
         if (catDiff !== 0) return catDiff;
-        return a._rand - b._rand; // Desempate aleatório para o mesmo nível
+        return a._rand - b._rand; 
     });
     
     const activePlayersCount = numberOfTeams * playersPerTeam;
@@ -325,7 +323,7 @@ export const redrawTeamWithWaitlist = async (teamId) => {
                     if (waitlistCount > bestSwapCount) {
                         isBetter = true;
                     } else if (waitlistCount === bestSwapCount) {
-                        isEqual = true; // Achou um empate idêntico na força e na quantidade de trocas
+                        isEqual = true; 
                     }
                 }
 
@@ -334,7 +332,7 @@ export const redrawTeamWithWaitlist = async (teamId) => {
                     bestSwapCount = waitlistCount;
                     bestCombos = [candidateTeam];
                 } else if (isEqual) {
-                    bestCombos.push(candidateTeam); // Guarda todas as combinações equivalentes
+                    bestCombos.push(candidateTeam); 
                 }
             }
         }
@@ -441,6 +439,69 @@ export const createWaitlist = () => {
     });
 };
 
+// NOVA FUNÇÃO: Confirmar a movimentação manual de um jogador
+export const confirmMovePlayer = async () => {
+    const destTeamId = document.getElementById('moveDestination').value;
+    const { sourceTeamId, playerId } = state.moveData;
+
+    if (!destTeamId || !sourceTeamId || !playerId) {
+        showToast("Erro ao transferir jogador.", "error");
+        return;
+    }
+
+    const sourceTeam = state.drawnTeams.find(t => t.id === sourceTeamId);
+    const destTeam = state.drawnTeams.find(t => t.id === destTeamId);
+
+    if (!sourceTeam || !destTeam) return;
+
+    const playerIndex = sourceTeam.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+
+    // Retira o jogador da equipe de origem
+    const playerToMove = sourceTeam.players.splice(playerIndex, 1)[0];
+
+    // Ajuste de "Rounds de Espera" com base no destino
+    if (destTeam.isWaitlist) {
+        playerToMove.waitlistRounds = (playerToMove.waitlistRounds || 0) + 1;
+    } else if (sourceTeam.isWaitlist) {
+        playerToMove.waitlistRounds = 0;
+    }
+
+    // Adiciona o jogador à equipe de destino
+    destTeam.players.push(playerToMove);
+
+    // Função de ordenação
+    const sortFn = (a, b) => {
+        if (destTeam.isWaitlist || sourceTeam.isWaitlist) {
+            if (b.waitlistRounds !== a.waitlistRounds) return (b.waitlistRounds || 0) - (a.waitlistRounds || 0);
+        }
+        return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+    };
+
+    sourceTeam.players.sort(sortFn);
+    destTeam.players.sort(sortFn);
+
+    try {
+        closeMoveModal();
+        const updates = [];
+
+        if (sourceTeam.players.length === 0) {
+            // Se a equipe ficou vazia, ela é deletada do banco de dados
+            updates.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', sourceTeamId)));
+        } else {
+            updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', sourceTeamId), { players: sourceTeam.players }));
+        }
+
+        updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', destTeamId), { players: destTeam.players }));
+
+        await Promise.all(updates);
+        showToast("Transferência concluída!", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao transferir jogador.", "error");
+    }
+};
+
 export const clearTeams = () => {
     openConfirmModal("Limpar Todas as Equipes", "Deseja realmente excluir todas as equipes geradas?", async () => {
         try {
@@ -510,3 +571,4 @@ window.clearTeams = clearTeams;
 window.deleteTeam = deleteTeam;
 window.updateScore = updateScore;
 window.resetScore = resetScore;
+window.confirmMovePlayer = confirmMovePlayer;

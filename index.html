@@ -38,8 +38,8 @@
     </div>
 
     <main class="max-w-7xl mx-auto w-full p-2 sm:p-4 md:p-8 flex-1">
+        
         <section id="view-public" class="animate-in fade-in duration-500">
-            
             <header class="mb-8 sm:mb-12 mt-4 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 shadow-lg">
                 <div class="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left">
                     <h2 class="text-4xl sm:text-5xl md:text-6xl font-black mb-2 tracking-tight text-white font-['Oswald'] drop-shadow-md">
@@ -132,7 +132,6 @@
                     </h2>
                     <p class="text-sm sm:text-base text-slate-400">Os maiores vencedores da Turma do Vôlei</p>
                 </header>
-
                 <div id="rankingList" class="bg-slate-800/40 p-3 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-700"></div>
             </div>
         </section>
@@ -179,7 +178,7 @@
                             <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm sm:text-base outline-none focus:ring-2 focus:ring-green-500">
                             
                             <div class="mb-4">
-                                <label class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Categoria para Sorteio</label>
+                                <label class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Categoria</label>
                                 <select id="statCategoria" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 sm:p-3 text-sm sm:text-base font-bold text-slate-200 outline-none focus:ring-2 focus:ring-green-500">
                                     <option value="5">CABEÇA DE CHAVE</option>
                                     <option value="4">AVANÇADO</option>
@@ -233,7 +232,7 @@
                     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
                         <div class="p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
                             <h2 class="text-lg sm:text-xl font-bold">Jogadores</h2>
-                            <span id="playerCount" class="text-xs sm:text-sm text-slate-400 bg-slate-900 px-2 sm:px-3 py-1 rounded-full">0</span>
+                            <span id="playerCount" class="text-xs sm:text-sm text-slate-400 bg-slate-900 px-2 sm:px-3 py-1 rounded-full border border-slate-700">0 / 0 Selecionados</span>
                         </div>
                         <div class="overflow-x-auto w-full">
                             <table class="w-full text-left min-w-[500px]">
@@ -243,6 +242,7 @@
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Categoria</th>
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Vit / Jogos</th>
+                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Nível</th>
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Ações</th>
                                     </tr>
                                 </thead>
@@ -250,14 +250,13 @@
                             </table>
                         </div>
                     </div>
+                    
                     <div id="adminTeamsSection" class="hidden animate-in fade-in">
                          <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
                             <div class="p-4 sm:p-6 border-b border-slate-700 bg-green-500/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <h2 class="text-lg sm:text-xl font-bold text-green-400">Equipes Atuais</h2>
                                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                                    <button onclick="drawTeams(3)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> GERAL (3)</button>
-                                    <button onclick="drawTeams(4)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> GERAL (4)</button>
-                                    <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> CRIAR ESPERA</button>
+                                    <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> ATUALIZAR ESPERA</button>
                                     <button onclick="clearTeams()" class="flex-1 sm:flex-none bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-red-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="trash-2" class="w-3 h-3 sm:w-4 sm:h-4"></i> LIMPAR TODAS</button>
                                 </div>
                             </div>
@@ -280,9 +279,7 @@
                             <select id="team1Select" style="text-align-last: center;" class="text-lg sm:text-2xl md:text-3xl font-bold text-blue-400 uppercase tracking-widest bg-transparent outline-none focus:border-b border-blue-500 w-full transition-colors cursor-pointer appearance-none pb-2 text-center text-ellipsis overflow-hidden">
                                 <option value="" class="bg-slate-800 text-sm text-slate-300">SELECIONE</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-blue-400">
-                                <i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-                            </div>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-blue-400"><i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i></div>
                         </div>
                         <span id="score1" class="text-6xl sm:text-8xl md:text-9xl font-black text-white mb-4 sm:mb-8 font-['Oswald'] drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all leading-none">0</span>
                         <div class="flex gap-2 sm:gap-4 w-full">
@@ -298,9 +295,7 @@
                             <select id="team2Select" style="text-align-last: center;" class="text-lg sm:text-2xl md:text-3xl font-bold text-red-400 uppercase tracking-widest bg-transparent outline-none focus:border-b border-red-500 w-full transition-colors cursor-pointer appearance-none pb-2 text-center text-ellipsis overflow-hidden">
                                 <option value="" class="bg-slate-800 text-sm text-slate-300">SELECIONE</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-red-400">
-                                <i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-                            </div>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-red-400"><i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i></div>
                         </div>
                         <span id="score2" class="text-6xl sm:text-8xl md:text-9xl font-black text-white mb-4 sm:mb-8 font-['Oswald'] drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all leading-none">0</span>
                         <div class="flex gap-2 sm:gap-4 w-full">
@@ -317,14 +312,12 @@
         </section>
 
         <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">
-            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center transform transition-all scale-100">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center">
                 <i data-lucide="trophy" class="w-16 h-16 sm:w-20 sm:h-20 text-yellow-400 mb-4 animate-bounce"></i>
                 <h2 class="text-2xl sm:text-3xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
                 <p class="text-slate-300 mb-4 sm:mb-6 text-base sm:text-lg">A equipe vencedora é:</p>
                 <div id="victoryTeamName" class="text-2xl sm:text-4xl font-black text-yellow-400 mb-6 sm:mb-8 px-4 sm:px-6 py-3 bg-slate-900 rounded-2xl border border-yellow-500/30 w-full truncate">EQUIPE 1</div>
-                
                 <p id="victoryTeamWarning" class="text-xs text-red-400 mb-4 hidden">Para contabilizar o ranking, os times precisam estar selecionados no placar.</p>
-                
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
                     <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 rounded-xl text-xs sm:text-sm transition-all active:scale-95">APENAS ZERAR</button>
                     <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 sm:py-4 rounded-xl text-sm sm:text-base transition-all active:scale-95 shadow-[0_0_15px_rgba(34,197,94,0.4)]">SALVAR RANKING</button>
@@ -333,7 +326,7 @@
         </div>
 
         <div id="confirmModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 px-4">
-            <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 max-w-sm w-full text-center transform transition-all scale-100">
+            <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 max-w-sm w-full text-center">
                 <div class="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-500/30">
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                 </div>
@@ -342,6 +335,25 @@
                 <div class="flex gap-3 w-full">
                     <button onclick="closeConfirmModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-colors text-sm">Cancelar</button>
                     <button id="btnConfirmAction" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-[0_0_15px_rgba(239,68,68,0.4)]">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="movePlayerModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 px-4">
+            <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-blue-500 max-w-sm w-full text-center">
+                <i data-lucide="arrow-right-left" class="w-10 h-10 text-blue-500 mx-auto mb-4"></i>
+                <h3 class="text-xl font-bold text-white mb-2">Mover Jogador</h3>
+                <p id="movePlayerName" class="text-slate-300 mb-4 text-sm font-bold bg-slate-900 py-2 rounded-lg border border-slate-700"></p>
+
+                <div class="mb-6 text-left">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Transferir para:</label>
+                    <select id="moveDestination" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        </select>
+                </div>
+
+                <div class="flex gap-3 w-full">
+                    <button onclick="closeMoveModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-colors text-sm">Cancelar</button>
+                    <button onclick="confirmMovePlayer()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-[0_0_15px_rgba(59,130,246,0.4)]">Transferir</button>
                 </div>
             </div>
         </div>

@@ -52,6 +52,37 @@ export const closeConfirmModal = () => {
     state.confirmActionCallback = null;
 };
 
+// Funções do Modal de Transferência Manual
+export const openMoveModal = (teamId, playerId) => {
+    state.moveData = { sourceTeamId: teamId, playerId: playerId };
+    const team = state.drawnTeams.find(t => t.id === teamId);
+    const player = team.players.find(p => p.id === playerId);
+
+    document.getElementById('movePlayerName').innerText = player.name;
+
+    const select = document.getElementById('moveDestination');
+    let options = '';
+    
+    const sortedTeams = [...state.drawnTeams].sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label)));
+    
+    sortedTeams.forEach(t => {
+        if (t.id !== teamId) {
+            const teamName = t.isWaitlist ? "Lista de Espera" : getTeamName(t);
+            options += `<option value="${t.id}">${teamName}</option>`;
+        }
+    });
+    select.innerHTML = options;
+
+    document.getElementById('movePlayerModal').classList.remove('hidden');
+    document.getElementById('movePlayerModal').classList.add('flex');
+};
+
+export const closeMoveModal = () => {
+    document.getElementById('movePlayerModal').classList.add('hidden');
+    document.getElementById('movePlayerModal').classList.remove('flex');
+    state.moveData = { sourceTeamId: null, playerId: null };
+};
+
 export const closeVictoryModalOnly = () => {
     document.getElementById('victoryModal').classList.add('hidden');
     document.getElementById('victoryModal').classList.remove('flex');
@@ -191,13 +222,10 @@ export const renderTeams = () => {
         return `<div class="team-container p-4 sm:p-5 rounded-xl border relative shadow-lg transition-colors ${t.isWaitlist ? 'bg-slate-800/40 border-slate-600' : 'border-slate-700 bg-slate-800/80'}">${state.isAuthenticated && !t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-1.5 sm:gap-2"><button onclick="redrawTeamWithWaitlist('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/30 transition-all" title="Sortear com Lista de Espera"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-4 sm:h-4"></i></button><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}${state.isAuthenticated && t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-2"><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}<h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase w-3/4">${teamName}</h3><div class="space-y-2 mt-2">${playersSorted.map(p => {
             const catInfo = getCategoryInfo(p.categoria), ptsValue = p.pontos || 0;
             const isDestaque = ptsValue === maxPoints && maxPoints >= 50;
-            
-            // ATUALIZAÇÃO 2: Mostrar badge de rodadas na espera se for > 0
-            const waitlistBadge = (p.waitlistRounds && p.waitlistRounds > 0) 
-                ? `<span class="ml-1 px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold border border-slate-600 whitespace-nowrap" title="${p.waitlistRounds} rodada(s) na espera">⏳ ${p.waitlistRounds}</span>` 
-                : '';
+            const waitlistBadge = (p.waitlistRounds && p.waitlistRounds > 0) ? `<span class="ml-1 px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold border border-slate-600 whitespace-nowrap" title="${p.waitlistRounds} rodada(s) na espera">⏳ ${p.waitlistRounds}</span>` : '';
 
-            return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot} shrink-0"></span><i data-lucide="${p.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80 shrink-0"></i><span class="font-bold ${catInfo.text} truncate max-w-[110px] sm:max-w-[130px]">${p.name}</span>${waitlistBadge}${(p.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${p.streak} Vitórias Seguidas!"></i>` : ''}${(p.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(p.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} PTS</span></div>`;
+            // Renderiza os jogadores. Se for admin, inclui o botão de "Transferir/Mover"
+            return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0 group"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot} shrink-0"></span><i data-lucide="${p.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80 shrink-0"></i><span class="font-bold ${catInfo.text} truncate max-w-[110px] sm:max-w-[130px]">${p.name}</span>${waitlistBadge}${(p.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${p.streak} Vitórias Seguidas!"></i>` : ''}${(p.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(p.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><div class="flex items-center gap-1 sm:gap-2"><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} PTS</span>${state.isAuthenticated ? `<button onclick="openMoveModal('${t.id}', '${p.id}')" class="p-1 text-slate-400 hover:text-blue-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus:opacity-100" title="Transferir Jogador"><i data-lucide="arrow-right-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i></button>` : ''}</div></div>`;
         }).join('')}</div></div>`}).join('');
         
     adminGrid.innerHTML = publicGrid.innerHTML = content; 
@@ -242,12 +270,14 @@ window.switchView = switchView;
 window.openConfirmModal = openConfirmModal;
 window.closeConfirmModal = closeConfirmModal;
 window.closeVictoryModalOnly = closeVictoryModalOnly;
+window.openMoveModal = openMoveModal;
+window.closeMoveModal = closeMoveModal;
+
 window.toggleRanking = () => {
     state.showAllRanking = !state.showAllRanking;
     renderRanking();
 };
 
-// --- Inicialização de Event Listeners Físicos do HTML --- //
 document.addEventListener('DOMContentLoaded', () => {
     const btnConfirm = document.getElementById('btnConfirmAction');
     if (btnConfirm) {
