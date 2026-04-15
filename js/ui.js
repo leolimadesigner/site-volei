@@ -22,7 +22,7 @@ export const getCategoryInfo = (cat) => {
 
 export const getTeamName = (team) => {
     if (!team.players || team.players.length === 0) return `EQUIPE ${team.label}`;
-    const headPlayer = team.players.reduce((max, p) => (p.categoria || 1) > (max.categoria || 1) ? p : max, team.players[0]);
+    const headPlayer = team.players.reduce((max, p) => (parseInt(p.categoria) || 1) > (parseInt(max.categoria) || 1) ? p : max, team.players[0]);
     const firstName = headPlayer.name.split(' ')[0].toUpperCase();
     return `TIME DE ${firstName}`;
 };
@@ -144,14 +144,16 @@ export const renderRanking = () => {
 
 export const renderAdmin = () => {
     const tbody = document.getElementById('adminTableBody');
-    document.getElementById('playerCount').innerText = state.players.length;
+    
+    // ATUALIZAÇÃO 1: Mostra o total de jogadores selecionados vs total de cadastrados
+    document.getElementById('playerCount').innerText = `${state.selectedPlayerIds.size} / ${state.players.length} Selecionados`;
     
     const selectAllCheckbox = document.getElementById('selectAll');
     if(selectAllCheckbox) selectAllCheckbox.checked = state.players.length > 0 && state.players.every(p => state.selectedPlayerIds.has(p.id));
     
     const maxPoints = state.players.length > 0 ? Math.max(...state.players.map(p => p.pontos || 0)) : 0;
     const sortedPlayersForAdmin = [...state.players].sort((a, b) => { 
-        const catDiff = (b.categoria || 1) - (a.categoria || 1); 
+        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
         if (catDiff !== 0) return catDiff; 
         return (b.pontos || 0) - (a.pontos || 0); 
     });
@@ -181,7 +183,7 @@ export const renderTeams = () => {
     const content = state.drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label))).map(t => {
         const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 mb-1"></i> Lista de Espera' : getTeamName(t);
         const playersSorted = [...t.players].sort((a, b) => { 
-            const catDiff = (b.categoria || 1) - (a.categoria || 1); 
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
             if (catDiff !== 0) return catDiff; 
             return (b.pontos || 0) - (a.pontos || 0); 
         });
@@ -189,8 +191,13 @@ export const renderTeams = () => {
         return `<div class="team-container p-4 sm:p-5 rounded-xl border relative shadow-lg transition-colors ${t.isWaitlist ? 'bg-slate-800/40 border-slate-600' : 'border-slate-700 bg-slate-800/80'}">${state.isAuthenticated && !t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-1.5 sm:gap-2"><button onclick="redrawTeamWithWaitlist('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/30 transition-all" title="Sortear com Lista de Espera"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-4 sm:h-4"></i></button><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}${state.isAuthenticated && t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-2"><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}<h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase w-3/4">${teamName}</h3><div class="space-y-2 mt-2">${playersSorted.map(p => {
             const catInfo = getCategoryInfo(p.categoria), ptsValue = p.pontos || 0;
             const isDestaque = ptsValue === maxPoints && maxPoints >= 50;
+            
+            // ATUALIZAÇÃO 2: Mostrar badge de rodadas na espera se for > 0
+            const waitlistBadge = (p.waitlistRounds && p.waitlistRounds > 0) 
+                ? `<span class="ml-1 px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold border border-slate-600 whitespace-nowrap" title="${p.waitlistRounds} rodada(s) na espera">⏳ ${p.waitlistRounds}</span>` 
+                : '';
 
-            return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot}"></span><i data-lucide="${p.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80 shrink-0"></i><span class="font-bold ${catInfo.text} truncate max-w-[120px] sm:max-w-[150px]">${p.name}</span>${(p.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${p.streak} Vitórias Seguidas!"></i>` : ''}${(p.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(p.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} PTS</span></div>`;
+            return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot} shrink-0"></span><i data-lucide="${p.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80 shrink-0"></i><span class="font-bold ${catInfo.text} truncate max-w-[110px] sm:max-w-[130px]">${p.name}</span>${waitlistBadge}${(p.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${p.streak} Vitórias Seguidas!"></i>` : ''}${(p.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(p.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} PTS</span></div>`;
         }).join('')}</div></div>`}).join('');
         
     adminGrid.innerHTML = publicGrid.innerHTML = content; 
@@ -242,11 +249,9 @@ window.toggleRanking = () => {
 
 // --- Inicialização de Event Listeners Físicos do HTML --- //
 document.addEventListener('DOMContentLoaded', () => {
-    // Liga a ação do botão confirmar dentro do Modal genérico
     const btnConfirm = document.getElementById('btnConfirmAction');
     if (btnConfirm) {
         btnConfirm.addEventListener('click', () => {
-            // Executa a função que está guardada no estado
             if (state.confirmActionCallback) {
                 state.confirmActionCallback();
             }

@@ -66,6 +66,12 @@ export const togglePlayerSelection = (id, isChecked) => {
     const allSelected = state.players.length > 0 && state.players.every(p => state.selectedPlayerIds.has(p.id));
     const selectAllCheckbox = document.getElementById('selectAll');
     if(selectAllCheckbox) selectAllCheckbox.checked = allSelected;
+    
+    // Atualiza o contador imediatamente ao clicar no checkbox sem precisar recarregar a tabela
+    const countElement = document.getElementById('playerCount');
+    if (countElement) {
+        countElement.innerText = `${state.selectedPlayerIds.size} / ${state.players.length} Selecionados`;
+    }
 };
 
 export const toggleAllPlayers = (isChecked) => {
