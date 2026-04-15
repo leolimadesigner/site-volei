@@ -322,7 +322,12 @@
                 <i data-lucide="trophy" class="w-16 h-16 sm:w-20 sm:h-20 text-yellow-400 mb-4 animate-bounce"></i>
                 <h2 class="text-2xl sm:text-3xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
                 <p class="text-slate-300 mb-4 sm:mb-6 text-base sm:text-lg">A equipe vencedora é:</p>
-                <div id="victoryTeamName" class="text-2xl sm:text-4xl font-black text-yellow-400 mb-6 sm:mb-8 px-4 sm:px-6 py-3 bg-slate-900 rounded-2xl border border-yellow-500/30 w-full truncate">EQUIPE 1</div>
+                
+                <div id="victoryTeamName" class="text-2xl sm:text-4xl font-black text-yellow-400 mb-3 px-4 sm:px-6 py-3 bg-slate-900 rounded-2xl border border-yellow-500/30 w-full truncate">EQUIPE 1</div>
+                
+                <div id="victoryEloInfo" class="w-full text-sm sm:text-base mb-6 hidden bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-inner">
+                </div>
+
                 <p id="victoryTeamWarning" class="text-xs text-red-400 mb-4 hidden">Para contabilizar o ranking, os times precisam estar selecionados no placar.</p>
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
                     <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 rounded-xl text-xs sm:text-sm transition-all active:scale-95">APENAS ZERAR</button>

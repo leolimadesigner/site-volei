@@ -182,10 +182,12 @@ export const renderAdmin = () => {
     if(selectAllCheckbox) selectAllCheckbox.checked = state.players.length > 0 && state.players.every(p => state.selectedPlayerIds.has(p.id));
     
     const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
+    
+    // ORDENAÇÃO: Categoria 1º, Ordem Alfabética 2º
     const sortedPlayersForAdmin = [...state.players].sort((a, b) => { 
         const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
         if (catDiff !== 0) return catDiff; 
-        return (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+        return a.name.localeCompare(b.name); 
     });
 
     tbody.innerHTML = sortedPlayersForAdmin.map(p => {
@@ -212,10 +214,12 @@ export const renderTeams = () => {
 
     const content = state.drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label))).map(t => {
         const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 mb-1"></i> Lista de Espera' : getTeamName(t);
+        
+        // ORDENAÇÃO: Categoria 1º, Ordem Alfabética 2º
         const playersSorted = [...t.players].sort((a, b) => { 
             const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
             if (catDiff !== 0) return catDiff; 
-            return (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+            return a.name.localeCompare(b.name); 
         });
         
         return `<div class="team-container p-4 sm:p-5 rounded-xl border relative shadow-lg transition-colors ${t.isWaitlist ? 'bg-slate-800/40 border-slate-600' : 'border-slate-700 bg-slate-800/80'}">${state.isAuthenticated && !t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-1.5 sm:gap-2"><button onclick="redrawTeamWithWaitlist('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/30 transition-all" title="Sortear com Lista de Espera"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-4 sm:h-4"></i></button><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}${state.isAuthenticated && t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-2"><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}<h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase w-3/4">${teamName}</h3><div class="space-y-2 mt-2">${playersSorted.map(p => {

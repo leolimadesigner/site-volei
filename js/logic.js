@@ -199,8 +199,7 @@ export const drawTeams = async () => {
                 let sortedTeam = result.teams[i].sort((a, b) => {
                     const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                     if (catDiff !== 0) return catDiff;
-                    // Desempate usando o sistema de Elo
-                    return (b.eloRating ?? 150) - (a.eloRating ?? 150);
+                    return a.name.localeCompare(b.name); 
                 });
                 await addDoc(teamsRef, { label: (i + 1).toString(), players: sortedTeam });
             }
@@ -209,7 +208,7 @@ export const drawTeams = async () => {
                 let sortedWaitlist = result.waitlist.sort((a, b) => {
                     const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                     if (catDiff !== 0) return catDiff;
-                    return (b.eloRating ?? 150) - (a.eloRating ?? 150);
+                    return a.name.localeCompare(b.name);
                 });
                 await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: sortedWaitlist });
                 showToast(`Sorteio concluído! ${result.waitlist.length} atleta(s) na espera.`);
@@ -265,7 +264,9 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         
         mandatory.sort((a, b) => {
             if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
-            return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            if (catDiff !== 0) return catDiff;
+            return a.name.localeCompare(b.name);
         });
         
         if (mandatory.length > N) {
@@ -356,7 +357,11 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         const newTeam = bestTeam.map(p => {
             const { isFromTeam, isFromWaitlist, isNew, ...rest } = p;
             return { ...rest, waitlistRounds: 0 }; 
-        }).sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+        }).sort((a, b) => {
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            if (catDiff !== 0) return catDiff;
+            return a.name.localeCompare(b.name);
+        });
 
         const newWaitlist = pool.filter(p => !newTeamIds.has(p.id)).map(p => {
             const { isFromTeam, isFromWaitlist, isNew, ...rest } = p;
@@ -369,7 +374,9 @@ export const redrawTeamWithWaitlist = async (teamId) => {
             return { ...rest, waitlistRounds: rounds };
         }).sort((a, b) => {
             if (b.waitlistRounds !== a.waitlistRounds) return (b.waitlistRounds || 0) - (a.waitlistRounds || 0);
-            return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            if (catDiff !== 0) return catDiff;
+            return a.name.localeCompare(b.name);
         });
 
         try {
@@ -426,7 +433,7 @@ export const createWaitlist = () => {
             const updatedWaitlist = [...currentWaitlistPlayers, ...newPlayersWithRounds].sort((a, b) => {
                 const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                 if (catDiff !== 0) return catDiff;
-                return (b.eloRating ?? 150) - (a.eloRating ?? 150);
+                return a.name.localeCompare(b.name);
             });
             
             if (waitlistTeamDoc) {
@@ -486,7 +493,7 @@ export const confirmMovePlayer = async () => {
         }
         const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
         if (catDiff !== 0) return catDiff;
-        return (b.eloRating ?? 150) - (a.eloRating ?? 150);
+        return a.name.localeCompare(b.name);
     };
 
     sourceTeam.players.sort(sortFn);
@@ -534,6 +541,40 @@ export const deleteTeam = (id) => {
 
 // --- Funções de Placar e Sistema Elo --- //
 
+export function calculateEloPreview() {
+    const select1 = document.getElementById('team1Select');
+    const select2 = document.getElementById('team2Select');
+    if (!select1 || !select2 || !select1.value || !select2.value || select1.value === select2.value) return null;
+
+    const team1 = state.drawnTeams.find(t => t.label === select1.value);
+    const team2 = state.drawnTeams.find(t => t.label === select2.value);
+    if (!team1 || !team2) return null;
+
+    // NOVO: Busca o Elo sempre da lista principal de jogadores e não da "foto" da equipa
+    const getTeamElo = (team) => {
+        if (team.players.length === 0) return 150;
+        const sum = team.players.reduce((acc, p) => {
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            const currentElo = dbPlayer && dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150;
+            return acc + currentElo;
+        }, 0);
+        return sum / team.players.length;
+    };
+
+    const eloT1 = getTeamElo(team1);
+    const eloT2 = getTeamElo(team2);
+    const expectedT1 = 1 / (1 + Math.pow(10, (eloT2 - eloT1) / 400));
+    const expectedT2 = 1 / (1 + Math.pow(10, (eloT1 - eloT2) / 400));
+
+    const isTeam1Winner = state.score1 > state.score2;
+    const K = 32;
+
+    const changeT1 = Math.round(K * ((isTeam1Winner ? 1 : 0) - expectedT1));
+    const changeT2 = Math.round(K * ((isTeam1Winner ? 0 : 1) - expectedT2));
+
+    return { changeT1, changeT2, team1, team2, isTeam1Winner };
+}
+
 export function checkWinCondition() {
     const isTradicionalWin = (state.score1 >= 21 || state.score2 >= 21) && Math.abs(state.score1 - state.score2) >= 2;
     const isCapoteWin = (state.score1 >= 8 && state.score2 === 0) || (state.score2 >= 8 && state.score1 === 0);
@@ -543,12 +584,33 @@ export function checkWinCondition() {
         let winnerName = state.score1 > state.score2 ? (select1.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)") : (select2.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)");
         document.getElementById('victoryTeamName').innerText = winnerName;
         
+        const btnSaveResult = document.getElementById('btnSaveResult');
+        const warning = document.getElementById('victoryTeamWarning');
+        const eloInfoDiv = document.getElementById('victoryEloInfo');
+
         if (!select1.value || !select2.value || select1.value === select2.value) { 
-            document.getElementById('btnSaveResult').classList.add('hidden'); 
-            document.getElementById('victoryTeamWarning').classList.remove('hidden'); 
+            btnSaveResult.classList.add('hidden'); 
+            warning.classList.remove('hidden'); 
+            if(eloInfoDiv) eloInfoDiv.classList.add('hidden');
         } else { 
-            document.getElementById('btnSaveResult').classList.remove('hidden'); 
-            document.getElementById('victoryTeamWarning').classList.add('hidden'); 
+            btnSaveResult.classList.remove('hidden'); 
+            warning.classList.add('hidden'); 
+            
+            // Renderiza a prévia do Elo na tela de vitória!
+            const preview = calculateEloPreview();
+            if (preview && eloInfoDiv) {
+                const winChange = preview.isTeam1Winner ? preview.changeT1 : preview.changeT2;
+                const loseChange = preview.isTeam1Winner ? preview.changeT2 : preview.changeT1;
+                
+                eloInfoDiv.innerHTML = `
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-green-400 font-bold flex items-center gap-1 text-base"><i data-lucide="trending-up" class="w-5 h-5"></i> +${winChange} ELO</span>
+                        <span class="text-slate-500 font-bold text-[10px] uppercase tracking-widest">Recompensa</span>
+                        <span class="text-red-400 font-bold flex items-center gap-1 text-base"><i data-lucide="trending-down" class="w-5 h-5"></i> ${loseChange} ELO</span>
+                    </div>
+                `;
+                eloInfoDiv.classList.remove('hidden');
+            }
         }
         
         document.getElementById('victoryModal').classList.remove('hidden'); 
@@ -575,47 +637,16 @@ export const resetScore = () => {
     });
 };
 
-// NOVA FUNÇÃO: Aplica a matemática do ELO System quando a partida é salva no placar
 export const saveAndCloseVictoryModal = async () => {
-    const select1 = document.getElementById('team1Select');
-    const select2 = document.getElementById('team2Select');
-
-    if (!select1.value || !select2.value || select1.value === select2.value) {
+    const preview = calculateEloPreview();
+    if (!preview) {
         showToast("Selecione dois times válidos e diferentes no placar!", "error");
         return;
     }
 
-    const team1 = state.drawnTeams.find(t => t.label === select1.value);
-    const team2 = state.drawnTeams.find(t => t.label === select2.value);
-
-    if (!team1 || !team2) return;
-
-    const isTeam1Winner = state.score1 > state.score2;
-
-    // 1. Calcula a Força Base da Equipe (Média do EloRating)
-    const getTeamElo = (team) => {
-        if (team.players.length === 0) return 150;
-        const sum = team.players.reduce((acc, p) => acc + (p.eloRating !== undefined ? p.eloRating : 150), 0);
-        return sum / team.players.length;
-    };
-
-    const eloT1 = getTeamElo(team1);
-    const eloT2 = getTeamElo(team2);
-
-    // 2. Cálculo da Expectativa de Vitória (Fórmula Matemática do Elo)
-    const expectedT1 = 1 / (1 + Math.pow(10, (eloT2 - eloT1) / 400));
-    const expectedT2 = 1 / (1 + Math.pow(10, (eloT1 - eloT2) / 400));
-
-    // Fator de variação máximo por partida (K-Factor)
-    const K = 32; 
-
-    // 3. Resultado real (1 para vitória, 0 para derrota)
+    const { changeT1, changeT2, team1, team2, isTeam1Winner } = preview;
     const actualT1 = isTeam1Winner ? 1 : 0;
     const actualT2 = isTeam1Winner ? 0 : 1;
-
-    // Variação de pontos de Elo para cada time
-    const changeT1 = Math.round(K * (actualT1 - expectedT1));
-    const changeT2 = Math.round(K * (actualT2 - expectedT2));
 
     const btnSave = document.getElementById('btnSaveResult');
     btnSave.innerText = "SALVANDO...";
@@ -624,12 +655,13 @@ export const saveAndCloseVictoryModal = async () => {
     try {
         const updatePromises = [];
 
-        // 4. Atualiza individualmente os jogadores do Team 1 no Banco de Dados
+        // Atualiza Time 1
         team1.players.forEach(p => {
-            const currentElo = p.eloRating !== undefined ? p.eloRating : 150;
-            const newElo = Math.max(0, currentElo + changeT1); 
             const dbPlayer = state.players.find(x => x.id === p.id);
             if (dbPlayer) {
+                const currentElo = dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150;
+                const newElo = Math.max(0, currentElo + changeT1);
+                
                 const partidas = (dbPlayer.partidas || 0) + 1;
                 const vitorias = (dbPlayer.vitorias || 0) + actualT1;
                 const streak = actualT1 === 1 ? 
@@ -646,12 +678,13 @@ export const saveAndCloseVictoryModal = async () => {
             }
         });
 
-        // 5. Atualiza individualmente os jogadores do Team 2 no Banco de Dados
+        // Atualiza Time 2
         team2.players.forEach(p => {
-            const currentElo = p.eloRating !== undefined ? p.eloRating : 150;
-            const newElo = Math.max(0, currentElo + changeT2);
             const dbPlayer = state.players.find(x => x.id === p.id);
             if (dbPlayer) {
+                const currentElo = dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150;
+                const newElo = Math.max(0, currentElo + changeT2);
+                
                 const partidas = (dbPlayer.partidas || 0) + 1;
                 const vitorias = (dbPlayer.vitorias || 0) + actualT2;
                 const streak = actualT2 === 1 ? 
