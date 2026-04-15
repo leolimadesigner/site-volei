@@ -179,6 +179,7 @@ export const editPlayer = (id) => {
     const photoPreview = document.getElementById('photoPreview');
     const photoPlaceholder = document.getElementById('photoPlaceholder');
     const photoData = document.getElementById('photoData');
+    const btnRemovePhoto = document.getElementById('btnRemovePhoto');
 
     if (p.photo) {
         if(photoPreview) {
@@ -187,6 +188,7 @@ export const editPlayer = (id) => {
         }
         if(photoPlaceholder) photoPlaceholder.classList.add('hidden');
         if(photoData) photoData.value = p.photo;
+        if(btnRemovePhoto) btnRemovePhoto.classList.remove('hidden');
     } else {
         if(photoPreview) {
             photoPreview.src = '';
@@ -194,10 +196,26 @@ export const editPlayer = (id) => {
         }
         if(photoPlaceholder) photoPlaceholder.classList.remove('hidden');
         if(photoData) photoData.value = '';
+        if(btnRemovePhoto) btnRemovePhoto.classList.add('hidden');
     }
 
     lucide.createIcons();
     document.getElementById('admin-form-anchor').scrollIntoView({ behavior: 'smooth' });
+};
+
+// Nova Função para remover a foto manualmente
+export const removePhoto = () => {
+    const photoPreview = document.getElementById('photoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const photoData = document.getElementById('photoData');
+    const fileInput = document.getElementById('playerPhoto');
+    const btnRemovePhoto = document.getElementById('btnRemovePhoto');
+
+    if (photoPreview) { photoPreview.src = ''; photoPreview.classList.add('hidden'); }
+    if (photoPlaceholder) photoPlaceholder.classList.remove('hidden');
+    if (photoData) photoData.value = '';
+    if (fileInput) fileInput.value = '';
+    if (btnRemovePhoto) btnRemovePhoto.classList.add('hidden');
 };
 
 export const resetForm = () => {
@@ -213,16 +231,8 @@ export const resetForm = () => {
     document.getElementById('btnSave').innerHTML = `<i data-lucide="save" class="w-4 h-4 sm:w-5 sm:h-5"></i> SALVAR`;
     document.getElementById('btnCancel').classList.add('hidden');
     
-    // LIMPA A FOTO
-    if (document.getElementById('photoPreview')) {
-        document.getElementById('photoPreview').src = '';
-        document.getElementById('photoPreview').classList.add('hidden');
-        document.getElementById('photoPlaceholder').classList.remove('hidden');
-        document.getElementById('photoData').value = '';
-        
-        const fileInput = document.getElementById('playerPhoto');
-        if(fileInput) fileInput.value = ''; // Limpa a seleção do arquivo
-    }
+    // Limpa a visualização da foto usando a função que criamos
+    removePhoto();
 
     lucide.createIcons();
 };
@@ -255,6 +265,10 @@ window.handleImageUpload = (event) => {
                 document.getElementById('photoPreview').classList.remove('hidden');
                 document.getElementById('photoPlaceholder').classList.add('hidden');
                 document.getElementById('photoData').value = base64;
+                
+                // Mostra o botão de remover foto
+                const btnRemovePhoto = document.getElementById('btnRemovePhoto');
+                if(btnRemovePhoto) btnRemovePhoto.classList.remove('hidden');
             }
         };
         img.src = e.target.result;
@@ -272,3 +286,4 @@ window.savePlayer = savePlayer;
 window.deletePlayer = deletePlayer;
 window.editPlayer = editPlayer;
 window.resetForm = resetForm;
+window.removePhoto = removePhoto;
