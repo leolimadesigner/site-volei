@@ -41,7 +41,6 @@ export const handleLogin = () => {
     const userVal = document.getElementById('loginUser').value;
     const passVal = document.getElementById('loginPass').value;
     
-    // Mantenha estas credenciais simples ou mude para Firebase Auth real mais tarde
     if (userVal === 'admin' && passVal === '12345') { 
         state.isAuthenticated = true; 
         switchView('admin'); 
@@ -66,6 +65,12 @@ export const togglePlayerSelection = (id, isChecked) => {
     const allSelected = state.players.length > 0 && state.players.every(p => state.selectedPlayerIds.has(p.id));
     const selectAllCheckbox = document.getElementById('selectAll');
     if(selectAllCheckbox) selectAllCheckbox.checked = allSelected;
+    
+    // Atualiza o contador imediatamente ao clicar no checkbox
+    const countElement = document.getElementById('playerCount');
+    if (countElement) {
+        countElement.innerText = `${state.selectedPlayerIds.size} / ${state.players.length} Selecionados`;
+    }
 };
 
 export const toggleAllPlayers = (isChecked) => {
@@ -85,7 +90,7 @@ export const savePlayer = async () => {
     const categoria = parseInt(document.getElementById('statCategoria').value);
     const partidas = Math.max(0, parseInt(document.getElementById('statJogos').value) || 0);
     const vitorias = Math.max(0, parseInt(document.getElementById('statVit').value) || 0);
-    const deltaBonus = parseInt(document.getElementById('statBonus').value) || 0;
+    const deltaElo = parseInt(document.getElementById('statBonus').value) || 0;
     const icon = document.getElementById('playerIcon').value || 'user';
     const editId = document.getElementById('editId').value;
 
@@ -94,26 +99,26 @@ export const savePlayer = async () => {
     const existingPlayer = editId ? state.players.find(x => x.id === editId) : null;
     const streak = existingPlayer ? (existingPlayer.streak || 0) : 0;
     
-    const currentBonus = existingPlayer ? (existingPlayer.bonus || 0) : 0;
-    const bonus = currentBonus + deltaBonus;
-
     const validVitorias = Math.min(partidas, vitorias); 
-    const derrotas = partidas - validVitorias;
     const des = partidas > 0 ? Math.round((validVitorias / partidas) * 100) : 0;
     
-    const pontos = Math.max(0, (validVitorias * 20) - (derrotas * 15) + bonus);
-    const lvlInfo = getLevelInfo(pontos);
+    // SISTEMA ELO COMPETITIVO
+    // Inicia com 150 (Intermediário do Bronze) se for um novo jogador
+    const currentElo = existingPlayer && existingPlayer.eloRating !== undefined ? existingPlayer.eloRating : 150;
+    
+    // Aplica ajustes manuais (se houver) feitos pelo admin
+    const newElo = Math.max(0, currentElo + deltaElo);
+    const lvlInfo = getLevelInfo(newElo);
     
     const playerObj = { 
-        name, categoria, partidas, des, pontos, icon, vitorias: validVitorias,
-        streak, bonus,
+        name, categoria, partidas, des, eloRating: newElo, icon, vitorias: validVitorias,
+        streak,
         type: lvlInfo.type,
         updatedAt: Date.now() 
     };
 
     try {
         const btnSave = document.getElementById('btnSave');
-        const originalText = btnSave.innerText;
         btnSave.disabled = true;
         btnSave.innerText = "A SALVAR...";
 
@@ -155,7 +160,10 @@ export const editPlayer = (id) => {
     document.getElementById('statCategoria').value = p.categoria || 1;
     document.getElementById('statJogos').value = p.partidas || 0;
     document.getElementById('statVit').value = p.vitorias || 0;
+    
+    // Resetamos o campo de bônus na UI. Ele serve agora apenas como ajuste temporário de Elo
     document.getElementById('statBonus').value = '0'; 
+    
     document.getElementById('playerIcon').value = p.icon || 'user';
     document.getElementById('editId').value = id;
     

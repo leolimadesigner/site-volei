@@ -25,6 +25,8 @@ export const state = {
     score1: 0,
     score2: 0,
     
-    // Callbacks para o modal de confirmação genérico
-    confirmActionCallback: null
+    confirmActionCallback: null,
+    
+    // Novo estado para o Modal de Transferência Manual
+    moveData: { sourceTeamId: null, playerId: null }
 };

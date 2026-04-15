@@ -1,38 +1,31 @@
 import { state } from './state.js';
 import { db, appId, teamsRef, doc, addDoc, updateDoc, deleteDoc } from './firebase.js';
-import { showToast, openConfirmModal } from './ui.js';
+import { showToast, openConfirmModal, closeMoveModal } from './ui.js';
 
-// --- Algoritmos de Balanceamento (Rigorosamente baseados no TeamBalancer.kt) --- //
+// --- Algoritmos de Balanceamento --- //
 
 export function balanceStrongInside(playersList, playersPerTeam) {
     const numberOfTeams = Math.floor(playersList.length / playersPerTeam);
-    
-    if (numberOfTeams === 0) {
-        return { teams: [], waitlist: [...playersList] };
-    }
+    if (numberOfTeams === 0) return { teams: [], waitlist: [...playersList] };
 
-    // 1. Shuffled
-    let shuffledPlayers = [...playersList];
-    for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
-    }
+    // Adiciona uma semente aleatória para garantir variabilidade entre jogadores do mesmo nível
+    let shuffledPlayers = [...playersList].map(p => ({...p, _rand: Math.random()}));
     
-    // 2. Sorted By Descending (rating = categoria de 1 a 5)
-    let sortedPlayers = shuffledPlayers.sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+    let sortedPlayers = shuffledPlayers.sort((a, b) => {
+        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+        if (catDiff !== 0) return catDiff;
+        return a._rand - b._rand; 
+    });
     
     const activePlayersCount = numberOfTeams * playersPerTeam;
     const activePlayers = sortedPlayers.slice(0, activePlayersCount);
-    const waitlist = sortedPlayers.slice(activePlayersCount);
+    const waitlist = sortedPlayers.slice(activePlayersCount).map(p => ({ ...p, waitlistRounds: 0 }));
     
     const teams = Array.from({ length: numberOfTeams }, () => []);
+    let direction = 1, currentTeamIndex = 0;
     
-    let direction = 1;
-    let currentTeamIndex = 0;
-    
-    // Distribuição em zigue-zague (Serpentine Draft)
     for (const player of activePlayers) {
-        teams[currentTeamIndex].push(player);
+        teams[currentTeamIndex].push({ ...player, waitlistRounds: 0 });
         currentTeamIndex += direction;
         
         if (currentTeamIndex >= numberOfTeams) {
@@ -43,28 +36,22 @@ export function balanceStrongInside(playersList, playersPerTeam) {
             currentTeamIndex = 0;
         }
     }
-    
     return { teams, waitlist };
 }
 
 export function balanceStrongOutside(playersList, playersPerTeam) {
     const numberOfTeams = Math.floor(playersList.length / playersPerTeam);
     const waitlistSize = playersList.length % playersPerTeam;
-    
-    if (numberOfTeams === 0) {
-        return { teams: [], waitlist: [...playersList] };
-    }
+    if (numberOfTeams === 0) return { teams: [], waitlist: [...playersList] };
 
-    // 1. Shuffled
-    let shuffledPlayers = [...playersList];
-    for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
-    }
+    let shuffledPlayers = [...playersList].map(p => ({...p, _rand: Math.random()}));
     
-    // 2. Sorted By Descending
-    let sortedPlayers = shuffledPlayers.sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
-    
+    let sortedPlayers = shuffledPlayers.sort((a, b) => {
+        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+        if (catDiff !== 0) return catDiff;
+        return a._rand - b._rand;
+    });
+
     const teams = Array.from({ length: numberOfTeams }, () => []);
     const waitlist = [];
     
@@ -72,59 +59,41 @@ export function balanceStrongOutside(playersList, playersPerTeam) {
     if (waitlistSize > 0) buckets.push(waitlist);
     
     const capacities = buckets.map((_, i) => i < numberOfTeams ? playersPerTeam : waitlistSize);
-    
     const draftOrder = [];
     const currentCaps = new Array(buckets.length).fill(0);
-    let dir = 1;
-    let cur = 0;
+    let dir = 1, cur = 0;
     
     while (draftOrder.length < playersList.length) {
-        if (currentCaps[cur] < capacities[cur]) {
-            draftOrder.push(cur);
-            currentCaps[cur]++;
-        }
-        
+        if (currentCaps[cur] < capacities[cur]) { draftOrder.push(cur); currentCaps[cur]++; }
         const next = cur + dir;
-        if (next >= buckets.length || next < 0) {
-            dir *= -1;
-        } else {
-            cur = next;
-        }
+        if (next >= buckets.length || next < 0) { dir *= -1; } else { cur = next; }
     }
     
     sortedPlayers.forEach((player, index) => { 
         const bucketIndex = draftOrder[index]; 
-        buckets[bucketIndex].push(player); 
+        buckets[bucketIndex].push({ ...player, waitlistRounds: 0 }); 
     });
 
-    // --- LÓGICA DE BALANCEAMENTO ALEATÓRIO PÓS-SORTEIO ---
+    // Pós-balanceamento da espera
     if (waitlist.length > 0 && teams.length >= 2) {
         let attempts = 0;
         while (attempts < 5) {
-            let weakestTeam = teams[0];
-            let strongestTeam = teams[0];
-            let minSum = Infinity;
-            let maxSum = -Infinity;
+            let weakestTeam = teams[0], strongestTeam = teams[0], minSum = Infinity, maxSum = -Infinity;
 
-            // Encontra a equipa mais fraca e a mais forte baseada no somatório das categorias
             teams.forEach(t => {
                 const sum = t.reduce((acc, p) => acc + (parseInt(p.categoria) || 1), 0);
                 if (sum < minSum) { minSum = sum; weakestTeam = t; }
                 if (sum > maxSum) { maxSum = sum; strongestTeam = t; }
             });
 
-            const diff = maxSum - minSum;
-            if (diff <= 0) break; // Equipas perfeitamente niveladas
+            if (maxSum - minSum <= 0) break; 
 
-            // Encontra o jogador mais fraco da equipa mais fraca
-            let weakestPlayer = weakestTeam[0];
-            let minRating = Infinity;
+            let weakestPlayer = weakestTeam[0], minRating = Infinity;
             weakestTeam.forEach(p => {
                 const r = parseInt(p.categoria) || 1;
                 if (r < minRating) { minRating = r; weakestPlayer = p; }
             });
 
-            // Descobre qual é a maior nota atualmente na lista de espera
             let maxWaitlistRating = -Infinity;
             waitlist.forEach(p => {
                 const r = parseInt(p.categoria) || 1;
@@ -132,38 +101,25 @@ export function balanceStrongOutside(playersList, playersPerTeam) {
             });
 
             const weakestPlayerRating = parseInt(weakestPlayer.categoria) || 1;
-
-            // Filtra os candidatos: > que o jogador fraco E diferente do líder da espera
             const candidates = waitlist.filter(p => {
                 const r = parseInt(p.categoria) || 1;
                 return r > weakestPlayerRating && r !== maxWaitlistRating;
             });
 
             if (candidates.length > 0) {
-                // Sorteia um candidato válido para entrar
+                // Seleção puramente aleatória dentre os válidos
                 const swapIn = candidates[Math.floor(Math.random() * candidates.length)];
-                
-                // Realiza a troca (Swap)
-                const weakestIdx = weakestTeam.indexOf(weakestPlayer);
-                weakestTeam.splice(weakestIdx, 1);
-                
-                const swapInIdx = waitlist.indexOf(swapIn);
-                waitlist.splice(swapInIdx, 1);
-
+                weakestTeam.splice(weakestTeam.indexOf(weakestPlayer), 1);
+                waitlist.splice(waitlist.indexOf(swapIn), 1);
                 weakestTeam.push(swapIn);
                 waitlist.push(weakestPlayer);
-            } else {
-                break; // Sem candidatos válidos, encerra o pós-balanceamento
-            }
+            } else { break; }
             attempts++;
         }
     }
-
     return { teams, waitlist };
 }
 
-// Extra: Função de salvaguarda de espalhamento de cabeças de chave. 
-// Opcional, mas ajuda a garantir que jogadores de nível 5 (Cabeça de Chave) não fiquem na mesma equipa se houver vagas.
 export function preventDoubleCabeças(result, mandatoryIds) {
     let teams = result.teams.map(t => [...t]);
     let waitlist = [...result.waitlist];
@@ -180,7 +136,15 @@ export function preventDoubleCabeças(result, mandatoryIds) {
             let teamWithZeroIndex = teams.findIndex(t => t.filter(p => parseInt(p.categoria) === 5).length === 0);
             if (teamWithZeroIndex !== -1) {
                 let otherTeam = teams[teamWithZeroIndex];
-                let nonCabecas = otherTeam.filter(p => parseInt(p.categoria) !== 5).sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+                // Sorteio aleatório entre cabeças de chave disponíveis
+                let nonCabecas = otherTeam.filter(p => parseInt(p.categoria) !== 5)
+                    .map(p => ({...p, _rand: Math.random()}))
+                    .sort((a, b) => {
+                        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                        if (catDiff !== 0) return catDiff;
+                        return a._rand - b._rand;
+                    });
+
                 if (nonCabecas.length > 0) {
                     let swapTarget = nonCabecas[0];
                     team.splice(team.indexOf(toMove), 1, swapTarget);
@@ -190,7 +154,14 @@ export function preventDoubleCabeças(result, mandatoryIds) {
             }
             
             if (!swapped && waitlist.length > 0) {
-                let nonCabecasWait = waitlist.filter(p => parseInt(p.categoria) !== 5).sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+                let nonCabecasWait = waitlist.filter(p => parseInt(p.categoria) !== 5)
+                    .map(p => ({...p, _rand: Math.random()}))
+                    .sort((a, b) => {
+                        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                        if (catDiff !== 0) return catDiff;
+                        return a._rand - b._rand;
+                    });
+                    
                 if (nonCabecasWait.length > 0) {
                     let swapTarget = nonCabecasWait[0];
                     team.splice(team.indexOf(toMove), 1, swapTarget);
@@ -204,9 +175,11 @@ export function preventDoubleCabeças(result, mandatoryIds) {
     return { teams, waitlist };
 }
 
-// --- Funções de Controlo de Equipas --- //
+export const drawTeams = async () => {
+    // Recolhe o número de jogadores pretendido pelo administrador (Lotação Livre)
+    const sizeInput = document.getElementById('teamSize');
+    const size = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
 
-export const drawTeams = async (size) => {
     const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
     if (activePlayers.length === 0) { showToast("Selecione os atletas para o jogo!", "error"); return; }
 
@@ -214,14 +187,10 @@ export const drawTeams = async (size) => {
     if (numTeamsToDraw === 0) { showToast(`Selecione pelo menos ${size} jogadores para o sorteio!`, "error"); return; }
 
     const strategy = document.getElementById('draftStrategy').value;
-    let result = { teams: [], waitlist: [] };
-    
-    strategy === 'FORA' ? result = balanceStrongOutside(activePlayers, size) : result = balanceStrongInside(activePlayers, size);
-    
-    // Aplica a salvaguarda extra
+    let result = strategy === 'FORA' ? balanceStrongOutside(activePlayers, size) : balanceStrongInside(activePlayers, size);
     result = preventDoubleCabeças(result, new Set());
 
-    openConfirmModal("Sorteio Geral", "Deseja realizar um novo sorteio geral? Todas as equipes atuais serão desfeitas.", async () => {
+    openConfirmModal("Sorteio Geral", "Todas as equipes atuais serão desfeitas e os contadores zerados.", async () => {
         try {
             const deletePromises = state.drawnTeams.map(t => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id)));
             await Promise.all(deletePromises);
@@ -230,7 +199,7 @@ export const drawTeams = async (size) => {
                 let sortedTeam = result.teams[i].sort((a, b) => {
                     const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                     if (catDiff !== 0) return catDiff;
-                    return (b.pontos || 0) - (a.pontos || 0);
+                    return a.name.localeCompare(b.name); 
                 });
                 await addDoc(teamsRef, { label: (i + 1).toString(), players: sortedTeam });
             }
@@ -239,7 +208,7 @@ export const drawTeams = async (size) => {
                 let sortedWaitlist = result.waitlist.sort((a, b) => {
                     const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                     if (catDiff !== 0) return catDiff;
-                    return (b.pontos || 0) - (a.pontos || 0);
+                    return a.name.localeCompare(b.name);
                 });
                 await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: sortedWaitlist });
                 showToast(`Sorteio concluído! ${result.waitlist.length} atleta(s) na espera.`);
@@ -251,116 +220,304 @@ export const drawTeams = async (size) => {
 };
 
 export const redrawTeamWithWaitlist = async (teamId) => {
-    openConfirmModal("Sortear Substituições", "Deseja retirar os jogadores da espera e montar um novo time substituindo este?", async () => {
+    openConfirmModal("Sorteio de Substituições", "Deseja substituir este time considerando as prioridades da lista de espera?", async () => {
         const targetTeamDoc = state.drawnTeams.find(t => t.id === teamId);
         if (!targetTeamDoc) return;
 
         const waitlistTeamDoc = state.drawnTeams.find(t => t.isWaitlist);
-        const waitlistIds = new Set(waitlistTeamDoc ? waitlistTeamDoc.players.map(p => p.id) : []);
-        const allPlayersInTeams = new Set(state.drawnTeams.filter(t => !t.isWaitlist).flatMap(t => t.players.map(p => p.id)));
-        const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
-        const newlySelected = activePlayers.filter(p => !allPlayersInTeams.has(p.id) && !waitlistIds.has(p.id));
+        const otherTeams = state.drawnTeams.filter(t => t.id !== teamId && !t.isWaitlist);
         
-        let incomingPlayers = [...(waitlistTeamDoc ? waitlistTeamDoc.players : []), ...newlySelected];
+        let targetSum = 0;
+        if (otherTeams.length > 0) {
+            const totalOtherSum = otherTeams.reduce((acc, t) => acc + t.players.reduce((sum, p) => sum + (parseInt(p.categoria) || 1), 0), 0);
+            targetSum = totalOtherSum / otherTeams.length;
+        }
 
-        if (incomingPlayers.length === 0) {
-            showToast("Não há ninguém na lista de espera para entrar!", "error");
+        const currentTeamPlayers = targetTeamDoc.players.map(p => ({...p, isFromTeam: true}));
+        const waitlistPlayers = waitlistTeamDoc ? waitlistTeamDoc.players.map(p => ({...p, isFromWaitlist: true})) : [];
+        
+        const allAssignedIds = new Set([
+            ...state.drawnTeams.filter(t => !t.isWaitlist).flatMap(t => t.players.map(p => p.id)),
+            ...waitlistPlayers.map(p => p.id)
+        ]);
+        
+        const activeSelected = state.players.filter(p => state.selectedPlayerIds.has(p.id));
+        const newUnassigned = activeSelected.filter(p => !allAssignedIds.has(p.id)).map(p => ({...p, isNew: true, waitlistRounds: 0})); 
+        
+        let pool = [...currentTeamPlayers, ...waitlistPlayers, ...newUnassigned];
+        
+        // Agora N não é o tamanho atual da equipa, mas sim o tamanho pretendido nas configurações!
+        // Isto assegura a reposição automática se faltar alguém.
+        const sizeInput = document.getElementById('teamSize');
+        const N = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
+
+        if (pool.length < N) {
+            showToast("Não há jogadores suficientes para formar um time completo.", "warning");
             return;
         }
 
-        incomingPlayers = incomingPlayers.sort(() => Math.random() - 0.5);
-
-        let originalTeamPlayers = [...targetTeamDoc.players];
-        let newTeamPlayers = [];
-        let nextWaitlist = [];
-        let swapCount = Math.min(incomingPlayers.length, originalTeamPlayers.length);
-
-        for (let i = 0; i < swapCount; i++) {
-            let inP = incomingPlayers[i];
-            let closestIdx = 0;
-            let minDiff = Infinity;
-            for(let j = 0; j < originalTeamPlayers.length; j++) {
-                let diff = Math.abs((parseInt(originalTeamPlayers[j].categoria) || 1) - (parseInt(inP.categoria) || 1));
-                if(diff < minDiff) { minDiff = diff; closestIdx = j; }
-            }
-            let outP = originalTeamPlayers.splice(closestIdx, 1)[0];
-            nextWaitlist.push(outP);
-            newTeamPlayers.push(inP);
+        if (targetSum === 0) { 
+            targetSum = pool.reduce((acc, p) => acc + (parseInt(p.categoria) || 1), 0) * (N / pool.length);
         }
-        newTeamPlayers.push(...originalTeamPlayers);
 
-        for (let i = swapCount; i < incomingPlayers.length; i++) { nextWaitlist.push(incomingPlayers[i]); }
-
-        let localResult = preventDoubleCabeças({ teams: [newTeamPlayers], waitlist: nextWaitlist }, new Set());
+        let mandatory = pool.filter(p => p.isFromWaitlist && (p.waitlistRounds >= 1));
         
-        newTeamPlayers = localResult.teams[0].sort((a, b) => {
+        mandatory.sort((a, b) => {
+            if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
             const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
             if (catDiff !== 0) return catDiff;
-            return (b.pontos || 0) - (a.pontos || 0);
+            return a.name.localeCompare(b.name);
         });
         
-        nextWaitlist = localResult.waitlist.sort((a, b) => {
+        if (mandatory.length > N) {
+            mandatory = mandatory.slice(0, N);
+        }
+
+        const baseTeam = mandatory;
+        const remainingPool = pool.filter(p => !baseTeam.some(m => m.id === p.id));
+        const slotsLeft = N - baseTeam.length;
+
+        let limitedPool = remainingPool;
+        
+        // Embaralha o pool de candidatos para que a geração de combinações não vicie os primeiros da lista
+        for (let i = limitedPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [limitedPool[i], limitedPool[j]] = [limitedPool[j], limitedPool[i]];
+        }
+
+        if (limitedPool.length > 12) {
+            limitedPool.sort((a, b) => {
+                const aVal = a.isFromWaitlist ? 1 : (a.isNew ? 0 : -1);
+                const bVal = b.isFromWaitlist ? 1 : (b.isNew ? 0 : -1);
+                if (bVal !== aVal) return bVal - aVal;
+                return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            });
+            limitedPool = limitedPool.slice(0, 12);
+        }
+
+        function getCombinations(arr, k) {
+            if (k === 0) return [[]];
+            if (arr.length === 0) return [];
+            const results = [];
+            function helper(start, combo) {
+                if (combo.length === k) { results.push([...combo]); return; }
+                for (let i = start; i < arr.length; i++) {
+                    combo.push(arr[i]); helper(i + 1, combo); combo.pop();
+                }
+            }
+            helper(0, []);
+            return results;
+        }
+
+        const combos = getCombinations(limitedPool, slotsLeft);
+        
+        let bestCombos = [];
+        let minDiff = Infinity;
+        let bestSwapCount = -1;
+
+        if (slotsLeft === 0) {
+            bestCombos = [baseTeam];
+        } else {
+            for (const combo of combos) {
+                const candidateTeam = [...baseTeam, ...combo];
+                const sum = candidateTeam.reduce((acc, p) => acc + (parseInt(p.categoria) || 1), 0);
+                const diff = Math.abs(sum - targetSum);
+                const waitlistCount = candidateTeam.filter(p => p.isFromWaitlist || p.isNew).length;
+
+                let isBetter = false;
+                let isEqual = false;
+
+                if (diff < minDiff) {
+                    isBetter = true;
+                } else if (diff === minDiff) {
+                    if (waitlistCount > bestSwapCount) {
+                        isBetter = true;
+                    } else if (waitlistCount === bestSwapCount) {
+                        isEqual = true; 
+                    }
+                }
+
+                if (isBetter) {
+                    minDiff = diff;
+                    bestSwapCount = waitlistCount;
+                    bestCombos = [candidateTeam];
+                } else if (isEqual) {
+                    bestCombos.push(candidateTeam); 
+                }
+            }
+        }
+
+        // Seleciona aleatoriamente entre os times empatados tecnicamente
+        let bestTeam = bestCombos.length > 0 
+            ? bestCombos[Math.floor(Math.random() * bestCombos.length)] 
+            : baseTeam;
+
+        const newTeamIds = new Set(bestTeam.map(p => p.id));
+        
+        const newTeam = bestTeam.map(p => {
+            const { isFromTeam, isFromWaitlist, isNew, ...rest } = p;
+            return { ...rest, waitlistRounds: 0 }; 
+        }).sort((a, b) => {
             const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
             if (catDiff !== 0) return catDiff;
-            return (b.pontos || 0) - (a.pontos || 0);
+            return a.name.localeCompare(b.name);
+        });
+
+        const newWaitlist = pool.filter(p => !newTeamIds.has(p.id)).map(p => {
+            const { isFromTeam, isFromWaitlist, isNew, ...rest } = p;
+            let rounds = 0;
+            if (isFromWaitlist) {
+                rounds = (p.waitlistRounds || 0) + 1; 
+            } else if (isFromTeam || isNew) {
+                rounds = 0; 
+            }
+            return { ...rest, waitlistRounds: rounds };
+        }).sort((a, b) => {
+            if (b.waitlistRounds !== a.waitlistRounds) return (b.waitlistRounds || 0) - (a.waitlistRounds || 0);
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+            if (catDiff !== 0) return catDiff;
+            return a.name.localeCompare(b.name);
         });
 
         try {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', targetTeamDoc.id), { players: newTeamPlayers });
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', targetTeamDoc.id), { players: newTeam });
+            
             if (waitlistTeamDoc) {
-                if (nextWaitlist.length > 0) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: nextWaitlist });
+                if (newWaitlist.length > 0) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: newWaitlist });
                 } else {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id));
                 }
-            } else if (nextWaitlist.length > 0) {
-                await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: nextWaitlist });
+            } else if (newWaitlist.length > 0) {
+                await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: newWaitlist });
             }
-            showToast("Time atualizado com a Lista de Espera!", "success");
+            showToast("Substituição feita e lotação corrigida!", "success");
         } catch(e) { console.error(e); showToast("Erro ao substituir equipe", "error"); }
     });
 };
 
 export const createWaitlist = () => {
-    const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
-    if (activePlayers.length === 0) { showToast("Selecione os atletas para adicionar à espera!", "error"); return; }
-    
-    openConfirmModal("Criar Lista de Espera", "Deseja mover os jogadores selecionados para a Lista de Espera?", async () => {
+    openConfirmModal("Sincronizar Presenças", "Isso irá remover os atletas desmarcados dos times e adicionar os novos marcados na lista de espera. Deseja continuar?", async () => {
         try {
             const waitlistTeamDoc = state.drawnTeams.find(t => t.isWaitlist);
-            let currentWaitlistPlayers = waitlistTeamDoc ? [...waitlistTeamDoc.players] : [];
-            const existingIds = new Set(currentWaitlistPlayers.map(p => p.id));
-            const newPlayersToAdd = activePlayers.filter(p => !existingIds.has(p.id));
-            
-            if (newPlayersToAdd.length === 0 && activePlayers.length > 0) { 
-                showToast("Os jogadores selecionados já estão na espera!", "info"); 
-                return; 
-            }
-            
-            const updatedWaitlist = [...currentWaitlistPlayers, ...newPlayersToAdd].sort((a, b) => {
-                const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
-                if (catDiff !== 0) return catDiff;
-                return (b.pontos || 0) - (a.pontos || 0);
-            });
-            
+            let currentWaitlistPlayers = [];
             const updatePromises = [];
+            
             for (const team of state.drawnTeams) {
                 if (!team.isWaitlist) {
-                    const filteredPlayers = team.players.filter(p => !state.selectedPlayerIds.has(p.id));
+                    const filteredPlayers = team.players.filter(p => state.selectedPlayerIds.has(p.id));
                     if (filteredPlayers.length !== team.players.length) {
-                        if (filteredPlayers.length === 0) updatePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id)));
-                        else updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id), { players: filteredPlayers }));
+                        if (filteredPlayers.length === 0) {
+                            updatePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id)));
+                        } else {
+                            updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id), { players: filteredPlayers }));
+                        }
                     }
+                } else {
+                    currentWaitlistPlayers = team.players.filter(p => state.selectedPlayerIds.has(p.id));
                 }
             }
             
-            if (waitlistTeamDoc) updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: updatedWaitlist }));
-            else updatePromises.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: updatedWaitlist }));
+            const playersInNormalTeamsIds = new Set(
+                state.drawnTeams
+                    .filter(t => !t.isWaitlist)
+                    .flatMap(t => t.players.filter(p => state.selectedPlayerIds.has(p.id)).map(p => p.id))
+            );
+            const playersInWaitlistIds = new Set(currentWaitlistPlayers.map(p => p.id));
+            
+            const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
+            const newPlayersToAdd = activePlayers.filter(p => !playersInNormalTeamsIds.has(p.id) && !playersInWaitlistIds.has(p.id));
+            
+            const newPlayersWithRounds = newPlayersToAdd.map(p => ({ ...p, waitlistRounds: 0 }));
+            
+            const updatedWaitlist = [...currentWaitlistPlayers, ...newPlayersWithRounds].sort((a, b) => {
+                const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                if (catDiff !== 0) return catDiff;
+                return a.name.localeCompare(b.name);
+            });
+            
+            if (waitlistTeamDoc) {
+                if (updatedWaitlist.length > 0) {
+                    updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: updatedWaitlist }));
+                } else {
+                    updatePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id)));
+                }
+            } else if (updatedWaitlist.length > 0) {
+                updatePromises.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: updatedWaitlist }));
+            }
             
             await Promise.all(updatePromises);
-            showToast("Lista de Espera criada/atualizada com sucesso!", "success");
-        } catch (e) { showToast("Erro ao criar lista de espera", "error"); }
+            showToast("Sincronização de presença concluída!", "success");
+        } catch (e) { 
+            console.error(e);
+            showToast("Erro ao atualizar presenças", "error"); 
+        }
     });
+};
+
+// NOVA FUNÇÃO: Confirmar a movimentação manual de um jogador
+export const confirmMovePlayer = async () => {
+    const destTeamId = document.getElementById('moveDestination').value;
+    const { sourceTeamId, playerId } = state.moveData;
+
+    if (!destTeamId || !sourceTeamId || !playerId) {
+        showToast("Erro ao transferir jogador.", "error");
+        return;
+    }
+
+    const sourceTeam = state.drawnTeams.find(t => t.id === sourceTeamId);
+    const destTeam = state.drawnTeams.find(t => t.id === destTeamId);
+
+    if (!sourceTeam || !destTeam) return;
+
+    const playerIndex = sourceTeam.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+
+    // Retira o jogador da equipe de origem
+    const playerToMove = sourceTeam.players.splice(playerIndex, 1)[0];
+
+    // Ajuste de "Rounds de Espera" com base no destino
+    if (destTeam.isWaitlist) {
+        playerToMove.waitlistRounds = (playerToMove.waitlistRounds || 0) + 1;
+    } else if (sourceTeam.isWaitlist) {
+        playerToMove.waitlistRounds = 0;
+    }
+
+    // Adiciona o jogador à equipe de destino
+    destTeam.players.push(playerToMove);
+
+    // Função de ordenação
+    const sortFn = (a, b) => {
+        if (destTeam.isWaitlist || sourceTeam.isWaitlist) {
+            if (b.waitlistRounds !== a.waitlistRounds) return (b.waitlistRounds || 0) - (a.waitlistRounds || 0);
+        }
+        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+        if (catDiff !== 0) return catDiff;
+        return a.name.localeCompare(b.name);
+    };
+
+    sourceTeam.players.sort(sortFn);
+    destTeam.players.sort(sortFn);
+
+    try {
+        closeMoveModal();
+        const updates = [];
+
+        if (sourceTeam.players.length === 0) {
+            // Se a equipe ficou vazia, ela é deletada do banco de dados
+            updates.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', sourceTeamId)));
+        } else {
+            updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', sourceTeamId), { players: sourceTeam.players }));
+        }
+
+        updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', destTeamId), { players: destTeam.players }));
+
+        await Promise.all(updates);
+        showToast("Transferência concluída!", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao transferir jogador.", "error");
+    }
 };
 
 export const clearTeams = () => {
@@ -382,53 +539,96 @@ export const deleteTeam = (id) => {
     });
 };
 
-// --- Funções de Placar --- //
+// --- Funções de Placar e Sistema Elo --- //
+
+export function calculateEloPreview() {
+    const select1 = document.getElementById('team1Select');
+    const select2 = document.getElementById('team2Select');
+    if (!select1 || !select2 || !select1.value || !select2.value || select1.value === select2.value) return null;
+
+    const team1 = state.drawnTeams.find(t => t.label === select1.value);
+    const team2 = state.drawnTeams.find(t => t.label === select2.value);
+    if (!team1 || !team2) return null;
+
+    // NOVO: Busca o Elo sempre da lista principal de jogadores e não da "foto" da equipa
+    const getTeamElo = (team) => {
+        if (team.players.length === 0) return 150;
+        const sum = team.players.reduce((acc, p) => {
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            const currentElo = dbPlayer && dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150;
+            return acc + currentElo;
+        }, 0);
+        return sum / team.players.length;
+    };
+
+    const eloT1 = getTeamElo(team1);
+    const eloT2 = getTeamElo(team2);
+    const expectedT1 = 1 / (1 + Math.pow(10, (eloT2 - eloT1) / 400));
+    const expectedT2 = 1 / (1 + Math.pow(10, (eloT1 - eloT2) / 400));
+
+    const isTeam1Winner = state.score1 > state.score2;
+    const K = 32;
+
+    const changeT1 = Math.round(K * ((isTeam1Winner ? 1 : 0) - expectedT1));
+    const changeT2 = Math.round(K * ((isTeam1Winner ? 0 : 1) - expectedT2));
+
+    return { changeT1, changeT2, team1, team2, isTeam1Winner };
+}
 
 export function checkWinCondition() {
     const isTradicionalWin = (state.score1 >= 21 || state.score2 >= 21) && Math.abs(state.score1 - state.score2) >= 2;
     const isCapoteWin = (state.score1 >= 8 && state.score2 === 0) || (state.score2 >= 8 && state.score1 === 0);
     
     if (isTradicionalWin || isCapoteWin) {
-        const select1 = document.getElementById('team1Select');
-        const select2 = document.getElementById('team2Select');
-        
-        let winnerName = state.score1 > state.score2 
-            ? (select1.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)") 
-            : (select2.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)");
-        
+        const select1 = document.getElementById('team1Select'), select2 = document.getElementById('team2Select');
+        let winnerName = state.score1 > state.score2 ? (select1.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)") : (select2.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)");
         document.getElementById('victoryTeamName').innerText = winnerName;
         
+        const btnSaveResult = document.getElementById('btnSaveResult');
+        const warning = document.getElementById('victoryTeamWarning');
+        const eloInfoDiv = document.getElementById('victoryEloInfo');
+
         if (!select1.value || !select2.value || select1.value === select2.value) { 
-            document.getElementById('btnSaveResult').classList.add('hidden'); 
-            document.getElementById('victoryTeamWarning').classList.remove('hidden'); 
+            btnSaveResult.classList.add('hidden'); 
+            warning.classList.remove('hidden'); 
+            if(eloInfoDiv) eloInfoDiv.classList.add('hidden');
         } else { 
-            document.getElementById('btnSaveResult').classList.remove('hidden'); 
-            document.getElementById('victoryTeamWarning').classList.add('hidden'); 
+            btnSaveResult.classList.remove('hidden'); 
+            warning.classList.add('hidden'); 
+            
+            // Renderiza a prévia do Elo na tela de vitória!
+            const preview = calculateEloPreview();
+            if (preview && eloInfoDiv) {
+                const winChange = preview.isTeam1Winner ? preview.changeT1 : preview.changeT2;
+                const loseChange = preview.isTeam1Winner ? preview.changeT2 : preview.changeT1;
+                
+                eloInfoDiv.innerHTML = `
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-green-400 font-bold flex items-center gap-1 text-base"><i data-lucide="trending-up" class="w-5 h-5"></i> +${winChange} ELO</span>
+                        <span class="text-slate-500 font-bold text-[10px] uppercase tracking-widest">Recompensa</span>
+                        <span class="text-red-400 font-bold flex items-center gap-1 text-base"><i data-lucide="trending-down" class="w-5 h-5"></i> ${loseChange} ELO</span>
+                    </div>
+                `;
+                eloInfoDiv.classList.remove('hidden');
+            }
         }
         
         document.getElementById('victoryModal').classList.remove('hidden'); 
         document.getElementById('victoryModal').classList.add('flex');
-        
         if (isCapoteWin) showToast("🔥 VITÓRIA POR CAPOTE (8 a 0)! 🔥", "success");
         lucide.createIcons();
     }
 }
 
 export const updateScore = (team, change) => {
-    if (team === 1) { 
-        state.score1 = Math.max(0, state.score1 + change); 
-        document.getElementById('score1').innerText = state.score1; 
-    } else { 
-        state.score2 = Math.max(0, state.score2 + change); 
-        document.getElementById('score2').innerText = state.score2; 
-    }
+    if (team === 1) { state.score1 = Math.max(0, state.score1 + change); document.getElementById('score1').innerText = state.score1; }
+    else { state.score2 = Math.max(0, state.score2 + change); document.getElementById('score2').innerText = state.score2; }
     checkWinCondition();
 };
 
 export const resetScore = () => {
     openConfirmModal("Zerar Placar", "Deseja realmente zerar o placar da partida atual?", () => {
-        state.score1 = 0; 
-        state.score2 = 0; 
+        state.score1 = 0; state.score2 = 0; 
         document.getElementById('score1').innerText = state.score1; 
         document.getElementById('score2').innerText = state.score2;
         document.getElementById('team1Select').value = ''; 
@@ -437,7 +637,93 @@ export const resetScore = () => {
     });
 };
 
-// --- Bindings Globais --- //
+export const saveAndCloseVictoryModal = async () => {
+    const preview = calculateEloPreview();
+    if (!preview) {
+        showToast("Selecione dois times válidos e diferentes no placar!", "error");
+        return;
+    }
+
+    const { changeT1, changeT2, team1, team2, isTeam1Winner } = preview;
+    const actualT1 = isTeam1Winner ? 1 : 0;
+    const actualT2 = isTeam1Winner ? 0 : 1;
+
+    const btnSave = document.getElementById('btnSaveResult');
+    btnSave.innerText = "SALVANDO...";
+    btnSave.disabled = true;
+
+    try {
+        const updatePromises = [];
+
+        // Atualiza Time 1
+        team1.players.forEach(p => {
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            if (dbPlayer) {
+                const currentElo = dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150;
+                const newElo = Math.max(0, currentElo + changeT1);
+                
+                const partidas = (dbPlayer.partidas || 0) + 1;
+                const vitorias = (dbPlayer.vitorias || 0) + actualT1;
+                const streak = actualT1 === 1 ? 
+                    (dbPlayer.streak >= 0 ? dbPlayer.streak + 1 : 1) : 
+                    (dbPlayer.streak <= 0 ? dbPlayer.streak - 1 : -1);
+
+                updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
+                    eloRating: newElo,
+                    partidas: partidas,
+                    vitorias: vitorias,
+                    streak: streak,
+                    updatedAt: Date.now()
+                }));
+            }
+        });
+
+        // Atualiza Time 2
+        team2.players.forEach(p => {
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            if (dbPlayer) {
+                const currentElo = dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150;
+                const newElo = Math.max(0, currentElo + changeT2);
+                
+                const partidas = (dbPlayer.partidas || 0) + 1;
+                const vitorias = (dbPlayer.vitorias || 0) + actualT2;
+                const streak = actualT2 === 1 ? 
+                    (dbPlayer.streak >= 0 ? dbPlayer.streak + 1 : 1) : 
+                    (dbPlayer.streak <= 0 ? dbPlayer.streak - 1 : -1);
+
+                updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
+                    eloRating: newElo,
+                    partidas: partidas,
+                    vitorias: vitorias,
+                    streak: streak,
+                    updatedAt: Date.now()
+                }));
+            }
+        });
+
+        await Promise.all(updatePromises);
+        
+        const ptsGanhos = isTeam1Winner ? changeT1 : changeT2;
+        showToast(`Ranking Atualizado! Time vencedor faturou +${ptsGanhos} de Elo.`, "success");
+
+        document.getElementById('victoryModal').classList.add('hidden');
+        document.getElementById('victoryModal').classList.remove('flex');
+        
+        state.score1 = 0; state.score2 = 0; 
+        document.getElementById('score1').innerText = state.score1; 
+        document.getElementById('score2').innerText = state.score2;
+        document.getElementById('team1Select').value = ''; 
+        document.getElementById('team2Select').value = ''; 
+        
+    } catch (error) {
+        console.error(error);
+        showToast("Erro ao salvar resultado.", "error");
+    } finally {
+        btnSave.innerText = "SALVAR RANKING";
+        btnSave.disabled = false;
+    }
+};
+
 window.drawTeams = drawTeams;
 window.redrawTeamWithWaitlist = redrawTeamWithWaitlist;
 window.createWaitlist = createWaitlist;
@@ -445,3 +731,5 @@ window.clearTeams = clearTeams;
 window.deleteTeam = deleteTeam;
 window.updateScore = updateScore;
 window.resetScore = resetScore;
+window.confirmMovePlayer = confirmMovePlayer;
+window.saveAndCloseVictoryModal = saveAndCloseVictoryModal;
