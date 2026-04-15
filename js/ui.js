@@ -131,20 +131,20 @@ export const renderPublic = () => {
             const lvlInfo = getLevelInfo(p.eloRating ?? 150), ptsValue = p.eloRating ?? 150, desPerc = p.des || 0;
             const isDestaque = ptsValue === maxElo && maxElo > 150;
             
-            // CARD HTML COM ELO RESTAURADO E FOTO EM TAMANHO EQUILIBRADO
-            const innerCard = `<div class="fifa-card card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[320px] sm:!h-[350px]'}">
+            // CARD HTML COM ELO REDUZIDO (!text-3xl) E FOTO AUMENTADA NO CELULAR (w-20)
+            const innerCard = `<div class="fifa-card card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[330px] sm:!h-[350px]'}">
                 <div class="flex flex-col items-center justify-center">
-                    <span class="overall drop-shadow-md">${ptsValue}</span>
-                    <span class="font-bold text-[9px] sm:text-[11px] opacity-90 tracking-[0.15em] mt-0.5 sm:mt-1">ELO</span>
+                    <span class="overall !text-3xl sm:!text-5xl drop-shadow-md">${ptsValue}</span>
+                    <span class="font-bold text-[8px] sm:text-[10px] opacity-90 tracking-[0.15em] -mt-1 sm:mt-0">ELO</span>
                 </div>
-                <div class="w-14 h-14 sm:w-20 sm:h-20 my-1.5 sm:my-2.5 flex items-center justify-center bg-black/10 rounded-full border-2 ${isDestaque ? 'border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.3)] text-yellow-200' : 'border-black/10'} shrink-0 overflow-hidden">
-                    ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-4 h-4 sm:w-6 sm:h-6 opacity-80"></i>`}
+                <div class="w-20 h-20 sm:w-20 sm:h-20 my-1 sm:my-2.5 flex items-center justify-center bg-black/10 rounded-full border-2 ${isDestaque ? 'border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.3)] text-yellow-200' : 'border-black/10'} shrink-0 overflow-hidden">
+                    ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-10 h-10 sm:w-10 sm:h-10 opacity-80"></i>`}
                 </div>
                 <div class="player-name ${isDestaque ? 'text-yellow-100 drop-shadow-md' : ''}">${p.name}</div>
                 <div class="w-[90%] mt-2 sm:mt-3 flex flex-col items-center">
                     <div class="flex justify-between w-full mb-1 px-1">
-                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest opacity-90">Desempenho</span>
-                        <span class="text-[9px] sm:text-[10px] font-bold opacity-90">${desPerc}%</span>
+                        <span class="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest opacity-90">Desempenho</span>
+                        <span class="text-[8px] sm:text-[10px] font-bold opacity-90">${desPerc}%</span>
                     </div>
                     <div class="w-full bg-black/30 rounded-full h-1.5 sm:h-2 border border-white/20 overflow-hidden relative shadow-inner">
                         <div class="bg-white h-full rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-1000" style="width: ${desPerc}%"></div>
@@ -152,7 +152,7 @@ export const renderPublic = () => {
                 </div>
             </div>`;
             
-            return `<div class="relative flex justify-center w-full sm:w-[210px] group ${isDestaque ? 'winner-frame-container' : ''}">${(p.streak || 0) >= 3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-orange-500/50 border border-orange-300 animate-bounce" title="${p.streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${p.streak}</div>` : ''}${(p.streak || 0) <= -3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-blue-500/50 border border-blue-300" title="${Math.abs(p.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${Math.abs(p.streak)}</div>` : ''}${isDestaque ? `<div class="winner-frame-wrapper !h-[330px] sm:!h-[360px]">${innerCard}</div>` : innerCard}</div>`;
+            return `<div class="relative flex justify-center w-full sm:w-[210px] group ${isDestaque ? 'winner-frame-container' : ''}">${(p.streak || 0) >= 3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-orange-500/50 border border-orange-300 animate-bounce" title="${p.streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${p.streak}</div>` : ''}${(p.streak || 0) <= -3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-blue-500/50 border border-blue-300" title="${Math.abs(p.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${Math.abs(p.streak)}</div>` : ''}${isDestaque ? `<div class="winner-frame-wrapper !h-[340px] sm:!h-[360px]">${innerCard}</div>` : innerCard}</div>`;
         }).join('');
         return `<div class="w-full flex flex-col items-center mb-10"><h3 class="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2 ${colorClass} border-b border-slate-700/50 pb-2 px-8 uppercase tracking-wider"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 h-6"></i> ${title}</h3><div class="grid grid-cols-[repeat(2,minmax(130px,180px))] sm:flex sm:flex-wrap gap-3 sm:gap-6 justify-center w-full max-w-[390px] sm:max-w-none mx-auto px-1 sm:px-0">${cardsHTML}</div></div>`;
     };
