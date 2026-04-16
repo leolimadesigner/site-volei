@@ -632,6 +632,7 @@ export const saveAndCloseVictoryModal = async () => {
         document.getElementById('score2').innerText = state.score2;
         document.getElementById('team1Select').value = ''; 
         document.getElementById('team2Select').value = ''; 
+        if (typeof updateLiveEloPreview === 'function') updateLiveEloPreview();
         
     } catch (error) {
         console.error(error);
