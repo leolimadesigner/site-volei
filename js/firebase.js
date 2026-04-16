@@ -5,17 +5,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// 2. Configuração do seu Projeto
+// 2. Configuração do seu NOVO Projeto de Teste
+// Substitua os valores abaixo pelos do seu novo projeto Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyCWjwuRy4BVliXYUog-_qy6I8vWEPJBbHk",
-    authDomain: "app-volei-34f53.firebaseapp.com",
-    projectId: "app-volei-34f53",
-    storageBucket: "app-volei-34f53.firebasestorage.app",
-    messagingSenderId: "290138844370",
-    appId: "1:290138844370:web:19a4c9b36fc8297668d10b"
+  apiKey: "AIzaSyAkZD_lIj7P1rMNdFYUciAppb6TqZ4dyVQ",
+  authDomain: "testes-site-volei.firebaseapp.com",
+  projectId: "testes-site-volei",
+  storageBucket: "testes-site-volei.firebasestorage.app",
+  messagingSenderId: "381521124753",
+  appId: "1:381521124753:web:d1bbb4e5a5f574116cce30",
+  measurementId: "G-1Q5TTB0FQ5"
 };
 
-export const appId = 'app-volei-34f53'; 
+// Alterei o nome interno do app para garantir que não mistura com o oficial
+export const appId = 'app-volei-teste'; 
 
 // 3. Inicialização
 export const app = initializeApp(firebaseConfig);
@@ -25,6 +28,6 @@ export const db = getFirestore(app);
 // 4. Referências das Coleções Principais
 export const playersRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
 export const teamsRef = collection(db, 'artifacts', appId, 'public', 'data', 'teams');
-export const matchHistoryRef = collection(db, 'artifacts', appId, 'public', 'data', 'matchHistory'); // Nova Referência para o histórico
+export const matchHistoryRef = collection(db, 'artifacts', appId, 'public', 'data', 'matchHistory');
 
 export { doc, setDoc, collection, onSnapshot, deleteDoc, addDoc, updateDoc, signInAnonymously, onAuthStateChanged };
