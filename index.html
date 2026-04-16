@@ -52,62 +52,75 @@
                 </div>
 
                 <div class="flex-[1.5] w-full bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-700/50 shadow-inner">
-                    <h3 class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 text-center md:text-left border-b border-slate-700/50 pb-2">
-                        <i data-lucide="bar-chart-2" class="w-3 h-3 inline-block mr-1 mb-0.5"></i> Sistema de Classificação
-                    </h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20 transition-all hover:bg-red-500/20">
-                            <div class="bg-red-900/50 p-1.5 rounded-md border border-red-500/30 shrink-0">
-                                <i data-lucide="flame" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-red-500 leading-tight uppercase tracking-wider">Mestre</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">800+ ELO</p>
+                    <!-- TÍTULO CLICÁVEL COM MELHOR VISIBILIDADE -->
+                    <div class="flex justify-between items-center cursor-pointer select-none p-2 sm:p-3 -mx-2 sm:-mx-3 -mt-2 rounded-xl hover:bg-slate-800/80 transition-colors group" onclick="document.getElementById('eloSystemContent').classList.toggle('hidden'); document.getElementById('eloSystemToggleIcon').classList.toggle('rotate-180');">
+                        <h3 class="text-[10px] sm:text-xs font-bold text-slate-300 uppercase tracking-widest m-0 text-center md:text-left flex items-center gap-1.5">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-green-500"></i> Sistema de Classificação
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-green-400 font-bold transition-colors uppercase tracking-wider bg-slate-900 px-2 py-1 rounded-md border border-slate-700 group-hover:border-green-500/30">Ver Níveis</span>
+                            <div class="bg-slate-900 p-1 rounded-full group-hover:bg-green-500/20 border border-slate-700 group-hover:border-green-500/30 transition-all">
+                                <i data-lucide="chevron-down" id="eloSystemToggleIcon" class="w-4 h-4 text-slate-400 group-hover:text-green-400 transition-transform duration-300"></i>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 transition-all hover:bg-fuchsia-500/20">
-                            <div class="bg-fuchsia-900/50 p-1.5 rounded-md border border-fuchsia-500/30 shrink-0">
-                                <i data-lucide="gem" class="w-4 h-4 sm:w-5 sm:h-5 text-fuchsia-400"></i>
+                    </div>
+                    
+                    <!-- CONTEÚDO RECOLHIDO(hidden) -->
+                    <div id="eloSystemContent" class="hidden pt-4 transition-all border-t border-slate-700/50 mt-2">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20 transition-all hover:bg-red-500/20">
+                                <div class="bg-red-900/50 p-1.5 rounded-md border border-red-500/30 shrink-0">
+                                    <i data-lucide="flame" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-red-500 leading-tight uppercase tracking-wider">Mestre</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">800+ ELO</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-fuchsia-400 leading-tight uppercase tracking-wider">Diamante</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">650 - 799</p>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 transition-all hover:bg-fuchsia-500/20">
+                                <div class="bg-fuchsia-900/50 p-1.5 rounded-md border border-fuchsia-500/30 shrink-0">
+                                    <i data-lucide="gem" class="w-4 h-4 sm:w-5 sm:h-5 text-fuchsia-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-fuchsia-400 leading-tight uppercase tracking-wider">Diamante</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">650 - 799</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 transition-all hover:bg-cyan-500/20">
-                            <div class="bg-cyan-900/50 p-1.5 rounded-md border border-cyan-500/30 shrink-0">
-                                <i data-lucide="shield" class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400"></i>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 transition-all hover:bg-cyan-500/20">
+                                <div class="bg-cyan-900/50 p-1.5 rounded-md border border-cyan-500/30 shrink-0">
+                                    <i data-lucide="shield" class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-cyan-400 leading-tight uppercase tracking-wider">Platina</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">550 - 649</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-cyan-400 leading-tight uppercase tracking-wider">Platina</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">550 - 649</p>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 transition-all hover:bg-yellow-500/20">
+                                <div class="bg-yellow-900/50 p-1.5 rounded-md border border-yellow-500/30 shrink-0">
+                                    <i data-lucide="award" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-yellow-400 leading-tight uppercase tracking-wider">Ouro</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">450 - 549</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 transition-all hover:bg-yellow-500/20">
-                            <div class="bg-yellow-900/50 p-1.5 rounded-md border border-yellow-500/30 shrink-0">
-                                <i data-lucide="award" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400"></i>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-slate-400/10 border border-slate-400/20 transition-all hover:bg-slate-400/20">
+                                <div class="bg-slate-700/50 p-1.5 rounded-md border border-slate-400/30 shrink-0">
+                                    <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-300"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-slate-300 leading-tight uppercase tracking-wider">Prata</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">350 - 449</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-yellow-400 leading-tight uppercase tracking-wider">Ouro</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">450 - 549</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-slate-400/10 border border-slate-400/20 transition-all hover:bg-slate-400/20">
-                            <div class="bg-slate-700/50 p-1.5 rounded-md border border-slate-400/30 shrink-0">
-                                <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-300"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-slate-300 leading-tight uppercase tracking-wider">Prata</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">350 - 449</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 transition-all hover:bg-orange-500/20">
-                            <div class="bg-orange-900/50 p-1.5 rounded-md border border-orange-500/30 shrink-0">
-                                <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-orange-500 leading-tight uppercase tracking-wider">Bronze</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">0 - 349</p>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 transition-all hover:bg-orange-500/20">
+                                <div class="bg-orange-900/50 p-1.5 rounded-md border border-orange-500/30 shrink-0">
+                                    <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-orange-500 leading-tight uppercase tracking-wider">Bronze</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">0 - 349</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -158,7 +171,7 @@
                             <input type="number" id="teamSize" value="4" min="2" max="10" class="w-6 sm:w-8 bg-transparent py-2 px-0 text-sm sm:text-base font-bold text-white text-center outline-none appearance-none m-0 pointer-events-none">
                             <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.min(10, parseInt(t.value) + 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">+</button>
                         </div>
-                        <button onclick="drawTeams()" class="flex-[2] sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> SORTEAR TIMES</button>
+                        <button onclick="drawTeams()" class="flex-[2] sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> SORTEAR GERAL</button>
                     </div>
 
                     <div class="flex gap-2 w-full sm:w-auto justify-between sm:justify-start mt-2 sm:mt-0">
@@ -170,22 +183,27 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                 <div class="lg:col-span-1">
-                    <!-- Formulário Colapsável com Acordeão -->
                     <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-slate-700 lg:sticky top-24 transition-all">
-                        <div class="flex justify-between items-center cursor-pointer select-none" onclick="document.getElementById('formContent').classList.toggle('hidden'); document.getElementById('formToggleIcon').classList.toggle('rotate-180');">
+                        <!-- TÍTULO CLICÁVEL COM MELHOR VISIBILIDADE -->
+                        <div class="flex justify-between items-center cursor-pointer select-none p-2 sm:p-3 -mx-2 sm:-mx-3 -mt-2 rounded-xl hover:bg-slate-900/50 transition-colors group" onclick="document.getElementById('formContent').classList.toggle('hidden'); document.getElementById('formToggleIcon').classList.toggle('rotate-180');">
                             <h2 id="formTitle" class="text-lg sm:text-xl font-bold flex items-center gap-2 text-green-400">
-                                <i data-lucide="user-plus" class="w-4 h-4 sm:w-5 sm:h-5"></i> NOVO JOGADOR
+                                <i data-lucide="user-plus" class="w-5 h-5"></i> Novo Atleta
                             </h2>
-                            <i data-lucide="chevron-up" id="formToggleIcon" class="w-5 h-5 text-slate-400 transition-transform duration-300 rotate-180"></i>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] sm:text-xs text-slate-400 group-hover:text-green-400 font-bold transition-colors uppercase tracking-wider bg-slate-900 px-2 py-1 rounded-md border border-slate-700 group-hover:border-green-500/30">Expandir</span>
+                                <div class="bg-slate-900 p-1.5 rounded-full group-hover:bg-green-500/20 border border-slate-700 group-hover:border-green-500/30 transition-all">
+                                    <i data-lucide="chevron-down" id="formToggleIcon" class="w-5 h-5 text-slate-400 group-hover:text-green-400 transition-transform duration-300"></i>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div id="formContent" class="space-y-4 mt-4 sm:mt-6 transition-all hidden">
+                        <div id="formContent" class="space-y-4 mt-4 sm:mt-6 transition-all hidden border-t border-slate-700 pt-4">
                             <input type="hidden" id="editId" value="">
                             <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm sm:text-base outline-none focus:ring-2 focus:ring-green-500">
                             
                             <div class="mb-2 mt-4 flex flex-col items-center">
-                                <label class="relative cursor-pointer group flex flex-col items-center">
-                                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover:border-green-500 transition-colors">
+                                <label class="relative cursor-pointer group/photo flex flex-col items-center">
+                                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover/photo:border-green-500 transition-colors">
                                         <div id="photoPlaceholder" class="text-slate-500 flex flex-col items-center">
                                             <i data-lucide="camera" class="w-6 h-6 sm:w-8 sm:h-8 mb-1"></i>
                                             <span class="text-[9px] sm:text-[10px] font-bold uppercase">Foto</span>
@@ -353,11 +371,17 @@
             <!-- Histórico de Partidas (Acordeão) -->
             <div id="historySection" class="mt-8 sm:mt-12 border-t border-slate-800 pt-8 sm:pt-12 max-w-4xl mx-auto text-left mb-16">
                 <div class="bg-slate-800/60 rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
-                    <div class="p-4 sm:p-5 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center cursor-pointer select-none hover:bg-slate-800 transition-colors" onclick="document.getElementById('historyContent').classList.toggle('hidden'); document.getElementById('historyToggleIcon').classList.toggle('rotate-180');">
-                        <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-slate-200">
-                            <i data-lucide="history" class="w-5 h-5 text-blue-400"></i> Histórico de Partidas
+                    <!-- TÍTULO CLICÁVEL COM MELHOR VISIBILIDADE -->
+                    <div class="p-4 sm:p-5 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center cursor-pointer select-none hover:bg-slate-800 transition-colors group" onclick="document.getElementById('historyContent').classList.toggle('hidden'); document.getElementById('historyToggleIcon').classList.toggle('rotate-180');">
+                        <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-slate-200 group-hover:text-blue-400 transition-colors">
+                            <i data-lucide="history" class="w-5 h-5 text-blue-500"></i> Histórico de Partidas
                         </h2>
-                        <i data-lucide="chevron-down" id="historyToggleIcon" class="w-5 h-5 text-slate-400 transition-transform duration-300"></i>
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            <span class="text-[10px] sm:text-xs text-slate-400 group-hover:text-blue-400 font-bold transition-colors uppercase tracking-widest bg-slate-950 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-slate-800 group-hover:border-blue-500/30">Ver Jogos</span>
+                            <div class="bg-slate-950 p-1.5 rounded-full group-hover:bg-blue-500/20 border border-slate-800 group-hover:border-blue-500/30 transition-all">
+                                <i data-lucide="chevron-down" id="historyToggleIcon" class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-transform duration-300"></i>
+                            </div>
+                        </div>
                     </div>
                     <div id="historyContent" class="hidden p-4 sm:p-6 transition-all bg-slate-800/30">
                         <div id="historyList" class="space-y-6">
