@@ -2,180 +2,15 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Meta tag atualizada para impedir o zoom automático no celular -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TIME CERTO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Condensed:wght@400;700&display=swap');
-
-        body {
-            background-color: #0f172a;
-            font-family: 'Roboto Condensed', sans-serif;
-            color: #f1f5f9;
-        }
-
-        /* Formato do Card FIFA */
-        .fifa-card {
-            position: relative;
-            width: 210px;
-            height: 300px;
-            clip-path: polygon(50% 0%, 100% 12%, 100% 88%, 50% 100%, 0% 88%, 0% 12%);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 10px 10px 10px;
-            color: #1a1a1a;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
-            overflow: hidden;
-        }
-
-        /* Efeito de Luz Estática */
-        .fifa-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.05) 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.2) 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .fifa-card > div {
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Efeito de Raio de Luz Animado */
-        .fifa-card::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -150%;
-            width: 60%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-25deg);
-            transition: all 0.6s ease;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        .group:hover .fifa-card {
-            transform: translateY(-8px) scale(1.02);
-        }
-        .group:hover .fifa-card::after {
-            left: 200%;
-        }
-
-        /* Cores Dinâmicas (Elo) */
-        .card-nivel6 { background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 50%, #450a0a 100%); border: 4px solid #f87171; color: white; }
-        .group:hover .card-nivel6 { box-shadow: 0 15px 35px rgba(153, 27, 27, 0.65); border-color: #fca5a5; }
-
-        .card-nivel5 { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 50%, #4c1d95 100%); border: 4px solid #c084fc; color: white; }
-        .group:hover .card-nivel5 { box-shadow: 0 15px 35px rgba(168, 85, 247, 0.65); border-color: #e9d5ff; }
-
-        .card-nivel4 { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #164e63 100%); border: 4px solid #22d3ee; color: white; }
-        .group:hover .card-nivel4 { box-shadow: 0 15px 35px rgba(6, 182, 212, 0.65); border-color: #a5f3fc; }
-        
-        .card-nivel3 { background: linear-gradient(135deg, #eab308 0%, #ca8a04 50%, #713f12 100%); border: 4px solid #fde047; color: #2e1a05; }
-        .group:hover .card-nivel3 { box-shadow: 0 15px 35px rgba(234, 179, 8, 0.65); border-color: #fef08a; }
-        
-        .card-nivel2 { background: linear-gradient(135deg, #94a3b8 0%, #64748b 50%, #334155 100%); border: 4px solid #cbd5e1; color: white; }
-        .group:hover .card-nivel2 { box-shadow: 0 15px 35px rgba(148, 163, 184, 0.65); border-color: #f1f5f9; }
-        
-        .card-nivel1 { background: linear-gradient(135deg, #c2410c 0%, #9a3412 50%, #431407 100%); border: 4px solid #fdba74; color: white; }
-        .group:hover .card-nivel1 { box-shadow: 0 15px 35px rgba(194, 65, 12, 0.65); border-color: #fed7aa; }
-
-        /* Moldura Animada para o Maior Vencedor */
-        .winner-frame-container {
-            filter: drop-shadow(0 0 15px rgba(250, 204, 21, 0.7));
-            animation: pulseFrameGlow 2s infinite alternate;
-            z-index: 15;
-        }
-        .winner-frame-wrapper {
-            padding: 5px; 
-            background: linear-gradient(135deg, #FDE047 0%, #D97706 25%, #FEF08A 50%, #D97706 75%, #FDE047 100%);
-            background-size: 200% 200%;
-            animation: shimmerFrame 3s infinite linear;
-            clip-path: polygon(50% 0%, 100% 12%, 100% 88%, 50% 100%, 0% 88%, 0% 12%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        @media (min-width: 640px) {
-            .winner-frame-wrapper { width: 220px; height: 310px; }
-        }
-        @media (max-width: 639px) {
-            .winner-frame-wrapper { width: 100%; aspect-ratio: 210 / 300; }
-        }
-        @keyframes shimmerFrame {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @keyframes pulseFrameGlow {
-            0% { filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.4)); }
-            100% { filter: drop-shadow(0 0 25px rgba(250, 204, 21, 1)); }
-        }
-
-        .overall { font-family: 'Oswald', sans-serif; font-size: 58px; font-weight: 700; line-height: 0.9; margin-top: 0; }
-        
-        .player-name {
-            font-family: 'Oswald', sans-serif; font-size: 19px; text-transform: uppercase;
-            margin-top: 4px; text-align: center; width: 95%; border-bottom: 2px solid currentColor;
-            padding-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-        }
-
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, max-content); 
-            justify-content: center; 
-            gap: 6px 16px; 
-            margin-top: 12px; 
-            width: 100%; 
-        }
-
-        .stat-item { display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
-        .stat-value { font-weight: 700; font-size: 15px; }
-        .stat-label { font-weight: 400; opacity: 0.8; font-size: 10px; }
-        .nav-btn.active { background-color: #334155; color: #22c55e; border-bottom: 2px solid #22c55e; }
-        .hidden-view { display: none !important; }
-
-        .ranking-item {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            transition: all 0.3s ease;
-        }
-        .ranking-item:hover { background: rgba(30, 41, 59, 0.8); transform: scale(1.02); }
-
-        @media (max-width: 640px) {
-            .fifa-card { width: 100%; height: auto; aspect-ratio: 210 / 300; padding: 16% 4% 8% 4%; }
-            .overall { font-size: 42px; }
-            .player-name { font-size: 15px; margin-top: 2px; width: 98%; border-bottom-width: 1px; padding-bottom: 2px; }
-            .stat-value { font-size: 13px; }
-            .stat-label { font-size: 8px; }
-            .stats-grid { gap: 4px 8px; margin-top: 8px; } 
-            .stat-item { gap: 3px; }
-        }
-
-        .loader {
-            border: 4px solid #1e293b; border-top: 4px solid #22c55e;
-            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Remove as setas do campo de número para o design dos botões ficar limpo */
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="min-h-screen flex flex-col">
+<!-- Adicionada a classe touch-manipulation para evitar zoom no duplo clique -->
+<body class="min-h-screen flex flex-col touch-manipulation">
 
     <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-2 sm:px-4 flex justify-between items-center h-16">
@@ -187,7 +22,7 @@
             </div>
             <div class="flex gap-1">
                 <button onclick="switchView('public')" id="btn-public" class="nav-btn active px-2 sm:px-4 py-2 rounded-t-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2">
-                    <i data-lucide="layout-grid" class="w-3 h-3 sm:w-4 sm:h-4"></i> Público
+                    <i data-lucide="layout-grid" class="w-3 h-3 sm:w-4 sm:h-4"></i> Ranking
                 </button>
                 <button onclick="switchView('placar')" id="btn-placar" class="nav-btn px-2 sm:px-4 py-2 rounded-t-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2">
                     <i data-lucide="monitor-play" class="w-3 h-3 sm:w-4 sm:h-4"></i> Placar
@@ -205,10 +40,8 @@
     </div>
 
     <main class="max-w-7xl mx-auto w-full p-2 sm:p-4 md:p-8 flex-1">
-        <!-- VISTA PÚBLICA -->
+        
         <section id="view-public" class="animate-in fade-in duration-500">
-            
-            <!-- NOVO CABEÇALHO COM DUAS COLUNAS E GUIA DE ELO -->
             <header class="mb-8 sm:mb-12 mt-4 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 shadow-lg">
                 <div class="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left">
                     <h2 class="text-4xl sm:text-5xl md:text-6xl font-black mb-2 tracking-tight text-white font-['Oswald'] drop-shadow-md">
@@ -216,67 +49,80 @@
                     </h2>
                     <p class="text-sm sm:text-base text-slate-400 font-bold flex items-center justify-center md:justify-start gap-2 bg-slate-900/50 px-4 py-2 rounded-full border border-slate-700/50">
                         <i data-lucide="refresh-cw" class="w-4 h-4 text-green-500"></i> 
-                        Pontuação atualizada automaticamente!
+                        Elo atualizado automaticamente!
                     </p>
                 </div>
 
                 <div class="flex-[1.5] w-full bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-700/50 shadow-inner">
-                    <h3 class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 text-center md:text-left border-b border-slate-700/50 pb-2">
-                        <i data-lucide="bar-chart-2" class="w-3 h-3 inline-block mr-1 mb-0.5"></i> Sistema de Classificação
-                    </h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20 transition-all hover:bg-red-500/20">
-                            <div class="bg-red-900/50 p-1.5 rounded-md border border-red-500/30 shrink-0">
-                                <i data-lucide="flame" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-red-500 leading-tight uppercase tracking-wider">Mestre</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">500+ PTS</p>
+                    <!-- TÍTULO CLICÁVEL COM MELHOR VISIBILIDADE -->
+                    <div class="flex justify-between items-center cursor-pointer select-none p-2 sm:p-3 -mx-2 sm:-mx-3 -mt-2 rounded-xl hover:bg-slate-800/80 transition-colors group" onclick="document.getElementById('eloSystemContent').classList.toggle('hidden'); document.getElementById('eloSystemToggleIcon').classList.toggle('rotate-180');">
+                        <h3 class="text-[10px] sm:text-xs font-bold text-slate-300 uppercase tracking-widest m-0 text-center md:text-left flex items-center gap-1.5">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-green-500"></i> Sistema de Classificação
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] sm:text-[10px] text-slate-400 group-hover:text-green-400 font-bold transition-colors uppercase tracking-wider bg-slate-900 px-2 py-1 rounded-md border border-slate-700 group-hover:border-green-500/30">Ver Níveis</span>
+                            <div class="bg-slate-900 p-1 rounded-full group-hover:bg-green-500/20 border border-slate-700 group-hover:border-green-500/30 transition-all">
+                                <i data-lucide="chevron-down" id="eloSystemToggleIcon" class="w-4 h-4 text-slate-400 group-hover:text-green-400 transition-transform duration-300"></i>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 transition-all hover:bg-fuchsia-500/20">
-                            <div class="bg-fuchsia-900/50 p-1.5 rounded-md border border-fuchsia-500/30 shrink-0">
-                                <i data-lucide="gem" class="w-4 h-4 sm:w-5 sm:h-5 text-fuchsia-400"></i>
+                    </div>
+                    
+                    <!-- CONTEÚDO RECOLHIDO(hidden) -->
+                    <div id="eloSystemContent" class="hidden pt-4 transition-all border-t border-slate-700/50 mt-2">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20 transition-all hover:bg-red-500/20">
+                                <div class="bg-red-900/50 p-1.5 rounded-md border border-red-500/30 shrink-0">
+                                    <i data-lucide="flame" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-red-500 leading-tight uppercase tracking-wider">Mestre</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">800+ ELO</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-fuchsia-400 leading-tight uppercase tracking-wider">Diamante</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">400 - 499</p>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20 transition-all hover:bg-fuchsia-500/20">
+                                <div class="bg-fuchsia-900/50 p-1.5 rounded-md border border-fuchsia-500/30 shrink-0">
+                                    <i data-lucide="gem" class="w-4 h-4 sm:w-5 sm:h-5 text-fuchsia-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-fuchsia-400 leading-tight uppercase tracking-wider">Diamante</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">650 - 799</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 transition-all hover:bg-cyan-500/20">
-                            <div class="bg-cyan-900/50 p-1.5 rounded-md border border-cyan-500/30 shrink-0">
-                                <i data-lucide="shield" class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400"></i>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 transition-all hover:bg-cyan-500/20">
+                                <div class="bg-cyan-900/50 p-1.5 rounded-md border border-cyan-500/30 shrink-0">
+                                    <i data-lucide="shield" class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-cyan-400 leading-tight uppercase tracking-wider">Platina</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">550 - 649</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-cyan-400 leading-tight uppercase tracking-wider">Platina</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">300 - 399</p>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 transition-all hover:bg-yellow-500/20">
+                                <div class="bg-yellow-900/50 p-1.5 rounded-md border border-yellow-500/30 shrink-0">
+                                    <i data-lucide="award" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-yellow-400 leading-tight uppercase tracking-wider">Ouro</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">450 - 549</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 transition-all hover:bg-yellow-500/20">
-                            <div class="bg-yellow-900/50 p-1.5 rounded-md border border-yellow-500/30 shrink-0">
-                                <i data-lucide="award" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400"></i>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-slate-400/10 border border-slate-400/20 transition-all hover:bg-slate-400/20">
+                                <div class="bg-slate-700/50 p-1.5 rounded-md border border-slate-400/30 shrink-0">
+                                    <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-300"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-slate-300 leading-tight uppercase tracking-wider">Prata</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">350 - 449</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-yellow-400 leading-tight uppercase tracking-wider">Ouro</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">200 - 299</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-slate-400/10 border border-slate-400/20 transition-all hover:bg-slate-400/20">
-                            <div class="bg-slate-700/50 p-1.5 rounded-md border border-slate-400/30 shrink-0">
-                                <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-300"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-slate-300 leading-tight uppercase tracking-wider">Prata</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">100 - 199</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 transition-all hover:bg-orange-500/20">
-                            <div class="bg-orange-900/50 p-1.5 rounded-md border border-orange-500/30 shrink-0">
-                                <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] sm:text-xs font-black text-orange-500 leading-tight uppercase tracking-wider">Bronze</p>
-                                <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">0 - 99</p>
+                            <div class="flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 transition-all hover:bg-orange-500/20">
+                                <div class="bg-orange-900/50 p-1.5 rounded-md border border-orange-500/30 shrink-0">
+                                    <i data-lucide="medal" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-black text-orange-500 leading-tight uppercase tracking-wider">Bronze</p>
+                                    <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold">0 - 349</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -294,7 +140,6 @@
                 <div id="publicTeamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-16"></div>
             </div>
 
-            <!-- Seção de Ranking (Hall da Fama) -->
             <div id="rankingSection" class="mt-8 sm:mt-12 border-t border-slate-800 pt-8 sm:pt-12 max-w-4xl mx-auto">
                 <header class="mb-6 sm:mb-10 text-center">
                     <h2 class="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center gap-2 sm:gap-3 text-yellow-500">
@@ -302,12 +147,10 @@
                     </h2>
                     <p class="text-sm sm:text-base text-slate-400">Os maiores vencedores da Turma do Vôlei</p>
                 </header>
-
                 <div id="rankingList" class="bg-slate-800/40 p-3 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-700"></div>
             </div>
         </section>
 
-        <!-- LOGIN ADMIN -->
         <section id="view-login" class="hidden-view flex justify-center py-12 sm:py-20 px-2">
             <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
                 <div class="text-center mb-8">
@@ -322,19 +165,26 @@
             </div>
         </section>
 
-        <!-- PAINEL ADMIN -->
         <section id="view-admin" class="hidden-view animate-in slide-in-from-bottom-4">
             <div id="admin-form-anchor" class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 sm:mb-8 gap-4 mt-4">
                 <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5 sm:w-6 sm:h-6 text-green-500"></i> Gestão do Clube</h2>
                 <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto items-stretch sm:items-center">
+                    
                     <select id="draftStrategy" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto">
+                        <option value="FORA" selected>Estratégia: Fora Forte</option>
                         <option value="DENTRO">Estratégia: Dentro Forte</option>
-                        <option value="FORA">Estratégia: Fora Forte</option>
                     </select>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="drawTeams(3)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> GERAL (3)</button>
-                        <button onclick="drawTeams(4)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> GERAL (4)</button>
+                    
+                    <div class="flex gap-2 w-full sm:w-auto items-center">
+                        <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none">
+                            <span class="pl-3 pr-1 py-2 text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">Time de:</span>
+                            <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.max(2, parseInt(t.value) - 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">-</button>
+                            <input type="number" id="teamSize" value="4" min="2" max="10" class="w-6 sm:w-8 bg-transparent py-2 px-0 text-sm sm:text-base font-bold text-white text-center outline-none appearance-none m-0 pointer-events-none">
+                            <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.min(10, parseInt(t.value) + 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">+</button>
+                        </div>
+                        <button onclick="drawTeams()" class="flex-[2] sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> SORTEAR GERAL</button>
                     </div>
+
                     <div class="flex gap-2 w-full sm:w-auto justify-between sm:justify-start mt-2 sm:mt-0">
                         <button onclick="clearTeams()" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-red-500/30">LIMPAR EQUIPES</button>
                         <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2"><i data-lucide="log-out" class="w-4 h-4"></i> SAIR</button>
@@ -345,13 +195,42 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
                 <div class="lg:col-span-1">
                     <div class="bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl border border-slate-700 lg:sticky top-24">
-                        <h2 id="formTitle" class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center gap-2 text-green-400"><i data-lucide="user-plus" class="w-4 h-4 sm:w-5 sm:h-5"></i> Novo Atleta</h2>
-                        <input type="hidden" id="editId" value="">
-                        <div class="space-y-4">
+                        <!-- TÍTULO CLICÁVEL COM MELHOR VISIBILIDADE -->
+                        <div class="flex justify-between items-center cursor-pointer select-none p-2 sm:p-3 -mx-2 sm:-mx-3 -mt-2 rounded-xl hover:bg-slate-900/50 transition-colors group" onclick="document.getElementById('formContent').classList.toggle('hidden'); document.getElementById('formToggleIcon').classList.toggle('rotate-180');">
+                            <h2 id="formTitle" class="text-lg sm:text-xl font-bold flex items-center gap-2 text-green-400">
+                                <i data-lucide="user-plus" class="w-5 h-5"></i> Novo Atleta
+                            </h2>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] sm:text-xs text-slate-400 group-hover:text-green-400 font-bold transition-colors uppercase tracking-wider bg-slate-900 px-2 py-1 rounded-md border border-slate-700 group-hover:border-green-500/30">Expandir</span>
+                                <div class="bg-slate-900 p-1.5 rounded-full group-hover:bg-green-500/20 border border-slate-700 group-hover:border-green-500/30 transition-all">
+                                    <i data-lucide="chevron-down" id="formToggleIcon" class="w-5 h-5 text-slate-400 group-hover:text-green-400 transition-transform duration-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="formContent" class="space-y-4 mt-4 sm:mt-6 transition-all hidden border-t border-slate-700 pt-4">
+                            <input type="hidden" id="editId" value="">
                             <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm sm:text-base outline-none focus:ring-2 focus:ring-green-500">
                             
+                            <div class="mb-2 mt-4 flex flex-col items-center">
+                                <label class="relative cursor-pointer group/photo flex flex-col items-center">
+                                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover/photo:border-green-500 transition-colors">
+                                        <div id="photoPlaceholder" class="text-slate-500 flex flex-col items-center">
+                                            <i data-lucide="camera" class="w-6 h-6 sm:w-8 sm:h-8 mb-1"></i>
+                                            <span class="text-[9px] sm:text-[10px] font-bold uppercase">Foto</span>
+                                        </div>
+                                        <img id="photoPreview" class="w-full h-full object-cover hidden" src="" alt="Preview">
+                                    </div>
+                                    <input type="file" id="playerPhoto" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                                    <input type="hidden" id="photoData" value="">
+                                </label>
+                                <button type="button" id="btnRemovePhoto" onclick="removePhoto()" class="mt-2 text-xs text-red-400 hover:text-red-300 font-bold hidden flex items-center gap-1 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Remover Foto
+                                </button>
+                            </div>
+
                             <div class="mb-4">
-                                <label class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Categoria para Sorteio</label>
+                                <label class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Categoria</label>
                                 <select id="statCategoria" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 sm:p-3 text-sm sm:text-base font-bold text-slate-200 outline-none focus:ring-2 focus:ring-green-500">
                                     <option value="5">CABEÇA DE CHAVE</option>
                                     <option value="4">AVANÇADO</option>
@@ -371,7 +250,7 @@
                                     <input type="number" id="statVit" value="0" min="0" oninput="if(this.value < 0) this.value = 0;" class="w-full bg-slate-900 border border-yellow-500/30 rounded-lg p-2 sm:p-3 text-sm sm:text-base font-bold text-yellow-500 text-center">
                                 </div>
                                 <div>
-                                    <label class="text-[9px] sm:text-[11px] text-fuchsia-400 font-bold uppercase tracking-wider truncate">Pts Extras</label>
+                                    <label class="text-[9px] sm:text-[11px] text-fuchsia-400 font-bold uppercase tracking-wider truncate">Ajuste Elo</label>
                                     <div class="flex items-center bg-slate-900 border border-fuchsia-500/30 rounded-lg overflow-hidden">
                                         <button type="button" onclick="adjustBonus(-5)" class="px-2 sm:px-3 py-2 sm:py-3 text-fuchsia-400 hover:bg-slate-800 font-black transition-colors">-</button>
                                         <input type="number" id="statBonus" value="0" class="w-full bg-transparent p-0 text-sm sm:text-base font-bold text-fuchsia-400 text-center outline-none">
@@ -381,7 +260,7 @@
                             </div>
                             
                             <div>
-                                <label class="block text-[10px] sm:text-sm font-medium text-slate-400 mb-1 mt-2">Ícone</label>
+                                <label class="block text-[10px] sm:text-sm font-medium text-slate-400 mb-1 mt-2">Ícone (Secundário)</label>
                                 <select id="playerIcon" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 sm:p-3 outline-none focus:ring-2 focus:ring-green-500 text-xs sm:text-sm">
                                     <option value="user">👤 Usuário</option>
                                     <option value="zap">⚡ Raio</option>
@@ -405,7 +284,7 @@
                     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
                         <div class="p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
                             <h2 class="text-lg sm:text-xl font-bold">Jogadores</h2>
-                            <span id="playerCount" class="text-xs sm:text-sm text-slate-400 bg-slate-900 px-2 sm:px-3 py-1 rounded-full">0</span>
+                            <span id="playerCount" class="text-xs sm:text-sm text-slate-400 bg-slate-900 px-2 sm:px-3 py-1 rounded-full border border-slate-700">0 / 0 Selecionados</span>
                         </div>
                         <div class="overflow-x-auto w-full">
                             <table class="w-full text-left min-w-[500px]">
@@ -415,6 +294,7 @@
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Categoria</th>
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Vit / Jogos</th>
+                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Nível</th>
                                         <th class="px-3 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Ações</th>
                                     </tr>
                                 </thead>
@@ -422,14 +302,17 @@
                             </table>
                         </div>
                     </div>
+                    
                     <div id="adminTeamsSection" class="hidden animate-in fade-in">
                          <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
-                            <div class="p-4 sm:p-6 border-b border-slate-700 bg-green-500/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="p-4 sm:p-6 border-b border-slate-700 bg-green-500/10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                                 <h2 class="text-lg sm:text-xl font-bold text-green-400">Equipes Atuais</h2>
-                                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                                    <button onclick="drawTeams(3)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> GERAL (3)</button>
-                                    <button onclick="drawTeams(4)" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors"><i data-lucide="shuffle" class="w-3 h-3 sm:w-4 sm:h-4"></i> GERAL (4)</button>
-                                    <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> CRIAR ESPERA</button>
+                                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                    <select id="waitlistStrategy" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-[10px] sm:text-xs text-slate-300 outline-none font-bold">
+                                        <option value="BALANCEADO" selected>Sortear Time de Fora</option>
+                                        <option value="FORCAR">Time Fora Sempre Entra</option>
+                                    </select>
+                                    <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> ATUALIZAR ESPERA</button>
                                     <button onclick="clearTeams()" class="flex-1 sm:flex-none bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-red-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="trash-2" class="w-3 h-3 sm:w-4 sm:h-4"></i> LIMPAR TODAS</button>
                                 </div>
                             </div>
@@ -440,68 +323,114 @@
             </div>
         </section>
 
-        <!-- TELA DE PLACAR -->
         <section id="view-placar" class="hidden-view animate-in zoom-in-95 duration-500">
-            <div class="max-w-5xl mx-auto bg-slate-800/40 p-4 sm:p-6 md:p-12 rounded-3xl border border-slate-700 shadow-2xl text-center">
-                <h2 class="text-2xl sm:text-3xl font-bold mb-6 sm:mb-10 flex items-center justify-center gap-2 sm:gap-3 text-white">
-                    <i data-lucide="monitor-play" class="w-6 h-6 sm:w-8 sm:h-8 text-green-500"></i> Placar do Jogo
-                </h2>
+            <!-- Removida a caixa de fundo (bg-slate-800/40) e o padding excessivo para ganhar espaço -->
+            <div class="max-w-6xl mx-auto text-center px-1 sm:px-4 flex flex-col items-center">
+                
+                <!-- Título Removido -->
 
-                <div class="flex flex-col md:flex-row gap-4 sm:gap-8 justify-center items-stretch md:items-center">
-                    <!-- TIME 1 (AZUL) -->
-                    <div class="flex-1 w-full bg-blue-900/20 border-2 border-blue-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 flex flex-col items-center relative">
-                        <div class="w-full relative mb-4 sm:mb-6">
-                            <select id="team1Select" style="text-align-last: center;" class="text-lg sm:text-2xl md:text-3xl font-bold text-blue-400 uppercase tracking-widest bg-transparent outline-none focus:border-b border-blue-500 w-full transition-colors cursor-pointer appearance-none pb-2 text-center text-ellipsis overflow-hidden">
-                                <option value="" class="bg-slate-800 text-sm text-slate-300">SELECIONE</option>
+                <!-- QUADRA DE VÔLEI -->
+                <div class="relative w-full flex flex-row border-2 sm:border-4 border-slate-300/80 rounded-xl sm:rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden bg-slate-800 mt-2 sm:mt-4">
+                    
+                    <!-- REDE NO MEIO -->
+                    <div class="absolute z-30 flex items-center justify-center pointer-events-none left-1/2 top-0 bottom-0 -translate-x-1/2 w-4 sm:w-6 md:w-8 h-full">
+                        <!-- Padrão da Rede -->
+                        <div class="absolute inset-0 border-x-2 sm:border-x-4 border-white/80 shadow-[0_0_10px_rgba(0,0,0,0.8)]" style="background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.4) 0, rgba(255,255,255,0.4) 2px, transparent 2px, transparent 8px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.4) 0, rgba(255,255,255,0.4) 2px, transparent 2px, transparent 8px); background-color: rgba(15, 23, 42, 0.4);"></div>
+                    </div>
+
+                    <!-- METADE 1 (AZUL) -->
+                    <div class="flex-1 relative bg-blue-900/30 hover:bg-blue-900/40 transition-colors p-2 pt-3 sm:p-8 md:p-12 landscape:p-2 landscape:pt-3 md:landscape:p-10 min-h-[260px] sm:min-h-[500px] md:min-h-[600px] landscape:min-h-[75vh] md:landscape:min-h-[600px] flex flex-col items-center">
+                        <div class="w-full relative bg-slate-900/60 rounded-lg sm:rounded-xl p-1 sm:p-2 md:p-3 border border-blue-500/30 backdrop-blur-sm z-20 shrink-0">
+                            <select id="team1Select" onchange="updateLiveEloPreview()" style="text-align-last: center;" class="text-[10px] sm:text-2xl md:text-3xl landscape:text-sm md:landscape:text-3xl font-bold text-blue-400 uppercase tracking-widest bg-transparent outline-none w-full transition-colors cursor-pointer appearance-none text-center text-ellipsis overflow-hidden">
+                                <option value="" class="bg-slate-800 text-slate-300">SELECIONE</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-blue-400">
-                                <i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-                            </div>
+                            <div class="pointer-events-none absolute inset-y-0 right-1 sm:right-2 md:right-4 flex items-center text-blue-400"><i data-lucide="chevron-down" class="w-3 h-3 sm:w-6 sm:h-6 landscape:w-4 landscape:h-4 md:landscape:w-6 md:landscape:h-6"></i></div>
                         </div>
-                        <span id="score1" class="text-6xl sm:text-8xl md:text-9xl font-black text-white mb-4 sm:mb-8 font-['Oswald'] drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all leading-none">0</span>
-                        <div class="flex gap-2 sm:gap-4 w-full">
-                            <button onclick="updateScore(1, -1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xl sm:text-2xl transition-all border border-slate-600 active:scale-95">-1</button>
-                            <button onclick="updateScore(1, 1)" class="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl text-3xl sm:text-4xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95">+1</button>
+                        
+                        <!-- NÚMEROS GIGANTES (100% CENTRALIZADOS) -->
+                        <!-- Adicionado select-none para não marcar o texto ao tocar rápido -->
+                        <div class="flex-1 w-full flex items-center justify-center relative z-10 py-2">
+                            <span id="score1" class="select-none text-[120px] sm:text-[150px] md:text-[200px] landscape:text-[160px] md:landscape:text-[220px] font-black text-white font-['Oswald'] drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all leading-none">0</span>
+                        </div>
+                        
+                        <div class="flex gap-2 sm:gap-4 md:gap-6 landscape:gap-3 w-full max-w-[200px] sm:max-w-[280px] md:max-w-[320px] landscape:max-w-[250px] relative z-20 shrink-0">
+                            <button onclick="updateScore(1, -1)" class="select-none flex-1 bg-slate-900/80 hover:bg-slate-800 text-white font-bold py-1.5 sm:py-4 landscape:py-2 md:landscape:py-4 rounded-md sm:rounded-2xl text-sm sm:text-2xl landscape:text-sm md:landscape:text-2xl transition-all border border-slate-600/50 shadow-lg active:scale-95 backdrop-blur-md">-1</button>
+                            <button onclick="updateScore(1, 1)" class="select-none flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-black py-1.5 sm:py-4 landscape:py-2 md:landscape:py-4 rounded-md sm:rounded-2xl text-xl sm:text-4xl landscape:text-xl md:landscape:text-4xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.5)] border border-blue-400/50 active:scale-95">+1</button>
                         </div>
                     </div>
 
-                    <!-- VS -->
-                    <div class="text-3xl sm:text-4xl md:text-6xl font-black text-slate-600 italic font-['Oswald'] py-1 sm:py-4">VS</div>
-
-                    <!-- TIME 2 (VERMELHO) -->
-                    <div class="flex-1 w-full bg-red-900/20 border-2 border-red-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 flex flex-col items-center relative">
-                        <div class="w-full relative mb-4 sm:mb-6">
-                            <select id="team2Select" style="text-align-last: center;" class="text-lg sm:text-2xl md:text-3xl font-bold text-red-400 uppercase tracking-widest bg-transparent outline-none focus:border-b border-red-500 w-full transition-colors cursor-pointer appearance-none pb-2 text-center text-ellipsis overflow-hidden">
-                                <option value="" class="bg-slate-800 text-sm text-slate-300">SELECIONE</option>
+                    <!-- METADE 2 (VERMELHO) -->
+                    <div class="flex-1 relative bg-red-900/30 hover:bg-red-900/40 transition-colors p-2 pt-3 sm:p-8 md:p-12 landscape:p-2 landscape:pt-3 md:landscape:p-10 min-h-[260px] sm:min-h-[500px] md:min-h-[600px] landscape:min-h-[75vh] md:landscape:min-h-[600px] flex flex-col items-center">
+                        <div class="w-full relative bg-slate-900/60 rounded-lg sm:rounded-xl p-1 sm:p-2 md:p-3 border border-red-500/30 backdrop-blur-sm z-20 shrink-0">
+                            <select id="team2Select" onchange="updateLiveEloPreview()" style="text-align-last: center;" class="text-[10px] sm:text-2xl md:text-3xl landscape:text-sm md:landscape:text-3xl font-bold text-red-400 uppercase tracking-widest bg-transparent outline-none w-full transition-colors cursor-pointer appearance-none text-center text-ellipsis overflow-hidden">
+                                <option value="" class="bg-slate-800 text-slate-300">SELECIONE</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-red-400">
-                                <i data-lucide="chevron-down" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-                            </div>
+                            <div class="pointer-events-none absolute inset-y-0 right-1 sm:right-2 md:right-4 flex items-center text-red-400"><i data-lucide="chevron-down" class="w-3 h-3 sm:w-6 sm:h-6 landscape:w-4 landscape:h-4 md:landscape:w-6 md:landscape:h-6"></i></div>
                         </div>
-                        <span id="score2" class="text-6xl sm:text-8xl md:text-9xl font-black text-white mb-4 sm:mb-8 font-['Oswald'] drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all leading-none">0</span>
-                        <div class="flex gap-2 sm:gap-4 w-full">
-                            <button onclick="updateScore(2, -1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 sm:py-4 rounded-xl sm:rounded-2xl text-xl sm:text-2xl transition-all border border-slate-600 active:scale-95">-1</button>
-                            <button onclick="updateScore(2, 1)" class="flex-[2] bg-red-600 hover:bg-red-500 text-white font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl text-3xl sm:text-4xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95">+1</button>
+                        
+                        <!-- NÚMEROS GIGANTES (100% CENTRALIZADOS) -->
+                        <!-- Adicionado select-none para não marcar o texto ao tocar rápido -->
+                        <div class="flex-1 w-full flex items-center justify-center relative z-10 py-2">
+                            <span id="score2" class="select-none text-[120px] sm:text-[150px] md:text-[200px] landscape:text-[160px] md:landscape:text-[220px] font-black text-white font-['Oswald'] drop-shadow-[0_0_20px_rgba(239,68,68,0.6)] transition-all leading-none">0</span>
+                        </div>
+                        
+                        <div class="flex gap-2 sm:gap-4 md:gap-6 landscape:gap-3 w-full max-w-[200px] sm:max-w-[280px] md:max-w-[320px] landscape:max-w-[250px] relative z-20 shrink-0">
+                            <button onclick="updateScore(2, -1)" class="select-none flex-1 bg-slate-900/80 hover:bg-slate-800 text-white font-bold py-1.5 sm:py-4 landscape:py-2 md:landscape:py-4 rounded-md sm:rounded-2xl text-sm sm:text-2xl landscape:text-sm md:landscape:text-2xl transition-all border border-slate-600/50 shadow-lg active:scale-95 backdrop-blur-md">-1</button>
+                            <button onclick="updateScore(2, 1)" class="select-none flex-[2] bg-red-600 hover:bg-red-500 text-white font-black py-1.5 sm:py-4 landscape:py-2 md:landscape:py-4 rounded-md sm:rounded-2xl text-xl sm:text-4xl landscape:text-xl md:landscape:text-4xl transition-all shadow-[0_0_15px_rgba(220,38,38,0.5)] border border-red-400/50 active:scale-95">+1</button>
                         </div>
                     </div>
                 </div>
 
-                <button onclick="resetScore()" class="mt-8 sm:mt-12 bg-slate-700 hover:bg-slate-600 text-slate-300 px-6 sm:px-8 py-3 rounded-full text-sm sm:text-base font-bold inline-flex items-center justify-center gap-2 transition-colors border border-slate-600 active:scale-95">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4 sm:w-5 sm:h-5"></i> ZERAR PLACAR
+                <!-- Elementos que Desaparecem no Modo Horizontal (Mobile) -->
+                <div id="liveEloPreview" class="w-full mt-4 sm:mt-6 max-w-3xl mx-auto hidden landscape:hidden md:landscape:flex bg-slate-900/80 p-3 sm:p-5 rounded-2xl border border-slate-700 shadow-inner flex-col sm:flex-row justify-between items-center gap-3 sm:gap-8 transition-all animate-in fade-in"></div>
+
+                <!-- Botão Zerar menor, isolado fora da quadra e invisível no telemóvel deitado -->
+                <button onclick="resetScore()" class="mt-4 sm:mt-6 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all border border-slate-700 shadow-lg active:scale-95 w-full max-w-[200px] landscape:hidden md:landscape:inline-flex">
+                    <i data-lucide="rotate-ccw" class="w-3 h-3 sm:w-4 sm:h-4"></i> ZERAR PLACAR
                 </button>
+            </div>
+
+            <!-- Times Sorteados Movidos para a Página de Placar -->
+            <div id="placarTeamsSection" class="mt-10 sm:mt-16 border-t border-slate-800 pt-8 sm:pt-12 hidden max-w-7xl mx-auto">
+                <header class="mb-6 sm:mb-10 text-center">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center gap-3">
+                        <i data-lucide="users" class="text-green-500 w-6 h-6 sm:w-8 sm:h-8"></i> Times Sorteados
+                    </h2>
+                </header>
+                <div id="placarTeamsGrid" class="flex flex-wrap justify-center gap-4 sm:gap-6 w-full"></div>
+            </div>
+
+            <!-- Histórico de Partidas (Acordeão) -->
+            <div id="historySection" class="mt-8 sm:mt-12 border-t border-slate-800 pt-8 sm:pt-12 max-w-4xl mx-auto text-left mb-16">
+                <div class="bg-slate-800/60 rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center cursor-pointer select-none hover:bg-slate-800 transition-colors group" onclick="document.getElementById('historyContent').classList.toggle('hidden'); document.getElementById('historyToggleIcon').classList.toggle('rotate-180');">
+                        <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-slate-200 group-hover:text-blue-400 transition-colors">
+                            <i data-lucide="history" class="w-5 h-5 text-blue-500"></i> Histórico de Partidas
+                        </h2>
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            <span class="text-[10px] sm:text-xs text-slate-400 group-hover:text-blue-400 font-bold transition-colors uppercase tracking-widest bg-slate-950 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-slate-800 group-hover:border-blue-500/30">Ver Jogos</span>
+                            <div class="bg-slate-950 p-1.5 rounded-full group-hover:bg-blue-500/20 border border-slate-800 group-hover:border-blue-500/30 transition-all">
+                                <i data-lucide="chevron-down" id="historyToggleIcon" class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-transform duration-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="historyContent" class="hidden p-4 sm:p-6 transition-all bg-slate-800/30">
+                        <div id="historyList" class="space-y-6">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- MODAL DE VITÓRIA -->
         <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">
-            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center transform transition-all scale-100">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center">
                 <i data-lucide="trophy" class="w-16 h-16 sm:w-20 sm:h-20 text-yellow-400 mb-4 animate-bounce"></i>
                 <h2 class="text-2xl sm:text-3xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
                 <p class="text-slate-300 mb-4 sm:mb-6 text-base sm:text-lg">A equipe vencedora é:</p>
-                <div id="victoryTeamName" class="text-2xl sm:text-4xl font-black text-yellow-400 mb-6 sm:mb-8 px-4 sm:px-6 py-3 bg-slate-900 rounded-2xl border border-yellow-500/30 w-full truncate">EQUIPE 1</div>
-                
+                <div id="victoryTeamName" class="text-2xl sm:text-4xl font-black text-yellow-400 mb-3 px-4 sm:px-6 py-3 bg-slate-900 rounded-2xl border border-yellow-500/30 w-full truncate">EQUIPE 1</div>
+                <div id="victoryEloInfo" class="w-full text-sm sm:text-base mb-6 hidden bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-inner"></div>
                 <p id="victoryTeamWarning" class="text-xs text-red-400 mb-4 hidden">Para contabilizar o ranking, os times precisam estar selecionados no placar.</p>
-                
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
                     <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 sm:py-4 rounded-xl text-xs sm:text-sm transition-all active:scale-95">APENAS ZERAR</button>
                     <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 sm:py-4 rounded-xl text-sm sm:text-base transition-all active:scale-95 shadow-[0_0_15px_rgba(34,197,94,0.4)]">SALVAR RANKING</button>
@@ -509,9 +438,8 @@
             </div>
         </div>
 
-        <!-- MODAL DE CONFIRMAÇÃO GENÉRICA -->
         <div id="confirmModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 px-4">
-            <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 max-w-sm w-full text-center transform transition-all scale-100">
+            <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 max-w-sm w-full text-center">
                 <div class="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-500/30">
                     <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                 </div>
@@ -524,17 +452,31 @@
             </div>
         </div>
 
+        <div id="movePlayerModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-200 px-4">
+            <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-blue-500 max-w-sm w-full text-center">
+                <i data-lucide="arrow-right-left" class="w-10 h-10 text-blue-500 mx-auto mb-4"></i>
+                <h3 class="text-xl font-bold text-white mb-2">Mover Jogador</h3>
+                <p id="movePlayerName" class="text-slate-300 mb-4 text-sm font-bold bg-slate-900 py-2 rounded-lg border border-slate-700"></p>
+                <div class="mb-6 text-left">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Transferir para:</label>
+                    <select id="moveDestination" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"></select>
+                </div>
+                <div class="flex gap-3 w-full">
+                    <button onclick="closeMoveModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-colors text-sm">Cancelar</button>
+                    <button onclick="confirmMovePlayer()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-[0_0_15px_rgba(59,130,246,0.4)]">Transferir</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- BOTÃO VOLTAR AO TOPO -->
-    <div class="w-full flex justify-center pb-8 pt-4">
+    <div class="w-full flex justify-center pb-8 pt-4 landscape:hidden md:landscape:flex">
         <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 transition-all border border-slate-700 shadow-lg active:scale-95">
             <i data-lucide="arrow-up" class="w-4 h-4"></i> VOLTAR AO TOPO
         </button>
     </div>
 
-    <!-- RODAPÉ DE CRÉDITOS -->
-    <footer class="w-full py-6 sm:py-8 mt-auto border-t border-slate-800 text-center text-slate-500 text-xs sm:text-sm">
+    <footer class="w-full py-6 sm:py-8 mt-auto border-t border-slate-800 text-center text-slate-500 text-xs sm:text-sm landscape:hidden md:landscape:block">
         Desenvolvido por <span class="text-slate-300 font-bold">JLDesigner</span> e <span class="text-slate-300 font-bold">RenatoEng</span>
     </footer>
 
@@ -543,668 +485,6 @@
         <span id="toastMsg" class="truncate"></span>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCWjwuRy4BVliXYUog-_qy6I8vWEPJBbHk",
-            authDomain: "app-volei-34f53.firebaseapp.com",
-            projectId: "app-volei-34f53",
-            storageBucket: "app-volei-34f53.firebasestorage.app",
-            messagingSenderId: "290138844370",
-            appId: "1:290138844370:web:19a4c9b36fc8297668d10b"
-        };
-        const appId = 'app-volei-34f53'; 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        const playersRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
-        const teamsRef = collection(db, 'artifacts', appId, 'public', 'data', 'teams');
-
-        let players = [];
-        let drawnTeams = [];
-        let selectedPlayerIds = new Set();
-        let isFirstLoad = true;
-        let isAuthenticated = false;
-        let currentUser = null;
-        let showAllRanking = false;
-        
-        let score1 = 0;
-        let score2 = 0;
-
-        let confirmActionCallback = null;
-
-        window.openConfirmModal = (title, message, callback) => {
-            document.getElementById('confirmTitle').innerText = title;
-            document.getElementById('confirmMessage').innerText = message;
-            confirmActionCallback = callback;
-            document.getElementById('confirmModal').classList.remove('hidden');
-            document.getElementById('confirmModal').classList.add('flex');
-            lucide.createIcons();
-        };
-
-        window.closeConfirmModal = () => {
-            document.getElementById('confirmModal').classList.add('hidden');
-            document.getElementById('confirmModal').classList.remove('flex');
-            confirmActionCallback = null;
-        };
-
-        document.getElementById('btnConfirmAction').addEventListener('click', () => {
-            if (confirmActionCallback) confirmActionCallback();
-            closeConfirmModal();
-        });
-
-        const getLevelInfo = (pontos) => {
-            if (pontos < 100) return { type: 'nivel1', label: 'BRONZE', bg: 'bg-orange-900/40', text: 'text-orange-400', dot: 'bg-orange-500' };
-            if (pontos < 200) return { type: 'nivel2', label: 'PRATA', bg: 'bg-slate-500/20', text: 'text-slate-400', dot: 'bg-slate-400' };
-            if (pontos < 300) return { type: 'nivel3', label: 'OURO', bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500' };
-            if (pontos < 400) return { type: 'nivel4', label: 'PLATINA', bg: 'bg-cyan-500/20', text: 'text-cyan-400', dot: 'bg-cyan-500' };
-            if (pontos < 500) return { type: 'nivel5', label: 'DIAMANTE', bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', dot: 'bg-fuchsia-500' };
-            return { type: 'nivel6', label: 'MESTRE', bg: 'bg-red-600/20', text: 'text-red-500', dot: 'bg-red-600' };
-        };
-
-        const getTeamName = (team) => {
-            if (!team.players || team.players.length === 0) return `EQUIPE ${team.label}`;
-            const headPlayer = team.players.reduce((max, p) => (p.categoria || 1) > (max.categoria || 1) ? p : max, team.players[0]);
-            const firstName = headPlayer.name.split(' ')[0].toUpperCase();
-            return `TIME DE ${firstName}`;
-        };
-
-        const getCategoryInfo = (cat) => {
-            const c = parseInt(cat) || 1;
-            if (c === 5) return { label: 'CABEÇA DE CHAVE', bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500' };
-            if (c === 4) return { label: 'AVANÇADO', bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500' };
-            if (c === 3) return { label: 'MÉDIO', bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500/30', dot: 'bg-lime-500' };
-            if (c === 2) return { label: 'BÁSICO', bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500' };
-            return { label: 'INICIANTE', bg: 'bg-stone-500/20', text: 'text-stone-400', border: 'border-stone-500/30', dot: 'bg-stone-500' };
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) { document.getElementById('loading-overlay').classList.add('hidden'); setupSync(); }
-        });
-        signInAnonymously(auth);
-
-        const setupSync = () => {
-            onSnapshot(playersRef, (snapshot) => {
-                players = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if (isFirstLoad) {
-                    players.forEach(p => selectedPlayerIds.add(p.id));
-                    isFirstLoad = false;
-                }
-                renderAll();
-            });
-            onSnapshot(teamsRef, (snapshot) => {
-                drawnTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderAll();
-            });
-        };
-
-        window.togglePlayerSelection = (id, isChecked) => {
-            if (isChecked) selectedPlayerIds.add(id);
-            else selectedPlayerIds.delete(id);
-            const allSelected = players.length > 0 && players.every(p => selectedPlayerIds.has(p.id));
-            const selectAllCheckbox = document.getElementById('selectAll');
-            if(selectAllCheckbox) selectAllCheckbox.checked = allSelected;
-        };
-
-        window.toggleAllPlayers = (isChecked) => {
-            if (isChecked) players.forEach(p => selectedPlayerIds.add(p.id));
-            else selectedPlayerIds.clear();
-            renderAdmin();
-        };
-
-        window.adjustBonus = (change) => {
-            const input = document.getElementById('statBonus');
-            let val = parseInt(input.value) || 0;
-            input.value = val + change;
-        };
-
-        window.savePlayer = async () => {
-            const name = document.getElementById('playerName').value.trim();
-            const categoria = parseInt(document.getElementById('statCategoria').value);
-            const partidas = Math.max(0, parseInt(document.getElementById('statJogos').value) || 0);
-            const vitorias = Math.max(0, parseInt(document.getElementById('statVit').value) || 0);
-            const deltaBonus = parseInt(document.getElementById('statBonus').value) || 0;
-            const icon = document.getElementById('playerIcon').value || 'user';
-            const editId = document.getElementById('editId').value;
-
-            if (!name) { showToast("Preencha o nome!", "error"); return; }
-            
-            const existingPlayer = editId ? players.find(x => x.id === editId) : null;
-            const streak = existingPlayer ? (existingPlayer.streak || 0) : 0;
-            
-            const currentBonus = existingPlayer ? (existingPlayer.bonus || 0) : 0;
-            const bonus = currentBonus + deltaBonus;
-
-            const validVitorias = Math.min(partidas, vitorias); 
-            const derrotas = partidas - validVitorias;
-            const des = partidas > 0 ? Math.round((validVitorias / partidas) * 100) : 0;
-            
-            const pontos = Math.max(0, (validVitorias * 20) - (derrotas * 15) + bonus);
-            const lvlInfo = getLevelInfo(pontos);
-            
-            const playerObj = { 
-                name, categoria, partidas, des, pontos, icon, vitorias: validVitorias,
-                streak, bonus,
-                type: lvlInfo.type,
-                updatedAt: Date.now() 
-            };
-
-            try {
-                if (editId) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', editId), playerObj);
-                    showToast("Atleta atualizado!");
-                } else {
-                    const docRef = await addDoc(playersRef, playerObj);
-                    selectedPlayerIds.add(docRef.id);
-                    showToast("Atleta cadastrado!");
-                }
-                resetForm();
-            } catch (e) { showToast("Erro ao salvar", "error"); }
-        };
-
-        window.deletePlayer = (id) => {
-            openConfirmModal("Excluir Atleta", "Tem a certeza que deseja excluir este atleta permanentemente?", async () => {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', id));
-                    showToast("Atleta removido.", "error");
-                } catch (e) { showToast("Erro ao excluir", "error"); }
-            });
-        };
-
-        window.editPlayer = (id) => {
-            const p = players.find(x => x.id === id);
-            if (!p) return;
-            document.getElementById('playerName').value = p.name;
-            document.getElementById('statCategoria').value = p.categoria || 1;
-            document.getElementById('statJogos').value = p.partidas || 0;
-            document.getElementById('statVit').value = p.vitorias || 0;
-            document.getElementById('statBonus').value = '0'; 
-            document.getElementById('playerIcon').value = p.icon || 'user';
-            document.getElementById('editId').value = id;
-            document.getElementById('formTitle').innerHTML = `<i data-lucide="edit-3"></i> Editar Atleta`;
-            document.getElementById('btnSave').innerText = "ATUALIZAR";
-            document.getElementById('btnCancel').classList.remove('hidden');
-            lucide.createIcons();
-            document.getElementById('admin-form-anchor').scrollIntoView({ behavior: 'smooth' });
-        };
-
-        window.resetForm = () => {
-            document.getElementById('playerName').value = '';
-            document.getElementById('editId').value = '';
-            document.getElementById('statCategoria').value = '5';
-            document.getElementById('statJogos').value = '0';
-            document.getElementById('statVit').value = '0';
-            document.getElementById('statBonus').value = '0';
-            document.getElementById('playerIcon').value = 'user';
-            document.getElementById('formTitle').innerHTML = `<i data-lucide="user-plus"></i> Novo Atleta`;
-            document.getElementById('btnSave').innerText = "SALVAR";
-            document.getElementById('btnCancel').classList.add('hidden');
-            lucide.createIcons();
-        };
-
-        window.redrawTeamWithWaitlist = async (teamId) => {
-            openConfirmModal("Sortear Substituições", "Deseja retirar os jogadores da espera e montar um novo time substituindo este?", async () => {
-                const targetTeamDoc = drawnTeams.find(t => t.id === teamId);
-                if (!targetTeamDoc) return;
-
-                const waitlistTeamDoc = drawnTeams.find(t => t.isWaitlist);
-                const waitlistIds = new Set(waitlistTeamDoc ? waitlistTeamDoc.players.map(p => p.id) : []);
-                const allPlayersInTeams = new Set(drawnTeams.filter(t => !t.isWaitlist).flatMap(t => t.players.map(p => p.id)));
-                const activePlayers = players.filter(p => selectedPlayerIds.has(p.id));
-                const newlySelected = activePlayers.filter(p => !allPlayersInTeams.has(p.id) && !waitlistIds.has(p.id));
-                
-                let incomingPlayers = [...(waitlistTeamDoc ? waitlistTeamDoc.players : []), ...newlySelected];
-
-                if (incomingPlayers.length === 0) {
-                    showToast("Não há ninguém na lista de espera para entrar!", "error");
-                    return;
-                }
-
-                incomingPlayers = incomingPlayers.sort(() => Math.random() - 0.5);
-
-                let originalTeamPlayers = [...targetTeamDoc.players];
-                let newTeamPlayers = [];
-                let nextWaitlist = [];
-                let swapCount = Math.min(incomingPlayers.length, originalTeamPlayers.length);
-
-                for (let i = 0; i < swapCount; i++) {
-                    let inP = incomingPlayers[i];
-                    let closestIdx = 0;
-                    let minDiff = Infinity;
-                    for(let j = 0; j < originalTeamPlayers.length; j++) {
-                        let diff = Math.abs((originalTeamPlayers[j].categoria || 1) - (inP.categoria || 1));
-                        if(diff < minDiff) { minDiff = diff; closestIdx = j; }
-                    }
-                    let outP = originalTeamPlayers.splice(closestIdx, 1)[0];
-                    nextWaitlist.push(outP);
-                    newTeamPlayers.push(inP);
-                }
-                newTeamPlayers.push(...originalTeamPlayers);
-
-                for (let i = swapCount; i < incomingPlayers.length; i++) { nextWaitlist.push(incomingPlayers[i]); }
-
-                let localResult = preventDoubleCabeças({ teams: [newTeamPlayers], waitlist: nextWaitlist }, new Set());
-                newTeamPlayers = localResult.teams[0].sort((a, b) => {
-                    const catDiff = (b.categoria || 1) - (a.categoria || 1);
-                    if (catDiff !== 0) return catDiff;
-                    return (b.pontos || 0) - (a.pontos || 0);
-                });
-                nextWaitlist = localResult.waitlist.sort((a, b) => {
-                    const catDiff = (b.categoria || 1) - (a.categoria || 1);
-                    if (catDiff !== 0) return catDiff;
-                    return (b.pontos || 0) - (a.pontos || 0);
-                });
-
-                try {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', targetTeamDoc.id), { players: newTeamPlayers });
-                    if (waitlistTeamDoc) {
-                        if (nextWaitlist.length > 0) {
-                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: nextWaitlist });
-                        } else {
-                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id));
-                        }
-                    } else if (nextWaitlist.length > 0) {
-                        await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: nextWaitlist });
-                    }
-                    showToast("Time atualizado com a Lista de Espera!", "success");
-                } catch(e) { console.error(e); showToast("Erro ao substituir equipe", "error"); }
-            });
-        };
-
-        window.drawTeams = async (size) => {
-            const activePlayers = players.filter(p => selectedPlayerIds.has(p.id));
-            if (activePlayers.length === 0) { showToast("Selecione os atletas para o jogo!", "error"); return; }
-
-            const numTeamsToDraw = Math.floor(activePlayers.length / size);
-            if (numTeamsToDraw === 0) { showToast(`Selecione pelo menos ${size} jogadores para o sorteio!`, "error"); return; }
-
-            const strategy = document.getElementById('draftStrategy').value;
-            let result = { teams: [], waitlist: [] };
-            strategy === 'FORA' ? result = balanceStrongOutside(activePlayers, size) : result = balanceStrongInside(activePlayers, size);
-            
-            result = preventDoubleCabeças(result, new Set());
-
-            openConfirmModal("Sorteio Geral", "Deseja realizar um novo sorteio geral? Todas as equipes atuais serão desfeitas.", async () => {
-                try {
-                    const deletePromises = drawnTeams.map(t => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id)));
-                    await Promise.all(deletePromises);
-                    for (let i = 0; i < result.teams.length; i++) {
-                        let sortedTeam = result.teams[i].sort((a, b) => {
-                            const catDiff = (b.categoria || 1) - (a.categoria || 1);
-                            if (catDiff !== 0) return catDiff;
-                            return (b.pontos || 0) - (a.pontos || 0);
-                        });
-                        await addDoc(teamsRef, { label: (i + 1).toString(), players: sortedTeam });
-                    }
-                    if (result.waitlist.length > 0) {
-                        let sortedWaitlist = result.waitlist.sort((a, b) => {
-                            const catDiff = (b.categoria || 1) - (a.categoria || 1);
-                            if (catDiff !== 0) return catDiff;
-                            return (b.pontos || 0) - (a.pontos || 0);
-                        });
-                        await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: sortedWaitlist });
-                        showToast(`Sorteio concluído! ${result.waitlist.length} atleta(s) na espera.`);
-                    } else { showToast("Equipes perfeitamente equilibradas geradas!"); }
-                } catch(e) { showToast("Erro ao realizar Sorteio Geral", "error"); }
-            });
-        };
-
-        function preventDoubleCabeças(result, mandatoryIds) {
-            let teams = result.teams.map(t => [...t]);
-            let waitlist = [...result.waitlist];
-            for (let i = 0; i < teams.length; i++) {
-                let team = teams[i];
-                let cabecas = team.filter(p => parseInt(p.categoria) === 5);
-                while (cabecas.length > 1) {
-                    let toMoveIndex = cabecas.findIndex(p => !mandatoryIds.has(p.id));
-                    let toMove = toMoveIndex !== -1 ? cabecas.splice(toMoveIndex, 1)[0] : cabecas.pop();
-                    let swapped = false;
-                    let teamWithZeroIndex = teams.findIndex(t => t.filter(p => parseInt(p.categoria) === 5).length === 0);
-                    if (teamWithZeroIndex !== -1) {
-                        let otherTeam = teams[teamWithZeroIndex];
-                        let nonCabecas = otherTeam.filter(p => parseInt(p.categoria) !== 5).sort((a, b) => (b.categoria || 1) - (a.categoria || 1));
-                        if (nonCabecas.length > 0) {
-                            let swapTarget = nonCabecas[0];
-                            team.splice(team.indexOf(toMove), 1, swapTarget);
-                            otherTeam.splice(otherTeam.indexOf(swapTarget), 1, toMove);
-                            swapped = true;
-                        }
-                    }
-                    if (!swapped && waitlist.length > 0) {
-                        let nonCabecasWait = waitlist.filter(p => parseInt(p.categoria) !== 5).sort((a, b) => (b.categoria || 1) - (a.categoria || 1));
-                        if (nonCabecasWait.length > 0) {
-                            let swapTarget = nonCabecasWait[0];
-                            team.splice(team.indexOf(toMove), 1, swapTarget);
-                            waitlist.splice(waitlist.indexOf(swapTarget), 1, toMove);
-                            swapped = true;
-                        }
-                    }
-                    if (!swapped) break; 
-                }
-            }
-            return { teams, waitlist };
-        }
-
-        function balanceStrongInside(playersList, playersPerTeam) {
-            const numberOfTeams = Math.floor(playersList.length / playersPerTeam);
-            if (numberOfTeams === 0) return { teams: [], waitlist: [...playersList] };
-            let shuffledPlayers = [...playersList];
-            for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
-            }
-            let sortedPlayers = shuffledPlayers.sort((a, b) => (b.categoria || 1) - (a.categoria || 1));
-            let randomizedPlayers = [];
-            for (let i = 0; i < sortedPlayers.length; i += numberOfTeams) {
-                let chunk = sortedPlayers.slice(i, i + numberOfTeams);
-                for (let k = chunk.length - 1; k > 0; k--) {
-                    const j = Math.floor(Math.random() * (k + 1));
-                    [chunk[k], chunk[j]] = [chunk[j], chunk[k]];
-                }
-                randomizedPlayers.push(...chunk);
-            }
-            const activePlayersCount = numberOfTeams * playersPerTeam;
-            const activePlayers = randomizedPlayers.slice(0, activePlayersCount);
-            const waitlist = randomizedPlayers.slice(activePlayersCount);
-            const teams = Array.from({ length: numberOfTeams }, () => []);
-            let direction = 1, currentTeamIndex = 0;
-            for (const player of activePlayers) {
-                teams[currentTeamIndex].push(player);
-                currentTeamIndex += direction;
-                if (currentTeamIndex >= numberOfTeams) { direction = -1; currentTeamIndex = numberOfTeams - 1; }
-                else if (currentTeamIndex < 0) { direction = 1; currentTeamIndex = 0; }
-            }
-            return { teams, waitlist };
-        }
-
-        function balanceStrongOutside(playersList, playersPerTeam) {
-            const numberOfTeams = Math.floor(playersList.length / playersPerTeam);
-            const waitlistSize = playersList.length % playersPerTeam;
-            if (numberOfTeams === 0) return { teams: [], waitlist: [...playersList] };
-            const bucketsCount = waitlistSize > 0 ? numberOfTeams + 1 : numberOfTeams;
-            let shuffledPlayers = [...playersList];
-            for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
-            }
-            let sortedPlayers = shuffledPlayers.sort((a, b) => (b.categoria || 1) - (a.categoria || 1));
-            let randomizedPlayers = [];
-            for (let i = 0; i < sortedPlayers.length; i += bucketsCount) {
-                let chunk = sortedPlayers.slice(i, i + bucketsCount);
-                for (let k = chunk.length - 1; k > 0; k--) {
-                    const j = Math.floor(Math.random() * (k + 1));
-                    [chunk[k], chunk[j]] = [chunk[j], chunk[k]];
-                }
-                randomizedPlayers.push(...chunk);
-            }
-            const teams = Array.from({ length: numberOfTeams }, () => []);
-            const waitlist = [];
-            const buckets = [...teams];
-            if (waitlistSize > 0) buckets.push(waitlist);
-            const capacities = buckets.map((_, i) => i < numberOfTeams ? playersPerTeam : waitlistSize);
-            const draftOrder = [];
-            const currentCaps = new Array(buckets.length).fill(0);
-            let dir = 1, cur = 0;
-            while (draftOrder.length < playersList.length) {
-                if (currentCaps[cur] < capacities[cur]) { draftOrder.push(cur); currentCaps[cur]++; }
-                const next = cur + dir;
-                if (next >= buckets.length || next < 0) { dir *= -1; } else { cur = next; }
-            }
-            randomizedPlayers.forEach((player, index) => { const bucketIndex = draftOrder[index]; buckets[bucketIndex].push(player); });
-            return { teams, waitlist };
-        }
-
-        window.deleteTeam = (id) => {
-            openConfirmModal("Remover Equipe", "Deseja remover esta equipe do sorteio?", async () => {
-                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', id)); showToast("Equipe removida.", "info"); } catch (e) { showToast("Erro ao excluir", "error"); }
-            });
-        };
-
-        window.clearTeams = () => {
-            openConfirmModal("Limpar Todas as Equipes", "Deseja realmente excluir todas as equipes geradas?", async () => {
-                try {
-                    const deletePromises = drawnTeams.map(t => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id)));
-                    await Promise.all(deletePromises);
-                    showToast("Todas as equipes foram removidas!", "info");
-                } catch (e) { showToast("Erro ao limpar equipes", "error"); }
-            });
-        };
-
-        window.createWaitlist = () => {
-            const activePlayers = players.filter(p => selectedPlayerIds.has(p.id));
-            if (activePlayers.length === 0) { showToast("Selecione os atletas para adicionar à espera!", "error"); return; }
-            openConfirmModal("Criar Lista de Espera", "Deseja mover os jogadores selecionados para a Lista de Espera?", async () => {
-                try {
-                    const waitlistTeamDoc = drawnTeams.find(t => t.isWaitlist);
-                    let currentWaitlistPlayers = waitlistTeamDoc ? [...waitlistTeamDoc.players] : [];
-                    const existingIds = new Set(currentWaitlistPlayers.map(p => p.id));
-                    const newPlayersToAdd = activePlayers.filter(p => !existingIds.has(p.id));
-                    if (newPlayersToAdd.length === 0 && activePlayers.length > 0) { showToast("Os jogadores selecionados já estão na espera!", "info"); return; }
-                    const updatedWaitlist = [...currentWaitlistPlayers, ...newPlayersToAdd].sort((a, b) => {
-                        const catDiff = (b.categoria || 1) - (a.categoria || 1);
-                        if (catDiff !== 0) return catDiff;
-                        return (b.pontos || 0) - (a.pontos || 0);
-                    });
-                    const updatePromises = [];
-                    for (const team of drawnTeams) {
-                        if (!team.isWaitlist) {
-                            const filteredPlayers = team.players.filter(p => !selectedPlayerIds.has(p.id));
-                            if (filteredPlayers.length !== team.players.length) {
-                                if (filteredPlayers.length === 0) updatePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id)));
-                                else updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id), { players: filteredPlayers }));
-                            }
-                        }
-                    }
-                    if (waitlistTeamDoc) updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: updatedWaitlist }));
-                    else updatePromises.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: updatedWaitlist }));
-                    await Promise.all(updatePromises);
-                    showToast("Lista de Espera criada/atualizada com sucesso!", "success");
-                } catch (e) { showToast("Erro ao criar lista de espera", "error"); }
-            });
-        };
-
-        window.toggleRanking = () => { showAllRanking = !showAllRanking; renderRanking(); };
-        window.handleLogin = () => {
-            if (document.getElementById('loginUser').value === 'admin' && document.getElementById('loginPass').value === '12345') { isAuthenticated = true; switchView('admin'); }
-            else showToast("Acesso Negado!", "error");
-        };
-        window.handleLogout = () => { isAuthenticated = false; switchView('public'); };
-        window.switchView = (view) => {
-            ['public', 'login', 'admin', 'placar'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden-view'));
-            ['btn-public', 'btn-admin', 'btn-placar'].forEach(b => document.getElementById(b).classList.remove('active'));
-            if (view === 'public') { document.getElementById('view-public').classList.remove('hidden-view'); document.getElementById('btn-public').classList.add('active'); }
-            else if (view === 'placar') { document.getElementById('view-placar').classList.remove('hidden-view'); document.getElementById('btn-placar').classList.add('active'); }
-            else { document.getElementById('btn-admin').classList.add('active'); isAuthenticated ? document.getElementById('view-admin').classList.remove('hidden-view') : document.getElementById('view-login').classList.remove('hidden-view'); }
-            renderAll();
-        };
-
-        window.updateScore = (team, change) => {
-            if (team === 1) { score1 = Math.max(0, score1 + change); document.getElementById('score1').innerText = score1; }
-            else { score2 = Math.max(0, score2 + change); document.getElementById('score2').innerText = score2; }
-            checkWinCondition();
-        };
-
-        function checkWinCondition() {
-            const isTradicionalWin = (score1 >= 21 || score2 >= 21) && Math.abs(score1 - score2) >= 2;
-            const isCapoteWin = (score1 >= 8 && score2 === 0) || (score2 >= 8 && score1 === 0);
-            if (isTradicionalWin || isCapoteWin) {
-                const select1 = document.getElementById('team1Select'), select2 = document.getElementById('team2Select');
-                let winnerName = score1 > score2 ? (select1.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)") : (select2.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)");
-                document.getElementById('victoryTeamName').innerText = winnerName;
-                if (!select1.value || !select2.value || select1.value === select2.value) { document.getElementById('btnSaveResult').classList.add('hidden'); document.getElementById('victoryTeamWarning').classList.remove('hidden'); }
-                else { document.getElementById('btnSaveResult').classList.remove('hidden'); document.getElementById('victoryTeamWarning').classList.add('hidden'); }
-                document.getElementById('victoryModal').classList.remove('hidden'); document.getElementById('victoryModal').classList.add('flex');
-                if (isCapoteWin) showToast("🔥 VITÓRIA POR CAPOTE (8 a 0)! 🔥", "success");
-                lucide.createIcons();
-            }
-        }
-
-        window.saveAndCloseVictoryModal = async () => {
-            const val1 = document.getElementById('team1Select').value, val2 = document.getElementById('team2Select').value;
-            if (val1 && val2 && val1 !== val2) {
-                const btn = document.getElementById('btnSaveResult');
-                const originalText = btn.innerText;
-                btn.disabled = true; btn.innerText = "SALVANDO...";
-                const team1 = drawnTeams.find(t => t.label === val1), team2 = drawnTeams.find(t => t.label === val2);
-                const winnerLabel = score1 > score2 ? val1 : val2;
-                const playersToUpdate = [];
-                if (team1) playersToUpdate.push({ team: team1, isWinner: winnerLabel === val1 });
-                if (team2) playersToUpdate.push({ team: team2, isWinner: winnerLabel === val2 });
-                try {
-                    for (const group of playersToUpdate) {
-                        for (const playerRef of group.team.players) {
-                            const p = players.find(x => x.id === playerRef.id);
-                            if (p) {
-                                const pJogos = (p.partidas || 0) + 1;
-                                const isWin = group.isWinner;
-                                let pVitorias = p.vitorias || 0, pStreak = p.streak || 0, pBonus = p.bonus || 0;
-                                if (isWin) { pVitorias += 1; pStreak = pStreak > 0 ? pStreak + 1 : 1; if (pStreak >= 3) pBonus += 10; }
-                                else { pStreak = pStreak < 0 ? pStreak - 1 : -1; if (pStreak <= -3) pBonus -= 5; }
-                                const pDerrotas = pJogos - pVitorias, pDes = Math.round((pVitorias / pJogos) * 100);
-                                const pPontos = Math.max(0, (pVitorias * 20) - (pDerrotas * 15) + pBonus);
-                                const lvlInfo = getLevelInfo(pPontos);
-                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), { partidas: pJogos, vitorias: pVitorias, des: pDes, pontos: pPontos, streak: pStreak, bonus: pBonus, type: lvlInfo.type });
-                            }
-                        }
-                    }
-                    showToast("Resultado salvo e Ranking atualizado!");
-                } catch (e) { showToast("Erro ao salvar resultado", "error"); }
-                finally { btn.disabled = false; btn.innerText = originalText; }
-            }
-            closeVictoryModalOnly();
-        };
-
-        window.closeVictoryModalOnly = () => {
-            document.getElementById('victoryModal').classList.add('hidden'); document.getElementById('victoryModal').classList.remove('flex');
-            score1 = 0; score2 = 0; document.getElementById('score1').innerText = score1; document.getElementById('score2').innerText = score2;
-        };
-
-        window.resetScore = () => {
-            openConfirmModal("Zerar Placar", "Deseja realmente zerar o placar da partida atual?", () => {
-                score1 = 0; score2 = 0; document.getElementById('score1').innerText = score1; document.getElementById('score2').innerText = score2;
-                document.getElementById('team1Select').value = ''; document.getElementById('team2Select').value = ''; showToast("Placar zerado!", "info");
-            });
-        };
-
-        function renderAll() { renderPublic(); renderAdmin(); renderTeams(); renderRanking(); renderPlacarTeams(); }
-
-        function renderPlacarTeams() {
-            const select1 = document.getElementById('team1Select'), select2 = document.getElementById('team2Select');
-            if (!select1 || !select2) return;
-            const val1 = select1.value, val2 = select2.value;
-            let optionsHTML1 = '<option value="" class="bg-slate-800 text-sm text-slate-400">SELECIONE</option>', optionsHTML2 = optionsHTML1;
-            const validTeams = drawnTeams.filter(t => !t.isWaitlist).sort((a,b) => parseInt(a.label) - parseInt(b.label));
-            validTeams.forEach(t => { const teamName = getTeamName(t); const opt = `<option value="${t.label}" class="bg-slate-800 text-sm text-white">${teamName}</option>`; optionsHTML1 += opt; optionsHTML2 += opt; });
-            select1.innerHTML = optionsHTML1; select2.innerHTML = optionsHTML2;
-            if (validTeams.find(t => t.label === val1)) select1.value = val1;
-            if (validTeams.find(t => t.label === val2)) select2.value = val2;
-        }
-
-        function renderRanking() {
-            const list = document.getElementById('rankingList');
-            const sortedPlayers = [...players].sort((a,b) => (b.vitorias || 0) - (a.vitorias || 0));
-            if (sortedPlayers.length === 0) { list.innerHTML = `<p class="opacity-50 text-sm text-center py-4">Aguardando resultados dos jogos...</p>`; return; }
-            const top3 = sortedPlayers.slice(0, 3), rest = sortedPlayers.slice(3);
-            let podiumHTML = '<div class="flex justify-center items-end gap-1 sm:gap-6 mb-8 mt-6">';
-            [1, 0, 2].forEach(pos => {
-                if (top3[pos]) {
-                    const p = top3[pos], heightClass = pos === 0 ? 'h-32 sm:h-40' : (pos === 1 ? 'h-24 sm:h-32' : 'h-20 sm:h-28');
-                    const isGold = pos === 0, isSilver = pos === 1;
-                    const bgClass = isGold ? 'bg-gradient-to-t from-yellow-600/20 to-yellow-500/40 border-yellow-500' : (isSilver ? 'bg-gradient-to-t from-slate-500/20 to-slate-400/40 border-slate-400' : 'bg-gradient-to-t from-amber-700/20 to-amber-600/40 border-amber-600');
-                    const borderColor = isGold ? 'border-yellow-500' : (isSilver ? 'border-slate-400' : 'border-amber-600');
-                    const textColor = isGold ? 'text-yellow-500' : (isSilver ? 'text-slate-300' : 'text-amber-600'), medal = isGold ? '🥇' : (isSilver ? '🥈' : '🥉');
-                    podiumHTML += `<div class="flex flex-col items-center w-20 sm:w-32 relative group"><div class="relative mb-2 sm:mb-3 flex flex-col items-center transition-transform group-hover:-translate-y-2"><div class="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-slate-900 flex items-center justify-center border-2 ${borderColor} shadow-[0_0_15px_currentColor] ${textColor} z-10"><i data-lucide="${p.icon || 'user'}" class="w-5 h-5 sm:w-8 sm:h-8"></i></div><span class="font-bold text-[10px] sm:text-sm text-center mt-1 sm:mt-2 text-slate-200 truncate w-full px-1 flex items-center justify-center gap-1">${medal} <span class="truncate">${p.name}</span></span></div><div class="w-full ${heightClass} ${bgClass} border-t-4 rounded-t-lg flex flex-col items-center pt-2 sm:pt-4 shadow-[inset_0_10px_20px_rgba(0,0,0,0.3)] relative overflow-hidden"><span class="text-2xl sm:text-4xl font-black ${textColor}">${p.vitorias || 0}</span><span class="text-[8px] sm:text-[10px] uppercase font-bold text-slate-400 mt-1">VITÓRIAS</span></div></div>`;
-                }
-            });
-            podiumHTML += '</div>';
-            let restHTML = '';
-            if (rest.length > 0) {
-                const listItems = rest.map((p, index) => {
-                    const rank = index + 4, lvlInfo = getLevelInfo(p.pontos || 0);
-                    return `<div class="p-3 sm:p-4 rounded-xl flex items-center justify-between border border-slate-700 bg-slate-800/50 hover:bg-slate-700/80 transition-colors"><div class="flex items-center gap-3 sm:gap-4"><span class="text-lg sm:text-xl w-8 text-center text-slate-500 font-bold">#${rank}</span><div class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center border border-slate-600 shrink-0"><i data-lucide="${p.icon || 'user'}" class="w-5 h-5 text-slate-400"></i></div><div><p class="text-base sm:text-lg font-bold text-slate-300 truncate max-w-[120px] sm:max-w-none">${p.name}</p><p class="text-[10px] uppercase tracking-widest text-slate-500">${p.pontos || 0} PTS • ${lvlInfo.label}</p></div></div><div class="text-right"><span class="text-xl sm:text-2xl font-bold text-slate-300">${p.vitorias || 0}</span><p class="text-[9px] uppercase font-bold text-slate-500">VITÓRIAS</p></div></div>`;
-                }).join('');
-                restHTML = `<div class="mt-8 text-center border-t border-slate-700/50 pt-6"><button onclick="toggleRanking()" class="text-xs sm:text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition-all border border-slate-600 rounded-full px-4 sm:px-6 py-2">${showAllRanking ? 'OCULTAR LISTA' : 'VER TODOS (' + rest.length + ')'}</button></div><div class="flex flex-col gap-3 mt-4 sm:mt-6 ${showAllRanking ? 'animate-in fade-in slide-in-from-top-4' : 'hidden'}">${listItems}</div>`;
-            }
-            list.innerHTML = podiumHTML + restHTML; lucide.createIcons();
-        }
-
-        function renderPublic() {
-            const grid = document.getElementById('publicGrid');
-            if (players.length === 0) { grid.innerHTML = `<p class="opacity-50 text-center w-full">Nenhum atleta cadastrado.</p>`; return; }
-            
-            // NOVO: Cálculo do destaque baseado em PONTOS (Mínimo 50)
-            const maxPoints = players.length > 0 ? Math.max(...players.map(p => p.pontos || 0)) : 0;
-
-            const sortFn = (a,b) => (b.pontos || 0) - (a.pontos || 0);
-            const mestre = players.filter(p => (p.pontos || 0) >= 500).sort(sortFn), diamante = players.filter(p => (p.pontos || 0) >= 400 && (p.pontos || 0) < 500).sort(sortFn), platina = players.filter(p => (p.pontos || 0) >= 300 && (p.pontos || 0) < 400).sort(sortFn), ouro = players.filter(p => (p.pontos || 0) >= 200 && (p.pontos || 0) < 300).sort(sortFn), prata = players.filter(p => (p.pontos || 0) >= 100 && (p.pontos || 0) < 200).sort(sortFn), bronze = players.filter(p => (p.pontos || 0) < 100).sort(sortFn);
-            const renderGroup = (title, icon, colorClass, list) => {
-                if (list.length === 0) return '';
-                const cardsHTML = list.map(p => {
-                    const lvlInfo = getLevelInfo(p.pontos || 0), ptsValue = p.pontos || 0, desPerc = p.des || 0;
-                    
-                    // APLICA CONDIÇÃO: Maior pontuação isolada E pelo menos 50 pontos
-                    const isDestaque = ptsValue === maxPoints && maxPoints >= 50;
-                    
-                    const innerCard = `<div class="fifa-card card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto'}"><div class="flex flex-col items-center justify-center"><span class="overall drop-shadow-md">${ptsValue}</span><span class="font-bold text-[9px] sm:text-[11px] opacity-90 tracking-[0.15em] mt-0.5 sm:mt-1">PONTOS</span></div><div class="w-9 h-9 sm:w-12 sm:h-12 my-1.5 sm:my-2 flex items-center justify-center bg-black/10 rounded-full border-2 ${isDestaque ? 'border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.3)] text-yellow-200' : 'border-black/10'} shrink-0"><i data-lucide="${p.icon || 'user'}" class="w-4 h-4 sm:w-6 sm:h-6 opacity-80"></i></div><div class="player-name ${isDestaque ? 'text-yellow-100 drop-shadow-md' : ''}">${p.name}</div><div class="w-[90%] mt-1.5 sm:mt-2.5 flex flex-col items-center"><div class="flex justify-between w-full mb-1 px-1"><span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest opacity-90">Desempenho</span><span class="text-[9px] sm:text-[10px] font-bold opacity-90">${desPerc}%</span></div><div class="w-full bg-black/30 rounded-full h-1.5 sm:h-2 border border-white/20 overflow-hidden relative shadow-inner"><div class="bg-white h-full rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-1000" style="width: ${desPerc}%"></div></div></div></div>`;
-                    return `<div class="relative flex justify-center w-full sm:w-[210px] group ${isDestaque ? 'winner-frame-container' : ''}">${(p.streak || 0) >= 3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-orange-500/50 border border-orange-300 animate-bounce" title="${p.streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${p.streak}</div>` : ''}${(p.streak || 0) <= -3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-blue-500/50 border border-blue-300" title="${Math.abs(p.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${Math.abs(p.streak)}</div>` : ''}${isDestaque ? `<div class="winner-frame-wrapper">${innerCard}</div>` : innerCard}</div>`;
-                }).join('');
-                return `<div class="w-full flex flex-col items-center mb-10"><h3 class="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2 ${colorClass} border-b border-slate-700/50 pb-2 px-8 uppercase tracking-wider"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 h-6"></i> ${title}</h3><div class="grid grid-cols-[repeat(2,minmax(130px,180px))] sm:flex sm:flex-wrap gap-3 sm:gap-6 justify-center w-full max-w-[390px] sm:max-w-none mx-auto px-1 sm:px-0">${cardsHTML}</div></div>`;
-            };
-            grid.innerHTML = renderGroup('Mestre', 'flame', 'text-red-500', mestre) + renderGroup('Diamante', 'gem', 'text-fuchsia-500', diamante) + renderGroup('Platina', 'shield', 'text-cyan-500', platina) + renderGroup('Ouro', 'award', 'text-yellow-500', ouro) + renderGroup('Prata', 'medal', 'text-slate-400', prata) + renderGroup('Bronze', 'medal', 'text-orange-500', bronze);
-            lucide.createIcons();
-        }
-
-        function renderAdmin() {
-            const tbody = document.getElementById('adminTableBody');
-            document.getElementById('playerCount').innerText = players.length;
-            const selectAllCheckbox = document.getElementById('selectAll');
-            if(selectAllCheckbox) selectAllCheckbox.checked = players.length > 0 && players.every(p => selectedPlayerIds.has(p.id));
-            
-            // NOVO: Cálculo do destaque baseado em PONTOS (Mínimo 50)
-            const maxPoints = players.length > 0 ? Math.max(...players.map(p => p.pontos || 0)) : 0;
-
-            const sortedPlayersForAdmin = [...players].sort((a, b) => { const catDiff = (b.categoria || 1) - (a.categoria || 1); if (catDiff !== 0) return catDiff; return (b.pontos || 0) - (a.pontos || 0); });
-            tbody.innerHTML = sortedPlayersForAdmin.map(p => {
-                const lvlInfo = getLevelInfo(p.pontos || 0), catInfo = getCategoryInfo(p.categoria);
-                const isDestaque = (p.pontos || 0) === maxPoints && maxPoints >= 50;
-
-                return `<tr class="hover:bg-slate-700/30 transition-colors"><td class="px-2 sm:px-4 py-3 sm:py-4 text-center"><input type="checkbox" ${selectedPlayerIds.has(p.id) ? 'checked' : ''} onclick="togglePlayerSelection('${p.id}', this.checked)" class="w-3 h-3 sm:w-4 sm:h-4 accent-green-500 cursor-pointer"></td><td class="px-3 sm:px-6 py-3 sm:py-4 font-bold text-slate-200 flex items-center gap-1 sm:gap-2 whitespace-nowrap"><i data-lucide="${p.icon || 'user'}" class="w-3 h-3 sm:w-4 sm:h-4 opacity-50 shrink-0"></i>${p.name}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder 50+ Pts)"></i>` : ''}</td><td class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap"><span class="px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-bold ${catInfo.bg} ${catInfo.text} border ${catInfo.border} opacity-90">${catInfo.label}</span></td><td class="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-yellow-500 whitespace-nowrap">${p.vitorias || 0} <span class="text-slate-500 text-xs font-normal">/ ${p.partidas || 0}</span>${(p.streak || 0) >= 3 ? `<span class="ml-1 text-orange-500 text-[10px] font-bold" title="${p.streak} Vitórias Seguidas"><i data-lucide="flame" class="w-3 h-3 inline fill-orange-500"></i>${p.streak}</span>` : ''}${(p.streak || 0) <= -3 ? `<span class="ml-1 text-blue-500 text-[10px] font-bold" title="${Math.abs(p.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 inline fill-blue-500"></i>${Math.abs(p.streak)}</span>` : ''}</td><td class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap"><span class="px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-bold ${lvlInfo.bg} ${lvlInfo.text} border border-current opacity-70">${lvlInfo.label}</span></td><td class="px-3 sm:px-6 py-3 py-4 text-right flex justify-end gap-1 sm:gap-2 whitespace-nowrap"><button onclick="editPlayer('${p.id}')" class="p-1.5 sm:p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg"><i data-lucide="edit-2" class="w-3 h-3 sm:w-4 sm:h-4"></i></button><button onclick="deletePlayer('${p.id}')" class="p-1.5 sm:p-2 hover:bg-red-500/20 text-red-400 rounded-lg"><i data-lucide="trash-2" class="w-3 h-3 sm:w-4 sm:h-4"></i></button></td></tr>`;
-            }).join(''); lucide.createIcons();
-        }
-
-        function renderTeams() {
-            const adminGrid = document.getElementById('adminTeamsGrid'), publicGrid = document.getElementById('publicTeamsGrid');
-            const sections = [document.getElementById('adminTeamsSection'), document.getElementById('publicTeamsSection')];
-            if (drawnTeams.length === 0) { sections.forEach(s => s.classList.add('hidden')); return; }
-            sections.forEach(s => s.classList.remove('hidden'));
-            
-            // NOVO: Cálculo do destaque baseado em PONTOS (Mínimo 50)
-            const maxPoints = players.length > 0 ? Math.max(...players.map(p => p.pontos || 0)) : 0;
-
-            const content = drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label))).map(t => {
-                const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 mb-1"></i> Lista de Espera' : getTeamName(t);
-                const playersSorted = [...t.players].sort((a, b) => { const catDiff = (b.categoria || 1) - (a.categoria || 1); if (catDiff !== 0) return catDiff; return (b.pontos || 0) - (a.pontos || 0); });
-                return `<div class="team-container p-4 sm:p-5 rounded-xl border relative shadow-lg transition-colors ${t.isWaitlist ? 'bg-slate-800/40 border-slate-600' : 'border-slate-700 bg-slate-800/80'}">${isAuthenticated && !t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-1.5 sm:gap-2"><button onclick="redrawTeamWithWaitlist('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/30 transition-all" title="Sortear com Lista de Espera"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-4 sm:h-4"></i></button><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}${isAuthenticated && t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-2"><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}<h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase w-3/4">${teamName}</h3><div class="space-y-2 mt-2">${playersSorted.map(p => {
-                    const catInfo = getCategoryInfo(p.categoria), ptsValue = p.pontos || 0;
-                    
-                    // APLICA CONDIÇÃO NO TIME SORTEADO TAMBÉM
-                    const isDestaque = ptsValue === maxPoints && maxPoints >= 50;
-
-                    return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot}"></span><i data-lucide="${p.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80 shrink-0"></i><span class="font-bold ${catInfo.text} truncate max-w-[120px] sm:max-w-[150px]">${p.name}</span>${(p.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${p.streak} Vitórias Seguidas!"></i>` : ''}${(p.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(p.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} PTS</span></div>`;
-                }).join('')}</div></div>`}).join('');
-            adminGrid.innerHTML = publicGrid.innerHTML = content; lucide.createIcons();
-        }
-
-        window.showToast = (msg, type = 'success') => {
-            const toast = document.getElementById('toast'); document.getElementById('toastMsg').innerText = msg;
-            toast.className = `fixed bottom-5 right-5 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-2xl transition-transform duration-300 flex items-center gap-2 sm:gap-3 z-[60] text-sm sm:text-base max-w-[90vw]`;
-            toast.classList.remove('translate-y-24'); setTimeout(() => toast.classList.add('translate-y-24'), 3500);
-        };
-    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
