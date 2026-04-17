@@ -27,8 +27,11 @@ function distributePlayersSmartly(playersList, capacities) {
         }
         if (eligibleIndices.length === 0) break; 
 
-        // Embaralha os índices elegíveis para garantir aleatoriedade em empates absolutos
-        eligibleIndices.sort(() => Math.random() - 0.5);
+        // Embaralha os índices elegíveis (Fisher-Yates) para garantir aleatoriedade real em empates absolutos
+        for (let j = eligibleIndices.length - 1; j > 0; j--) {
+            const randomIndex = Math.floor(Math.random() * (j + 1));
+            [eligibleIndices[j], eligibleIndices[randomIndex]] = [eligibleIndices[randomIndex], eligibleIndices[j]];
+        }
 
         let bestBucketIndex = eligibleIndices[0];
 
