@@ -3,6 +3,41 @@ import { calculateEloPreview } from './logic.js';
 
 // --- Funções Auxiliares de UI --- //
 
+export const getDailyPlayerStats = () => {
+    const today = new Date().toLocaleDateString('pt-BR');
+    const todaysMatches = (state.matchHistory || []).filter(m => m.dateString === today || new Date(m.timestamp).toLocaleDateString('pt-BR') === today);
+    
+    const stats = {};
+    todaysMatches.forEach(m => {
+        const t1Won = m.winner === 1;
+        const t2Won = m.winner === 2;
+        if (m.team1 && m.team1.players) {
+            m.team1.players.forEach(name => {
+                if (!stats[name]) stats[name] = { wins: 0, losses: 0 };
+                if (t1Won) stats[name].wins++; else stats[name].losses++;
+            });
+        }
+        if (m.team2 && m.team2.players) {
+            m.team2.players.forEach(name => {
+                if (!stats[name]) stats[name] = { wins: 0, losses: 0 };
+                if (t2Won) stats[name].wins++; else stats[name].losses++;
+            });
+        }
+    });
+    
+    let maxWins = 0, maxLosses = 0;
+    Object.values(stats).forEach(s => {
+        if (s.wins > maxWins) maxWins = s.wins;
+        if (s.losses > maxLosses) maxLosses = s.losses;
+    });
+    
+    const craques = new Set(), bagres = new Set();
+    if (maxWins >= 3) Object.keys(stats).forEach(name => { if (stats[name].wins === maxWins) craques.add(name); });
+    if (maxLosses >= 3) Object.keys(stats).forEach(name => { if (stats[name].losses === maxLosses) bagres.add(name); });
+    
+    return { stats, craques, bagres };
+};
+
 export const getLevelInfo = (elo) => {
     const e = elo ?? 150;
     if (e < 350) return { type: 'nivel1', label: 'BRONZE', bg: 'bg-orange-900/40', text: 'text-orange-400', dot: 'bg-orange-500' };
@@ -107,7 +142,9 @@ export const switchView = (view) => {
 export const renderPublic = () => {
     const grid = document.getElementById('publicGrid');
     if (state.players.length === 0) { grid.innerHTML = `<p class="opacity-50 text-center w-full">Nenhum atleta cadastrado.</p>`; return; }
+    
     const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
+    const dailyData = typeof getDailyPlayerStats === 'function' ? getDailyPlayerStats() : { stats: {}, craques: new Set(), bagres: new Set() };
     
     // ORDENAÇÃO: Elo primeiro, depois alfabético
     const sortFn = (a, b) => {
@@ -130,6 +167,9 @@ export const renderPublic = () => {
             const isDestaque = ptsValue === maxElo && maxElo > 150;
             const vitorias = p.vitorias || 0;
             const derrotas = (p.partidas || 0) - vitorias;
+            const isCraque = dailyData.craques.has(p.name);
+            const isBagre = dailyData.bagres.has(p.name);
+
             const innerCard = `<div class="fifa-card card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[330px] sm:!h-[350px]'}">
                 <div class="flex flex-col items-center justify-center">
                     <span class="overall !text-4xl sm:!text-5xl drop-shadow-md">${ptsValue}</span>
@@ -151,10 +191,16 @@ export const renderPublic = () => {
                     </div>
                 </div>
             </div>`;
-            return `<div class="relative flex justify-center w-full sm:w-[210px] group ${isDestaque ? 'winner-frame-container' : ''}">${(p.streak || 0) >= 3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-orange-500/50 border border-orange-300 animate-bounce" title="${p.streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${p.streak}</div>` : ''}${(p.streak || 0) <= -3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-blue-500/50 border border-blue-300" title="${Math.abs(p.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${Math.abs(p.streak)}</div>` : ''}${isDestaque ? `<div class="winner-frame-wrapper !h-[340px] sm:!h-[360px]">${innerCard}</div>` : innerCard}</div>`;
+            
+            // SELOS CORRIGIDOS PARA APARECER NO TOPO
+            const craqueBadge = isCraque ? `<div class="absolute -top-3 -right-2 sm:-top-4 sm:-right-3 z-50 bg-yellow-500 text-slate-900 text-[10px] sm:text-xs font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-yellow-500/50 border border-yellow-300 animate-bounce" title="Craque do Dia!"><i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4"></i> CRAQUE</div>` : '';
+            const bagreBadge = isBagre ? `<div class="absolute -top-3 ${isCraque ? 'right-20 sm:right-24' : '-right-2 sm:-right-3'} z-50 bg-emerald-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-emerald-500/50 border border-emerald-300" title="Bagre do Dia"><i data-lucide="fish" class="w-3 h-3 sm:w-4 sm:h-4"></i> BAGRE</div>` : '';
+
+            return `<div class="relative flex justify-center w-full sm:w-[210px] group ${isDestaque ? 'winner-frame-container' : ''}">${(p.streak || 0) >= 3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-orange-500/50 border border-orange-300 animate-bounce" title="${p.streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${p.streak}</div>` : ''}${(p.streak || 0) <= -3 ? `<div class="absolute -top-3 -left-2 sm:-top-4 sm:-left-3 z-50 bg-blue-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg shadow-blue-500/50 border border-blue-300" title="${Math.abs(p.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 sm:w-4 sm:h-4 fill-white"></i> ${Math.abs(p.streak)}</div>` : ''}${craqueBadge}${bagreBadge}${isDestaque ? `<div class="winner-frame-wrapper !h-[340px] sm:!h-[360px]">${innerCard}</div>` : innerCard}</div>`;
         }).join('');
         return `<div class="w-full flex flex-col items-center mb-10"><h3 class="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2 ${colorClass} border-b border-slate-700/50 pb-2 px-8 uppercase tracking-wider"><i data-lucide="${icon}" class="w-5 h-5 sm:w-6 h-6"></i> ${title}</h3><div class="grid grid-cols-[repeat(2,minmax(130px,180px))] sm:flex sm:flex-wrap gap-3 sm:gap-6 justify-center w-full max-w-[390px] sm:max-w-none mx-auto px-1 sm:px-0">${cardsHTML}</div></div>`;
     };
+
     grid.innerHTML = renderGroup('Mestre', 'flame', 'text-red-500', mestre) + renderGroup('Diamante', 'gem', 'text-fuchsia-500', diamante) + renderGroup('Platina', 'shield', 'text-cyan-500', platina) + renderGroup('Ouro', 'award', 'text-yellow-500', ouro) + renderGroup('Prata', 'medal', 'text-slate-400', prata) + renderGroup('Bronze', 'medal', 'text-orange-500', bronze);
     lucide.createIcons();
 };
@@ -231,8 +277,45 @@ export const renderTeams = () => {
     
     sections.forEach(s => { if(s) s.classList.remove('hidden'); });
     const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
+    const dailyData = typeof getDailyPlayerStats === 'function' ? getDailyPlayerStats() : { stats: {}, craques: new Set(), bagres: new Set() };
 
-    const content = state.drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label))).map(t => {
+    const sortedTeams = state.drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label)));
+
+    // 1. CONTEÚDO PARA O PLACAR (Cards Grandes, Bonitos e Dinâmicos com Vit/Der)
+    const contentPlacar = sortedTeams.map(t => {
+        const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 mb-1"></i> Lista de Espera' : getTeamName(t);
+        const playersSorted = [...t.players].sort((a, b) => { 
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
+            if (catDiff !== 0) return catDiff; 
+            return a.name.localeCompare(b.name); 
+        });
+        
+        return `<div class="team-container w-full sm:w-[350px] p-4 sm:p-5 rounded-xl border relative shadow-lg transition-colors ${t.isWaitlist ? 'bg-slate-800/40 border-slate-600' : 'border-slate-700 bg-slate-800/80'}">
+            ${state.isAuthenticated && !t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-1.5 sm:gap-2"><button onclick="redrawTeamWithWaitlist('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/30 transition-all" title="Sortear com Lista de Espera"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-4 sm:h-4"></i></button><button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button></div>` : ''}
+            ${state.isAuthenticated && t.isWaitlist ? `<div class="absolute top-3 right-3 flex gap-2">
+            ${t.players.length >= (document.getElementById('teamSize') ? parseInt(document.getElementById('teamSize').value) || 4 : 4) ? `<button onclick="promoteWaitlistToTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/30 transition-all" title="Formar Novo Time com a Espera"><i data-lucide="arrow-up-circle" class="w-4 h-4 sm:w-4 sm:h-4"></i></button>` : ''}
+            <button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button>
+            </div>` : ''}
+            <h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase w-3/4">${teamName}</h3>
+            <div class="space-y-2 mt-2">
+            ${playersSorted.map(p => {
+                const dbPlayer = state.players.find(x => x.id === p.id) || p;
+                const catInfo = getCategoryInfo(dbPlayer.categoria || p.categoria), ptsValue = dbPlayer.eloRating ?? 150;
+                const isDestaque = ptsValue === maxElo && maxElo > 150;
+                const waitlistBadge = (p.waitlistRounds && p.waitlistRounds > 0) ? `<span class="ml-1 px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold border border-slate-600 whitespace-nowrap" title="${p.waitlistRounds} rodada(s) na espera">⏳ ${p.waitlistRounds}</span>` : '';
+                
+                const pStats = dailyData.stats[dbPlayer.name] || { wins: 0, losses: 0 };
+                const isCraque = dailyData.craques.has(dbPlayer.name);
+                const isBagre = dailyData.bagres.has(dbPlayer.name);
+
+               return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0 group"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot} shrink-0"></span><div class="w-5 h-5 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center overflow-hidden shrink-0">${dbPlayer.photo ? `<img src="${dbPlayer.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${dbPlayer.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80"></i>`}</div><span class="font-bold ${catInfo.text} truncate max-w-[110px] sm:max-w-[130px] ml-1">${dbPlayer.name}</span><span class="text-[9px] font-bold text-slate-500 shrink-0 mx-0.5" title="Vitórias/Derrotas Diárias">(${pStats.wins}V ${pStats.losses}D)</span>${waitlistBadge}${(dbPlayer.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${dbPlayer.streak} Vitórias Seguidas!"></i>` : ''}${(dbPlayer.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(dbPlayer.streak)} Derrotas Seguidas"></i>` : ''}${isCraque ? `<i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400 shrink-0" title="Craque do Dia!"></i>` : ''}${isBagre ? `<i data-lucide="fish" class="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 shrink-0" title="Bagre do Dia"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><div class="flex items-center gap-1 sm:gap-2"><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} ELO</span>${state.isAuthenticated ? `<button onclick="openMoveModal('${t.id}', '${p.id}')" class="p-1 text-slate-400 hover:text-blue-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus:opacity-100" title="Transferir Jogador"><i data-lucide="arrow-right-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i></button>` : ''}</div></div>`;
+            }).join('')}
+            </div>
+        </div>`;
+    }).join('');
+
+    // 2. CONTEÚDO PARA ADMIN (Formatação EXATA do amigo, compacta e focada em listagem visual limpa)
+    const contentAdmin = sortedTeams.map(t => {
         const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 mb-1"></i> Lista de Espera' : getTeamName(t);
         const playersSorted = [...t.players].sort((a, b) => { 
             const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
@@ -244,15 +327,17 @@ export const renderTeams = () => {
             ${t.players.length >= (document.getElementById('teamSize') ? parseInt(document.getElementById('teamSize').value) || 4 : 4) ? `<button onclick="promoteWaitlistToTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/30 transition-all" title="Formar Novo Time com a Espera"><i data-lucide="arrow-up-circle" class="w-4 h-4 sm:w-4 sm:h-4"></i></button>` : ''}
             <button onclick="deleteTeam('${t.id}')" class="p-1.5 sm:p-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/30 transition-all" title="Remover Equipe"><i data-lucide="trash-2" class="w-4 h-4 sm:w-4 sm:h-4"></i></button>
         </div>` : ''}<h3 class="font-bold ${t.isWaitlist ? 'text-slate-400' : 'text-green-500'} text-base sm:text-lg mb-3 uppercase w-3/4">${teamName}</h3><div class="space-y-2 mt-2">${playersSorted.map(p => {
-            const catInfo = getCategoryInfo(p.categoria), ptsValue = p.eloRating ?? 150;
+            const dbPlayer = state.players.find(x => x.id === p.id) || p;
+            const catInfo = getCategoryInfo(dbPlayer.categoria || p.categoria), ptsValue = dbPlayer.eloRating ?? 150;
             const isDestaque = ptsValue === maxElo && maxElo > 150;
             const waitlistBadge = (p.waitlistRounds && p.waitlistRounds > 0) ? `<span class="ml-1 px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold border border-slate-600 whitespace-nowrap" title="${p.waitlistRounds} rodada(s) na espera">⏳ ${p.waitlistRounds}</span>` : '';
 
-            return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0 group"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot} shrink-0"></span><div class="w-5 h-5 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center overflow-hidden shrink-0">${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80"></i>`}</div><span class="font-bold ${catInfo.text} truncate max-w-[110px] sm:max-w-[130px] ml-1">${p.name}</span>${waitlistBadge}${(p.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${p.streak} Vitórias Seguidas!"></i>` : ''}${(p.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(p.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><div class="flex items-center gap-1 sm:gap-2"><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} ELO</span>${state.isAuthenticated ? `<button onclick="openMoveModal('${t.id}', '${p.id}')" class="p-1 text-slate-400 hover:text-blue-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus:opacity-100" title="Transferir Jogador"><i data-lucide="arrow-right-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i></button>` : ''}</div></div>`;
-        }).join('')}</div></div>`}).join('');
-        
-    if (adminGrid) adminGrid.innerHTML = content;
-    if (placarGrid) placarGrid.innerHTML = content; 
+            return `<div class="flex justify-between items-center text-xs sm:text-sm border-b border-slate-700/50 pb-1.5 last:border-0 last:pb-0 group"><span class="flex items-center gap-1 sm:gap-2"><span class="w-2 h-2 rounded-full ${catInfo.dot} shrink-0"></span><div class="w-5 h-5 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center overflow-hidden shrink-0">${dbPlayer.photo ? `<img src="${dbPlayer.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${dbPlayer.icon || 'user'}" class="w-3 h-3 ${catInfo.text} opacity-80"></i>`}</div><span class="font-bold ${catInfo.text} truncate max-w-[110px] sm:max-w-[130px] ml-1">${dbPlayer.name}</span>${waitlistBadge}${(dbPlayer.streak || 0) >= 3 ? `<i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" title="${dbPlayer.streak} Vitórias Seguidas!"></i>` : ''}${(dbPlayer.streak || 0) <= -3 ? `<i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0" title="${Math.abs(dbPlayer.streak)} Derrotas Seguidas"></i>` : ''}${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}</span><div class="flex items-center gap-1 sm:gap-2"><span class="opacity-60 text-[10px] sm:text-xs whitespace-nowrap shrink-0">${ptsValue} ELO</span>${state.isAuthenticated ? `<button onclick="openMoveModal('${t.id}', '${p.id}')" class="p-1 text-slate-400 hover:text-blue-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus:opacity-100" title="Transferir Jogador"><i data-lucide="arrow-right-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i></button>` : ''}</div></div>`;
+        }).join('')}</div></div>`;
+    }).join('');
+    
+    if (adminGrid) adminGrid.innerHTML = contentAdmin;
+    if (placarGrid) placarGrid.innerHTML = contentPlacar; 
     lucide.createIcons();
 };
 
@@ -286,10 +371,11 @@ export const updateLiveEloPreview = () => {
 
     const preview = calculateEloPreview();
     if (!preview) {
-        previewContainer.classList.add('hidden');
+        previewContainer.setAttribute('style', 'display: none !important;');
         return;
     }
 
+    previewContainer.removeAttribute('style');
     previewContainer.innerHTML = `
         <div class="flex-1 flex flex-col items-center w-full">
             <span class="text-[10px] sm:text-xs font-bold text-blue-400 uppercase tracking-widest mb-2 border-b border-blue-500/30 pb-1 px-4">Em caso de Vitória Azul</span>
