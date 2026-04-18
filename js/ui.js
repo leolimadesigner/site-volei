@@ -523,6 +523,19 @@ export const renderPlacarTeams = () => {
 
 export const renderMatchHistory = () => {
     const container = document.getElementById('historyList');
+    const btnClear = document.getElementById('btnClearHistory');
+    
+    // NOVO: Controla se o botão de limpar histórico aparece ou não
+    if (btnClear) {
+        if (state.isAuthenticated && state.matchHistory && state.matchHistory.length > 0) {
+            btnClear.classList.remove('hidden');
+            btnClear.classList.add('flex');
+        } else {
+            btnClear.classList.add('hidden');
+            btnClear.classList.remove('flex');
+        }
+    }
+
     if (!container) return;
     
     if (!state.matchHistory || state.matchHistory.length === 0) { 

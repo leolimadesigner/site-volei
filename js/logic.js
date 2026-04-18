@@ -805,6 +805,20 @@ export const promoteWaitlistToTeam = async (waitlistTeamId) => {
     });
 };
 
+export const clearMatchHistory = () => {
+    openConfirmModal("Limpar Histórico", "Deseja realmente apagar todo o histórico de partidas?", async () => {
+        try {
+            // Mapeia todas as partidas e cria uma requisição de delete para cada uma
+            const deletePromises = state.matchHistory.map(m => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matchHistory', m.id)));
+            await Promise.all(deletePromises);
+            showToast("Histórico de partidas limpo!", "info");
+        } catch (e) { 
+            console.error(e); 
+            showToast("Erro ao limpar histórico", "error"); 
+        }
+    });
+};
+
 // --- Bindings Globais --- //
 window.drawTeams = drawTeams;
 window.redrawTeamWithWaitlist = redrawTeamWithWaitlist;
@@ -817,3 +831,4 @@ window.confirmMovePlayer = confirmMovePlayer;
 window.saveAndCloseVictoryModal = saveAndCloseVictoryModal;
 window.promoteWaitlistToTeam = promoteWaitlistToTeam;
 window.updateLiveEloPreview = updateLiveEloPreview;
+window.clearMatchHistory = clearMatchHistory;
