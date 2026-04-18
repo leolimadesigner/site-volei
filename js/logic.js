@@ -543,9 +543,9 @@ export const calculateEloPreview = () => {
     const K = 32;
 
     const winT1 = Math.round(K * (1 - expectedT1));
-    const loseT1 = Math.round(K * (0 - expectedT1));
+    const loseT1 = Math.round(K * (0 - expectedT1) * 0.7); // Penalidade reduzida para 70%
     const winT2 = Math.round(K * (1 - expectedT2));
-    const loseT2 = Math.round(K * (0 - expectedT2));
+    const loseT2 = Math.round(K * (0 - expectedT2) * 0.7); // Penalidade reduzida para 70%
 
     return { 
         winT1, loseT1, winT2, loseT2,
@@ -646,13 +646,23 @@ export const saveAndCloseVictoryModal = async () => {
             team.players.forEach(p => {
                 const dbPlayer = state.players.find(x => x.id === p.id);
                 if (dbPlayer) {
-                    const newElo = Math.max(0, (dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150) + change);
                     const partidas = (dbPlayer.partidas || 0) + 1;
                     const vitorias = (dbPlayer.vitorias || 0) + actual;
-                    const streak = actual === 1 ? (dbPlayer.streak >= 0 ? dbPlayer.streak + 1 : 1) : (dbPlayer.streak <= 0 ? dbPlayer.streak - 1 : -1);
+                    
+                    // Atualiza a streak (foguinho/gelinho)
+                    const currentStreak = dbPlayer.streak || 0;
+                    const newStreak = actual === 1 ? (currentStreak >= 0 ? currentStreak + 1 : 1) : (currentStreak <= 0 ? currentStreak - 1 : -1);
+                    
+                    // NOVO: Aplica os +5 de bônus se a vitória criar ou manter uma streak de 3+
+                    let finalChange = change;
+                    if (actual === 1 && newStreak >= 3) {
+                        finalChange += 5;
+                    }
+
+                    const newElo = Math.max(0, (dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150) + finalChange);
                     
                     updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
-                        eloRating: newElo, partidas, vitorias, streak, updatedAt: Date.now()
+                        eloRating: newElo, partidas, vitorias, streak: newStreak, updatedAt: Date.now()
                     }));
                 }
             });
