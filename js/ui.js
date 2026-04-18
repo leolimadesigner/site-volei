@@ -189,15 +189,16 @@ export const renderPublic = () => {
             const isCraque = craques.has(p.name);
             const isBagre = bagres.has(p.name);
             const streak = p.streak || 0;
+            const pStats = stats[p.name] || { wins: 0, losses: 0 };
             
             // Selos posicionados fora do card, na lateral superior esquerda, empilhados com número
             const hasBadges = streak >= 3 || streak <= -3 || isCraque || isBagre;
             const badgesHTML = hasBadges ? `
                 <div class="absolute -top-2 -left-2 sm:-left-4 flex flex-col gap-1.5 z-40 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] items-start">
-                    ${streak >= 3 ? `<div class="bg-slate-900/90 p-1 sm:p-1.5 rounded-full border border-orange-500/50 flex items-center gap-1"><i data-lucide="flame" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 fill-orange-500" title="${streak} Vitórias Seguidas!"></i><span class="text-orange-500 font-black text-xs sm:text-sm pr-1.5">${streak}</span></div>` : ''}
-                    ${streak <= -3 ? `<div class="bg-slate-900/90 p-1 sm:p-1.5 rounded-full border border-blue-500/50 flex items-center gap-1"><i data-lucide="snowflake" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 fill-blue-500" title="${Math.abs(streak)} Derrotas Seguidas"></i><span class="text-blue-500 font-black text-xs sm:text-sm pr-1.5">${Math.abs(streak)}</span></div>` : ''}
-                    ${isCraque ? `<div class="bg-slate-900/90 p-1.5 rounded-full border border-yellow-400/50 flex items-center justify-center"><i data-lucide="crown" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400" title="Craque do Dia!"></i></div>` : ''}
-                    ${isBagre ? `<div class="bg-slate-900/90 p-1.5 rounded-full border border-emerald-400/50 flex items-center justify-center"><i data-lucide="fish" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" title="Bagre do Dia"></i></div>` : ''}
+                    ${streak >= 3 ? `<div class="bg-slate-900/90 p-1 sm:p-1.5 rounded-full border border-orange-500/50 flex items-center gap-1" title="${streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 fill-orange-500"></i><span class="text-orange-500 font-black text-xs sm:text-sm pr-1.5">${streak}</span></div>` : ''}
+                    ${streak <= -3 ? `<div class="bg-slate-900/90 p-1 sm:p-1.5 rounded-full border border-blue-500/50 flex items-center gap-1" title="${Math.abs(streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 fill-blue-500"></i><span class="text-blue-500 font-black text-xs sm:text-sm pr-1.5">${Math.abs(streak)}</span></div>` : ''}
+                    ${isCraque ? `<div class="bg-slate-900/90 p-1 sm:p-1.5 rounded-full border border-yellow-400/50 flex items-center gap-1" title="Craque do Dia!"><i data-lucide="crown" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400"></i><span class="text-yellow-400 font-black text-xs sm:text-sm pr-1.5">${pStats.wins}</span></div>` : ''}
+                    ${isBagre ? `<div class="bg-slate-900/90 p-1 sm:p-1.5 rounded-full border border-emerald-400/50 flex items-center gap-1" title="Bagre do Dia!"><i data-lucide="fish" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400"></i><span class="text-emerald-400 font-black text-xs sm:text-sm pr-1.5">${pStats.losses}</span></div>` : ''}
                 </div>
             ` : '';
             
@@ -462,8 +463,8 @@ export const renderTeams = () => {
                         ${waitlistBadge}
                         ${(dbPlayer.streak || 0) >= 3 ? `<span class="flex items-center" title="${dbPlayer.streak} Vitórias Seguidas!"><i data-lucide="flame" class="w-3 h-3 text-orange-500 fill-orange-500 shrink-0"></i><span class="text-[9px] font-black text-orange-500 ml-0.5">${dbPlayer.streak}</span></span>` : ''}
                         ${(dbPlayer.streak || 0) <= -3 ? `<span class="flex items-center" title="${Math.abs(dbPlayer.streak)} Derrotas Seguidas"><i data-lucide="snowflake" class="w-3 h-3 text-blue-500 fill-blue-500 shrink-0"></i><span class="text-[9px] font-black text-blue-500 ml-0.5">${Math.abs(dbPlayer.streak)}</span></span>` : ''}
-                        ${isCraque ? `<i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400 shrink-0" title="Craque do Dia!"></i>` : ''}
-                        ${isBagre ? `<i data-lucide="fish" class="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 shrink-0" title="Bagre do Dia"></i>` : ''}
+                        ${isCraque ? `<span class="flex items-center" title="Craque do Dia!"><i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400 shrink-0"></i><span class="text-[9px] font-black text-yellow-400 ml-0.5">${pStats.wins}</span></span>` : ''}
+                        ${isBagre ? `<span class="flex items-center" title="Bagre do Dia"><i data-lucide="fish" class="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 shrink-0"></i><span class="text-[9px] font-black text-emerald-400 ml-0.5">${pStats.losses}</span></span>` : ''}
                         ${isDestaque ? `<i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" title="MVP (Líder)"></i>` : ''}
                     </span>
                     <div class="flex items-center gap-1 sm:gap-2">
