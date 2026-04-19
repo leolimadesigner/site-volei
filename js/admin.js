@@ -1,10 +1,11 @@
-import { auth, db, playersRef, teamsRef, matchHistoryRef, settingsRef } from './firebase.js';
+import { auth, db, playersRef, teamsRef, matchHistoryRef, settingsRef, appId } from './firebase.js';
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { onSnapshot, doc, setDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { state } from './state.js';
 import { renderAll, switchView, showToast, openConfirmModal, renderSorteioTable } from './ui.js';
 
-const appId = 'app-volei-teste';
+// O appId agora é importado diretamente do firebase.js para garantir que as atualizações e exclusões
+// sejam feitas no banco de dados real (app-volei-34f53) e não num banco de testes.
 
 onAuthStateChanged(auth, (user) => {
     if (user) { 
@@ -87,7 +88,7 @@ export const savePlayer = async () => {
     btn.innerText = "SALVANDO...";
     
     try {
-        const elo = Math.max(0, (id ? state.players.find(x => x.id === id).eloRating || 150 : 150) + (parseInt(document.getElementById('statBonus').value) || 0));
+        const elo = Math.max(0, parseInt(document.getElementById('statBonus').value) || 150);
         
         const obj = { 
             name, 
@@ -131,7 +132,8 @@ export const editPlayer = (id) => {
     document.getElementById('statJogos').value = p.partidas || 0;
     document.getElementById('statVit').value = p.vitorias || 0;
     document.getElementById('playerIcon').value = p.icon || 'user';
-    
+    document.getElementById('statBonus').value = p.eloRating !== undefined ? p.eloRating : 150;
+
     if (p.photo) {
         document.getElementById('photoPreview').src = p.photo;
         document.getElementById('photoPreview').classList.remove('hidden');
