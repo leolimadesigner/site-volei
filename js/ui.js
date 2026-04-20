@@ -203,7 +203,7 @@ export const renderPublic = () => {
             ` : '';
             
             const innerCard = `
-                <div class="fifa-card card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[330px]'}">
+                <div onclick="openPlayerHistoryModal('${p.name}')" class="fifa-card cursor-pointer card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[330px]'}">
                     <div class="flex flex-col items-center justify-center">
                         <span class="overall !text-4xl">${ptsValue}</span>
                         <span class="font-bold text-[8px] opacity-90 tracking-[0.15em]">ELO</span>
@@ -522,40 +522,154 @@ export const renderPlacarTeams = () => {
     select2.value = val2;
 };
 
+export const changeHistoryPage = (idx) => {
+    state.historyCurrentPage = idx;
+    renderMatchHistory();
+};
+
 export const renderMatchHistory = () => {
     const container = document.getElementById('historyList');
     const btnClear = document.getElementById('btnClearHistory');
     
     if (btnClear) {
         if (state.isAuthenticated && state.matchHistory && state.matchHistory.length > 0) {
-            btnClear.classList.remove('hidden');
-            btnClear.classList.add('flex');
+            btnClear.classList.remove('hidden'); btnClear.classList.add('flex');
         } else {
-            btnClear.classList.add('hidden');
-            btnClear.classList.remove('flex');
+            btnClear.classList.add('hidden'); btnClear.classList.remove('flex');
         }
     }
-
     if (!container) return;
-    
     if (!state.matchHistory || state.matchHistory.length === 0) { 
         container.innerHTML = `<p class="text-slate-500 text-center text-sm py-4">Nenhuma partida registrada.</p>`; 
         return; 
     }
     
-    container.innerHTML = state.matchHistory
-        .sort((a,b) => b.timestamp - a.timestamp)
-        .map(m => {
-            const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
-            const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
-            
-            return `
-                <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 flex justify-between items-center">
+    const matches = [...state.matchHistory].sort((a,b) => b.timestamp - a.timestamp);
+    const groups = [];
+    let currentGroup = null;
+
+    matches.forEach(m => {
+        const dString = m.dateString || new Date(m.timestamp).toLocaleDateString('pt-BR');
+        if (!currentGroup || currentGroup.date !== dString) {
+            currentGroup = { date: dString, matches: [] };
+            groups.push(currentGroup);
+        }
+        currentGroup.matches.push(m);
+    });
+
+    if (state.historyCurrentPage >= groups.length) state.historyCurrentPage = Math.max(0, groups.length - 1);
+    const activeGroup = groups[state.historyCurrentPage];
+
+    let paginationHTML = '<div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2 border-b border-slate-700/50">';
+    groups.forEach((g, idx) => {
+        const isActive = idx === state.historyCurrentPage;
+        paginationHTML += `<button onclick="changeHistoryPage(${idx})" class="px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-colors ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${g.date}</button>`;
+    });
+    paginationHTML += '</div>';
+
+    let matchesHTML = activeGroup.matches.map((m, mIdx) => {
+        const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
+        const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
+        const eloGain = m.eloGain || 0;
+        const eloLoss = Math.round(eloGain * 0.7);
+
+        return `
+            <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-3">
+                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors group" onclick="document.getElementById('match-details-${mIdx}').classList.toggle('hidden')">
                     <div class="flex-1 text-right font-bold text-sm ${t1Color}">${m.team1.name}</div>
                     <div class="px-3 font-black text-lg">${m.team1.score} x ${m.team2.score}</div>
                     <div class="flex-1 text-left font-bold text-sm ${t2Color}">${m.team2.name}</div>
-                </div>`;
+                </div>
+                <div id="match-details-${mIdx}" class="hidden p-3 bg-slate-950/80 border-t border-slate-800/50 text-xs text-slate-300">
+                    <div class="flex justify-between gap-4">
+                        <div class="flex-1 text-right border-r border-slate-800 pr-4">
+                            <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Time Azul</p>
+                            <p class="mb-3">${(m.team1.players || []).join('<br>')}</p>
+                            <p class="font-black text-sm ${m.winner === 1 ? 'text-green-400' : 'text-red-400'}">
+                                ${m.winner === 1 ? '+' + eloGain : '-' + eloLoss} ELO
+                            </p>
+                        </div>
+                        <div class="flex-1 text-left pl-4">
+                            <p class="text-[10px] text-red-400 font-bold uppercase mb-2">Time Vermelho</p>
+                            <p class="mb-3">${(m.team2.players || []).join('<br>')}</p>
+                            <p class="font-black text-sm ${m.winner === 2 ? 'text-green-400' : 'text-red-400'}">
+                                ${m.winner === 2 ? '+' + eloGain : '-' + eloLoss} ELO
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+
+    container.innerHTML = paginationHTML + matchesHTML;
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+export const openPlayerHistoryModal = (playerName) => {
+    const modal = document.getElementById('playerHistoryModal');
+    const list = document.getElementById('playerHistoryList');
+    document.getElementById('playerHistoryTitle').innerText = `Histórico de ${playerName}`;
+
+    const pMatches = state.matchHistory.filter(m =>
+        (m.team1.players && m.team1.players.includes(playerName)) ||
+        (m.team2.players && m.team2.players.includes(playerName))
+    ).sort((a,b) => b.timestamp - a.timestamp);
+
+    if(pMatches.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 py-4 text-sm">Nenhuma partida registrada.</p>';
+    } else {
+        list.innerHTML = pMatches.map((m, idx) => {
+            const inT1 = m.team1.players && m.team1.players.includes(playerName);
+            const myTeam = inT1 ? 1 : 2;
+            const isWin = m.winner === myTeam;
+            const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
+            const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
+            
+            const eloGain = m.eloGain || 0;
+            const eloLoss = Math.round(eloGain * 0.7);
+            const myEloChange = isWin ? `+${eloGain}` : `-${eloLoss}`;
+            const eloColor = isWin ? 'text-green-400' : 'text-red-400';
+
+            return `
+                <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-2">
+                    <div class="p-3 cursor-pointer hover:bg-slate-800 transition-colors" onclick="document.getElementById('p-match-det-${idx}').classList.toggle('hidden')">
+                        <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+                            <span class="text-slate-400 font-bold">${m.dateString}</span>
+                            <span class="font-black ${eloColor} bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-[10px]">${isWin ? 'VITÓRIA' : 'DERROTA'} (${myEloChange} ELO)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1 text-right font-bold text-[11px] ${t1Color} truncate">${m.team1.name}</div>
+                            <div class="px-3 font-black text-sm">${m.team1.score} x ${m.team2.score}</div>
+                            <div class="flex-1 text-left font-bold text-[11px] ${t2Color} truncate">${m.team2.name}</div>
+                        </div>
+                    </div>
+                    <div id="p-match-det-${idx}" class="hidden p-3 bg-slate-950/80 border-t border-slate-800/50 text-[10px] text-slate-300">
+                        <div class="flex justify-between gap-4">
+                            <div class="flex-1 text-right">
+                                <p class="text-slate-500 font-bold uppercase mb-1">Time Azul</p>
+                                <p>${(m.team1.players || []).join('<br>')}</p>
+                                <p class="mt-2 font-bold ${m.winner === 1 ? 'text-green-400' : 'text-red-400'}">${m.winner === 1 ? '+'+eloGain : '-'+eloLoss} ELO</p>
+                            </div>
+                            <div class="flex-1 text-left">
+                                <p class="text-slate-500 font-bold uppercase mb-1">Time Vermelho</p>
+                                <p>${(m.team2.players || []).join('<br>')}</p>
+                                <p class="mt-2 font-bold ${m.winner === 2 ? 'text-green-400' : 'text-red-400'}">${m.winner === 2 ? '+'+eloGain : '-'+eloLoss} ELO</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }).join('');
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+export const closePlayerHistoryModal = () => {
+    document.getElementById('playerHistoryModal').classList.add('hidden');
+    document.getElementById('playerHistoryModal').classList.remove('flex');
 };
 
 export const renderAll = () => { 

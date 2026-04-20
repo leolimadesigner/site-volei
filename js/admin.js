@@ -77,6 +77,15 @@ export const toggleAllPlayers = (isC) => {
     renderSorteioTable(); 
 };
 
+export const selectOnlyPlayersInTeams = () => {
+    state.selectedPlayerIds.clear();
+    state.drawnTeams.forEach(team => {
+        team.players.forEach(p => state.selectedPlayerIds.add(p.id));
+    });
+    renderSorteioTable();
+    showToast("Atletas em times selecionados!", "info");
+};
+
 export const savePlayer = async () => {
     const name = document.getElementById('playerName').value.trim();
     const id = document.getElementById('editId').value;
