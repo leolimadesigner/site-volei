@@ -20,7 +20,7 @@
 - ~~Adicionar botão de excluir na lista de espera.~~
 - ~~Alterar pódio para pontos de Elo ao invés de vitórias.~~
 - ~~Colocar nas cartinhas o número da posição no ranking.~~
-- Quando o placar tiver dois times selecionados e alguma pontuação resgistrada não será possivel realizar novos sorteios de times, nem troca com lista de espera, para isso o placar deve estar zerado. Porémm é possivel realizar atualização da lista de espera. **Implementado mais ainda bugado**
+- ~~Quando o placar tiver dois times selecionados e alguma pontuação resgistrada não será possivel realizar novos sorteios de times, nem troca com lista de espera, para isso o placar deve estar zerado. Porémm é possivel realizar atualização da lista de espera.~~
 
 
 
