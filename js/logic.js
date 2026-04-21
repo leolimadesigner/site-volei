@@ -486,11 +486,53 @@ export const clearTeams = () => {
 };
 
 export const deleteTeam = (id) => {
-    openConfirmModal("Remover Equipe", "Deseja remover esta equipe do sorteio?", async () => {
+    const teamToDelete = state.drawnTeams.find(t => t.id === id);
+    if (!teamToDelete) return;
+
+    const modalMsg = teamToDelete.isWaitlist 
+        ? "Deseja remover a lista de espera do sorteio?" 
+        : "Deseja desmanchar esta equipe? Os jogadores serão enviados para a lista de espera.";
+
+    openConfirmModal("Remover Equipe", modalMsg, async () => {
         try { 
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', id)); 
-            showToast("Equipe removida.", "info"); 
-        } catch (e) { showToast("Erro ao excluir", "error"); }
+            if (teamToDelete.isWaitlist) {
+                // Comportamento original para a lista de espera
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', id)); 
+                showToast("Lista de espera removida.", "info"); 
+            } else {
+                // Move os jogadores para a lista de espera
+                const waitlistTeam = state.drawnTeams.find(t => t.isWaitlist);
+                const playersToMove = teamToDelete.players.map(p => ({ ...p, waitlistRounds: 0 }));
+                const updates = [];
+
+                // 1. Apaga o time atual
+                updates.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', id)));
+
+                if (waitlistTeam) {
+                    // 2A. Se já existe uma lista de espera, junta e ordena por categoria
+                    const updatedWaitlistPlayers = [...waitlistTeam.players, ...playersToMove].sort((a, b) => {
+                        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                        if (catDiff !== 0) return catDiff;
+                        return a.name.localeCompare(b.name);
+                    });
+                    updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeam.id), { players: updatedWaitlistPlayers }));
+                } else {
+                    // 2B. Se não existe lista de espera, cria uma nova com esses jogadores
+                    const sortedPlayers = playersToMove.sort((a, b) => {
+                        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                        if (catDiff !== 0) return catDiff;
+                        return a.name.localeCompare(b.name);
+                    });
+                    updates.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: sortedPlayers }));
+                }
+
+                await Promise.all(updates);
+                showToast("Equipe desfeita! Jogadores na espera.", "info");
+            }
+        } catch (e) { 
+            console.error(e);
+            showToast("Erro ao excluir equipe", "error"); 
+        }
     });
 };
 
