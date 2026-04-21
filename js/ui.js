@@ -171,6 +171,7 @@ export const renderPublic = () => {
     
     const { stats, craques, bagres } = getDailyPlayerStats();
     const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
+    const globalEloRank = [...state.players].sort((a, b) => (b.eloRating ?? 150) - (a.eloRating ?? 150) || a.name.localeCompare(b.name));
     
     const sortFn = (a, b) => { 
         const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150); 
@@ -204,10 +205,13 @@ export const renderPublic = () => {
                 </div>
             ` : '';
             
+            const rankPosition = globalEloRank.findIndex(x => x.id === p.id) + 1;
+
             const innerCard = `
-                <div onclick="openPlayerHistoryModal('${p.name}')" class="fifa-card cursor-pointer card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[330px]'}">
-                    <div class="flex flex-col items-center justify-center">
-                        <span class="overall !text-4xl">${ptsValue}</span>
+                <div onclick="openPlayerHistoryModal('${p.name}')" class="fifa-card cursor-pointer card-${lvlInfo.type} ${isDestaque ? '!w-full !h-full m-0' : 'w-full mx-auto !h-[330px]'} relative">
+                    <div class="absolute top-3 right-4 text-sm sm:text-lg font-black italic text-white/50 drop-shadow-md">#${rankPosition}</div>
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="overall !text-4xl">${ptsValue}</span>
                         <span class="font-bold text-[8px] opacity-90 tracking-[0.15em]">ELO</span>
                     </div>
                     <div class="w-24 h-24 mt-3 mb-1 flex items-center justify-center bg-black/10 rounded-full border-2 ${isDestaque ? 'border-yellow-400/60 text-yellow-200' : 'border-black/10'} shrink-0 overflow-hidden">
@@ -260,8 +264,8 @@ export const renderRanking = () => {
     const list = document.getElementById('rankingList');
     
     const sortedPlayers = [...state.players].sort((a,b) => { 
-        const vitDiff = (b.vitorias || 0) - (a.vitorias || 0); 
-        if (vitDiff !== 0) return vitDiff; 
+        const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+        if (eloDiff !== 0) return eloDiff; 
         return (a.name || '').localeCompare(b.name || ''); 
     });
     
@@ -294,7 +298,10 @@ export const renderRanking = () => {
                         </span>
                     </div>
                     <div class="w-full ${heightClass} ${bgClass} border-t-4 rounded-t-lg flex flex-col items-center pt-2 shadow-[inset_0_10px_20px_rgba(0,0,0,0.3)] relative overflow-hidden">
-                        <span class="text-2xl font-black ${textColor}">${p.vitorias || 0}</span>
+                        <div class="flex flex-col items-center">
+                            <span class="text-xl font-black ${textColor}">${p.eloRating ?? 150}</span>
+                            <span class="text-[8px] font-bold text-slate-400 uppercase mt-[-4px]">ELO</span>
+                        </div>
                     </div>
                 </div>`;
         }
@@ -319,10 +326,19 @@ export const renderSorteioTable = () => {
         selectAllCheckbox.checked = state.players.length > 0 && state.players.every(p => state.selectedPlayerIds.has(p.id));
     }
     
-    const sorted = [...state.players].sort((a, b) => { 
-        const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
-        if(c !== 0) return c; 
-        return a.name.localeCompare(b.name); 
+    const searchTerm = document.getElementById('searchSorteio')?.value.toLowerCase() || '';
+    const sortMode = document.getElementById('sortSorteio')?.value || 'default';
+
+    let filtered = state.players.filter(p => p.name.toLowerCase().includes(searchTerm));
+
+    const sorted = filtered.sort((a, b) => { 
+        if (sortMode === 'alpha') {
+            return a.name.localeCompare(b.name);
+        } else {
+            const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
+            if(c !== 0) return c; 
+            return a.name.localeCompare(b.name); 
+        }
     });
     
     tbody.innerHTML = sorted.map(p => {
@@ -445,6 +461,9 @@ export const renderTeams = () => {
             <div class="absolute top-3 right-3 flex gap-1">
                 <button onclick="promoteWaitlistToTeam('${t.id}')" class="p-1.5 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400" title="Formar Novo Time com a Espera">
                     <i data-lucide="arrow-up-circle" class="w-3 h-3"></i>
+                </button>
+                <button onclick="deleteTeam('${t.id}')" class="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500" title="Excluir Lista de Espera">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i>
                 </button>
             </div>`;
 

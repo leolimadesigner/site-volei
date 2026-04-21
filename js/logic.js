@@ -129,6 +129,13 @@ export const drawTeams = async () => {
     const sizeInput = document.getElementById('teamSize');
     const size = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
 
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Sorteio bloqueado! Um jogo está em andamento. Zere o placar antes de um novo sorteio.", "error");
+        return;
+    }
+
     const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
     if (activePlayers.length === 0) { showToast("Selecione os atletas para o jogo!", "error"); return; }
 
@@ -168,6 +175,13 @@ export const drawTeams = async () => {
 };
 
 export const redrawTeamWithWaitlist = async (teamId) => {
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Troca bloqueada! Um jogo está em andamento no placar.", "error");
+        return;
+    }
+    
     openConfirmModal("Sorteio de Substituições", "Deseja substituir este time considerando as prioridades da lista de espera?", async () => {
         const targetTeamDoc = state.drawnTeams.find(t => t.id === teamId);
         if (!targetTeamDoc) return;

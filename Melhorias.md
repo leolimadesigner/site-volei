@@ -16,11 +16,11 @@
 - ~~Na aba sorteio adicionar um botão, na lista de quem vai jogar hoje, com o nome selecionar apenas jogadores em times, para selecionar~~
 ~~todos os jogadores que estão em times e lista de espera.~~ 
 - ~~Fazer com que o placar seja atualizado simultaneamente para todas as pessoas que accessem o site.~~
-- Adicionar filtro para pesquisar jogadores pelo nome, ou ordem alfabética ou padrao por nível.
-- Travar placar e os sorteios enquanto houver uma partida em andamento.
-- Adicionar botão de excluir na lista de espera.
-- Alterar pódio para pontos de Elo ao invés de vitórias.
-- Colocar nas cartinhas o número da posição no ranking.
+- ~~Adicionar filtro para pesquisar jogadores pelo nome, ou ordem alfabética ou o padrao por nível seguido de ordem alfabética.~~
+- ~~Adicionar botão de excluir na lista de espera.~~
+- ~~Alterar pódio para pontos de Elo ao invés de vitórias.~~
+- ~~Colocar nas cartinhas o número da posição no ranking.~~
+- Quando o placar tiver dois times selecionados e alguma pontuação resgistrada não será possivel realizar novos sorteios de times, nem troca com lista de espera, para isso o placar deve estar zerado. Porémm é possivel realizar atualização da lista de espera. **Implementado mais ainda bugado**
 
 
 
