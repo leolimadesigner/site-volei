@@ -1,6 +1,6 @@
 import { state } from './state.js';
-import { db, appId, teamsRef, doc, addDoc, updateDoc, deleteDoc, matchHistoryRef, playersRef } from './firebase.js';
-import { showToast, openConfirmModal, closeMoveModal, getTeamName, updateLiveEloPreview } from './ui.js';
+import { showToast, openConfirmModal, closeMoveModal, getTeamName } from './ui.js';
+import { db, appId, teamsRef, matchHistoryRef, playersRef, settingsRef, doc, addDoc, deleteDoc, updateDoc } from './firebase.js';
 
 // --- Algoritmos de Balanceamento (Nossa Lógica Original Restaurada) --- //
 
@@ -129,6 +129,13 @@ export const drawTeams = async () => {
     const sizeInput = document.getElementById('teamSize');
     const size = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
 
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Sorteio bloqueado! Um jogo está em andamento. Zere o placar antes de um novo sorteio.", "error");
+        return;
+    }
+
     const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
     if (activePlayers.length === 0) { showToast("Selecione os atletas para o jogo!", "error"); return; }
 
@@ -140,7 +147,7 @@ export const drawTeams = async () => {
 
     openConfirmModal("Sorteio Geral", "Todas as equipes atuais serão desfeitas e os contadores zerados.", async () => {
         try {
-            const deletePromises = state.drawnTeams.map(t => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id)));
+            const deletePromises = state.drawnTeams.map(t => deleteDoc(doc(teamsRef, t.id)));
             await Promise.all(deletePromises);
             
             for (let i = 0; i < result.teams.length; i++) {
@@ -168,6 +175,13 @@ export const drawTeams = async () => {
 };
 
 export const redrawTeamWithWaitlist = async (teamId) => {
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Troca bloqueada! Um jogo está em andamento no placar.", "error");
+        return;
+    }
+    
     openConfirmModal("Sorteio de Substituições", "Deseja substituir este time considerando as prioridades da lista de espera?", async () => {
         const targetTeamDoc = state.drawnTeams.find(t => t.id === teamId);
         if (!targetTeamDoc) return;
@@ -327,13 +341,13 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         });
 
         try {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', targetTeamDoc.id), { players: newTeam });
+            await updateDoc(doc(teamsRef, targetTeamDoc.id), { players: newTeam });
             
             if (waitlistTeamDoc) {
                 if (newWaitlist.length > 0) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: newWaitlist });
+                    await updateDoc(doc(teamsRef, waitlistTeamDoc.id), { players: newWaitlist });
                 } else {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id));
+                    await deleteDoc(doc(teamsRef, waitlistTeamDoc.id));
                 }
             } else if (newWaitlist.length > 0) {
                 await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: newWaitlist });
@@ -355,9 +369,9 @@ export const createWaitlist = () => {
                     const filteredPlayers = team.players.filter(p => state.selectedPlayerIds.has(p.id));
                     if (filteredPlayers.length !== team.players.length) {
                         if (filteredPlayers.length === 0) {
-                            updatePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id)));
+                            updatePromises.push(deleteDoc(doc(teamsRef, team.id)));
                         } else {
-                            updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', team.id), { players: filteredPlayers }));
+                            updatePromises.push(updateDoc(doc(teamsRef, team.id), { players: filteredPlayers }));
                         }
                     }
                 } else {
@@ -385,9 +399,9 @@ export const createWaitlist = () => {
             
             if (waitlistTeamDoc) {
                 if (updatedWaitlist.length > 0) {
-                    updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id), { players: updatedWaitlist }));
+                    updatePromises.push(updateDoc(doc(teamsRef, waitlistTeamDoc.id), { players: updatedWaitlist }));
                 } else {
-                    updatePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistTeamDoc.id)));
+                    updatePromises.push(deleteDoc(doc(teamsRef, waitlistTeamDoc.id)));
                 }
             } else if (updatedWaitlist.length > 0) {
                 updatePromises.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: updatedWaitlist }));
@@ -446,12 +460,12 @@ export const confirmMovePlayer = async () => {
         const updates = [];
 
         if (sourceTeam.players.length === 0) {
-            updates.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', sourceTeamId)));
+            updates.push(deleteDoc(doc(teamsRef, sourceTeamId)));
         } else {
-            updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', sourceTeamId), { players: sourceTeam.players }));
+            updates.push(updateDoc(doc(teamsRef, sourceTeamId), { players: sourceTeam.players }));
         }
 
-        updates.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', destTeamId), { players: destTeam.players }));
+        updates.push(updateDoc(doc(teamsRef, destTeamId), { players: destTeam.players }));
 
         await Promise.all(updates);
         showToast("Transferência concluída!", "success");
@@ -464,7 +478,7 @@ export const confirmMovePlayer = async () => {
 export const clearTeams = () => {
     openConfirmModal("Limpar Todas as Equipes", "Deseja realmente excluir todas as equipes geradas?", async () => {
         try {
-            const deletePromises = state.drawnTeams.map(t => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', t.id)));
+            const deletePromises = state.drawnTeams.map(t => deleteDoc(doc(teamsRef, t.id)));
             await Promise.all(deletePromises);
             showToast("Todas as equipes foram removidas!", "info");
         } catch (e) { showToast("Erro ao limpar equipes", "error"); }
@@ -472,15 +486,95 @@ export const clearTeams = () => {
 };
 
 export const deleteTeam = (id) => {
-    openConfirmModal("Remover Equipe", "Deseja remover esta equipe do sorteio?", async () => {
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Exclusão bloqueada! Um jogo está em andamento no placar.", "error");
+        return;
+    }
+
+    const teamToDelete = state.drawnTeams.find(t => t.id === id);
+    if (!teamToDelete) return;
+
+    const modalMsg = teamToDelete.isWaitlist 
+        ? "Deseja remover a lista de espera do sorteio?" 
+        : "Deseja desmanchar esta equipe? Os jogadores serão enviados para a lista de espera.";
+
+    openConfirmModal("Remover Equipe", modalMsg, async () => {
         try { 
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', id)); 
-            showToast("Equipe removida.", "info"); 
-        } catch (e) { showToast("Erro ao excluir", "error"); }
+            if (teamToDelete.isWaitlist) {
+                // Comportamento original para a lista de espera
+                await deleteDoc(doc(teamsRef, id)); 
+                showToast("Lista de espera removida.", "info"); 
+            } else {
+                // Move os jogadores para a lista de espera
+                const waitlistTeam = state.drawnTeams.find(t => t.isWaitlist);
+                const playersToMove = teamToDelete.players.map(p => ({ ...p, waitlistRounds: 0 }));
+                const updates = [];
+
+                // 1. Apaga o time atual
+                updates.push(deleteDoc(doc(teamsRef, id)));
+
+                if (waitlistTeam) {
+                    // 2A. Se já existe uma lista de espera, junta e ordena por categoria
+                    const updatedWaitlistPlayers = [...waitlistTeam.players, ...playersToMove].sort((a, b) => {
+                        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                        if (catDiff !== 0) return catDiff;
+                        return a.name.localeCompare(b.name);
+                    });
+                    updates.push(updateDoc(doc(teamsRef, waitlistTeam.id), { players: updatedWaitlistPlayers }));
+                } else {
+                    // 2B. Se não existe lista de espera, cria uma nova com esses jogadores
+                    const sortedPlayers = playersToMove.sort((a, b) => {
+                        const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                        if (catDiff !== 0) return catDiff;
+                        return a.name.localeCompare(b.name);
+                    });
+                    updates.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: sortedPlayers }));
+                }
+
+                await Promise.all(updates);
+                showToast("Equipe desfeita! Jogadores na espera.", "info");
+            }
+        } catch (e) { 
+            console.error(e);
+            showToast("Erro ao excluir equipe", "error"); 
+        }
     });
 };
 
 // --- Funções de Placar e Sistema Elo --- //
+
+export const updateLiveEloPreview = () => {
+    const previewDiv = document.getElementById('liveEloPreview');
+    if (!previewDiv) return;
+    
+    const preview = calculateEloPreview();
+    if (!preview) {
+        previewDiv.classList.add('hidden');
+        previewDiv.classList.remove('flex');
+        return;
+    }
+
+    previewDiv.innerHTML = `
+        <div class="flex-1 text-center">
+            <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+            <p class="text-green-400 font-black text-lg sm:text-xl">+${preview.winT1} ELO</p>
+            <p class="text-red-400 font-bold text-xs sm:text-sm">${preview.loseT1} ELO se perder</p>
+        </div>
+        <div class="shrink-0 bg-slate-800 p-2 sm:p-3 rounded-full border border-slate-700">
+            <i data-lucide="swords" class="w-4 h-4 sm:w-6 sm:h-6 text-slate-400"></i>
+        </div>
+        <div class="flex-1 text-center">
+            <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+            <p class="text-green-400 font-black text-lg sm:text-xl">+${preview.winT2} ELO</p>
+            <p class="text-red-400 font-bold text-xs sm:text-sm">${preview.loseT2} ELO se perder</p>
+        </div>
+    `;
+    previewDiv.classList.remove('hidden');
+    previewDiv.classList.add('flex');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
 
 export const calculateEloPreview = () => {
     const select1 = document.getElementById('team1Select');
@@ -509,9 +603,9 @@ export const calculateEloPreview = () => {
     const K = 32;
 
     const winT1 = Math.round(K * (1 - expectedT1));
-    const loseT1 = Math.round(K * (0 - expectedT1));
+    const loseT1 = Math.round(K * (0 - expectedT1) * 0.7); // Penalidade reduzida para 70%
     const winT2 = Math.round(K * (1 - expectedT2));
-    const loseT2 = Math.round(K * (0 - expectedT2));
+    const loseT2 = Math.round(K * (0 - expectedT2) * 0.7); // Penalidade reduzida para 70%
 
     return { 
         winT1, loseT1, winT2, loseT2,
@@ -537,6 +631,13 @@ export const checkWinCondition = () => {
         if (!select1.value || !select2.value || select1.value === select2.value) { 
             btnSaveResult.classList.add('hidden'); 
             warning.classList.remove('hidden'); 
+            warning.innerText = "Selecione duas equipes válidas e diferentes.";
+            if(eloInfoDiv) eloInfoDiv.classList.add('hidden');
+        } else if (!state.isAuthenticated && !state.eloEnabled) {
+            // NOVO: Aplica de facto a trava do Placar Aberto
+            btnSaveResult.classList.add('hidden'); 
+            warning.classList.remove('hidden'); 
+            warning.innerText = "O Placar Público está fechado. Apenas o administrador pode salvar os resultados.";
             if(eloInfoDiv) eloInfoDiv.classList.add('hidden');
         } else { 
             btnSaveResult.classList.remove('hidden'); 
@@ -565,15 +666,31 @@ export const checkWinCondition = () => {
     }
 };
 
-export const updateScore = (team, change) => {
+export const syncTeamsToCloud = async () => {
+    const t1 = document.getElementById('team1Select')?.value || '';
+    const t2 = document.getElementById('team2Select')?.value || '';
+    try {
+        await updateDoc(settingsRef, { team1: t1, team2: t2 });
+    } catch (e) {
+        console.error("Erro ao sincronizar times:", e);
+    }
+    if (typeof updateLiveEloPreview === 'function') updateLiveEloPreview();
+};
+
+export const updateScore = async (team, change) => {
     if (team === 1) { state.score1 = Math.max(0, state.score1 + change); document.getElementById('score1').innerText = state.score1; }
     else { state.score2 = Math.max(0, state.score2 + change); document.getElementById('score2').innerText = state.score2; }
+    
+    // Sincroniza com a nuvem
+    try { await updateDoc(settingsRef, { score1: state.score1, score2: state.score2 }); } catch(e) {}
     checkWinCondition();
 };
 
 export const resetScore = () => {
-    openConfirmModal("Zerar Placar", "Deseja realmente zerar o placar da partida atual?", () => {
+    openConfirmModal("Zerar Placar", "Deseja realmente zerar o placar da partida atual?", async () => {
         state.score1 = 0; state.score2 = 0; 
+        try { await updateDoc(settingsRef, { score1: 0, score2: 0, team1: '', team2: '' }); } catch(e) {}
+        
         document.getElementById('score1').innerText = state.score1; 
         document.getElementById('score2').innerText = state.score2;
         document.getElementById('team1Select').value = ''; 
@@ -584,6 +701,11 @@ export const resetScore = () => {
 };
 
 export const saveAndCloseVictoryModal = async () => {
+    // Trava de segurança: Se a pontuação já for 0, alguém já salvou.
+    if (state.score1 === 0 && state.score2 === 0) {
+        showToast("Esta partida já foi encerrada por outro usuário.", "warning");
+        return;
+    }
     const preview = calculateEloPreview();
     if (!preview) {
         showToast("Selecione dois times válidos e diferentes no placar!", "error");
@@ -600,18 +722,32 @@ export const saveAndCloseVictoryModal = async () => {
 
     try {
         const updatePromises = [];
+        const processedPlayerIds = new Set(); // NOVO: Impede que o jogador pontue duas vezes
 
         [ {team: team1, change: changeT1, actual: actualT1}, {team: team2, change: changeT2, actual: actualT2} ].forEach(({team, change, actual}) => {
             team.players.forEach(p => {
+                if (processedPlayerIds.has(p.id)) return; // Se já processou em outro time, pula
+                processedPlayerIds.add(p.id);
+
                 const dbPlayer = state.players.find(x => x.id === p.id);
                 if (dbPlayer) {
-                    const newElo = Math.max(0, (dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150) + change);
                     const partidas = (dbPlayer.partidas || 0) + 1;
                     const vitorias = (dbPlayer.vitorias || 0) + actual;
-                    const streak = actual === 1 ? (dbPlayer.streak >= 0 ? dbPlayer.streak + 1 : 1) : (dbPlayer.streak <= 0 ? dbPlayer.streak - 1 : -1);
                     
-                    updatePromises.push(updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
-                        eloRating: newElo, partidas, vitorias, streak, updatedAt: Date.now()
+                    // Atualiza a streak (foguinho/gelinho)
+                    const currentStreak = dbPlayer.streak || 0;
+                    const newStreak = actual === 1 ? (currentStreak >= 0 ? currentStreak + 1 : 1) : (currentStreak <= 0 ? currentStreak - 1 : -1);
+                    
+                    // NOVO: Aplica os +5 de bônus se a vitória criar ou manter uma streak de 3+
+                    let finalChange = change;
+                    if (actual === 1 && newStreak >= 3) {
+                        finalChange += 5;
+                    }
+
+                    const newElo = Math.max(0, (dbPlayer.eloRating !== undefined ? dbPlayer.eloRating : 150) + finalChange);
+                    
+                    updatePromises.push(updateDoc(doc(playersRef, p.id), {
+                        eloRating: newElo, partidas, vitorias, streak: newStreak, updatedAt: Date.now()
                     }));
                 }
             });
@@ -636,7 +772,8 @@ export const saveAndCloseVictoryModal = async () => {
         document.getElementById('victoryModal').classList.add('hidden');
         document.getElementById('victoryModal').classList.remove('flex');
         
-        state.score1 = 0; state.score2 = 0; 
+        state.score1 = 0; state.score2 = 0;
+        try { await updateDoc(settingsRef, { score1: 0, score2: 0, team1: '', team2: '' }); } catch(e) {} 
         document.getElementById('score1').innerText = state.score1; 
         document.getElementById('score2').innerText = state.score2;
         document.getElementById('team1Select').value = ''; 
@@ -653,6 +790,13 @@ export const saveAndCloseVictoryModal = async () => {
 };
 
 export const promoteWaitlistToTeam = async (waitlistTeamId) => {
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Ação bloqueada! Um jogo está em andamento no placar.", "error");
+        return;
+    }
+
     openConfirmModal("Promover Lista de Espera", "Deseja criar um novo time equilibrado usando os jogadores da lista de espera?", async () => {
         const waitlistDoc = state.drawnTeams.find(t => t.id === waitlistTeamId && t.isWaitlist);
         if (!waitlistDoc) return;
@@ -742,14 +886,28 @@ export const promoteWaitlistToTeam = async (waitlistTeamId) => {
             await addDoc(teamsRef, { label: nextLabelNumber.toString(), players: newTeamPlayers });
 
             if (sortedWaitlist.length > 0) {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistDoc.id), { players: sortedWaitlist });
+                await updateDoc(doc(teamsRef, waitlistDoc.id), { players: sortedWaitlist });
             } else {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teams', waitlistDoc.id));
+                await deleteDoc(doc(teamsRef, waitlistDoc.id));
             }
             showToast("Nova equipe formada a partir da espera!", "success");
         } catch (e) {
             console.error(e);
             showToast("Erro ao promover lista de espera.", "error");
+        }
+    });
+};
+
+export const clearMatchHistory = () => {
+    openConfirmModal("Limpar Histórico", "Deseja realmente apagar todo o histórico de partidas?", async () => {
+        try {
+            // Mapeia todas as partidas e cria uma requisição de delete para cada uma
+            const deletePromises = state.matchHistory.map(m => deleteDoc(doc(matchHistoryRef, m.id)));
+            await Promise.all(deletePromises);
+            showToast("Histórico de partidas limpo!", "info");
+        } catch (e) { 
+            console.error(e); 
+            showToast("Erro ao limpar histórico", "error"); 
         }
     });
 };
@@ -765,3 +923,5 @@ window.resetScore = resetScore;
 window.confirmMovePlayer = confirmMovePlayer;
 window.saveAndCloseVictoryModal = saveAndCloseVictoryModal;
 window.promoteWaitlistToTeam = promoteWaitlistToTeam;
+window.updateLiveEloPreview = updateLiveEloPreview;
+window.clearMatchHistory = clearMatchHistory;
