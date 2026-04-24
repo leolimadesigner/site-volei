@@ -594,11 +594,18 @@ export const renderSorteioTable = () => {
 
     const sorted = filtered.sort((a, b) => { 
         if (sortMode === 'alpha') {
-            return a.name.localeCompare(b.name);
+            return (a.name || '').localeCompare(b.name || '');
         } else {
-            const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
-            if(c !== 0) return c; 
-            return a.name.localeCompare(b.name); 
+            // 1º Critério: Categoria (Maior para menor)
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
+            if(catDiff !== 0) return catDiff; 
+            
+            // 2º Critério: Elo (Maior para menor)
+            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            if (eloDiff !== 0) return eloDiff;
+            
+            // 3º Critério: Ordem Alfabética
+            return (a.name || '').localeCompare(b.name || ''); 
         }
     });
     
