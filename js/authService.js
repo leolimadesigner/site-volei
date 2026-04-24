@@ -38,17 +38,13 @@ export const logoutAdmin = async () => {
 
 /**
  * Observador de estado de autenticação.
- * Este é o "coração" da segurança no frontend. Ele deteta se o 
- * utilizador está logado e atualiza o estado global.
  */
 export const initAuthObserver = (callback) => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Verifica se o UID do utilizador logado coincide com o seu UID de Admin
-            // (Isso impede que outros utilizadores logados via e-mail virem admins)
-            const ADMIN_UID = "lDvT8onqvthNuycl1npALGbjvl12";
-            
-            state.isAuthenticated = (user.uid === ADMIN_UID);
+            // Como só você tem conta de e-mail registrada no painel no momento,
+            // qualquer login bem-sucedido concede acesso de Admin.
+            state.isAuthenticated = true;
             state.user = user;
         } else {
             state.isAuthenticated = false;

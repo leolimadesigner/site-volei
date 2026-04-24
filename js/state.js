@@ -3,6 +3,21 @@
  * Centraliza todas as variáveis voláteis que a interface precisa para se renderizar.
  */
 export const state = {
+    // Gerador robusto de ID de sessão
+    localSessionId: (() => {
+        try {
+            let s = sessionStorage.getItem('tc_sid');
+            if (!s) {
+                s = Math.random().toString(36).substring(2, 15);
+                sessionStorage.setItem('tc_sid', s);
+            }
+            return s;
+        } catch (e) {
+            // Caso o navegador bloqueie o sessionStorage (ex: aba anônima restrita)
+            return "temp-" + Math.random().toString(36).substring(2, 15);
+        }
+    })(),
+
     // ---------------------------------------------------
     // 1. DADOS DO BANCO (Atualizados via onSnapshot)
     // ---------------------------------------------------

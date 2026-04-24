@@ -78,60 +78,58 @@ export const drawTeams = async () => {
 // ============================================================================
 
 export const createWaitlist = () => {
-    openConfirmModal("Sincronizar Presenças", "Adicionar novos marcados na espera e remover os desmarcados?", async () => {
+    openConfirmModal("Atualizar Lista de Espera", "Os atletas selecionados (que não estejam em times) formarão a nova lista de espera. Deseja continuar?", async () => {
         try {
             const waitlistTeamDoc = state.drawnTeams.find(t => t.isWaitlist);
-            let currentWaitlistPlayers = [];
-            const updatePromises = [];
-            
-            for (const team of state.drawnTeams) {
-                if (!team.isWaitlist) {
-                    const filteredPlayers = team.players.filter(p => state.selectedPlayerIds.has(p.id));
-                    if (filteredPlayers.length !== team.players.length) {
-                        if (filteredPlayers.length === 0) {
-                            updatePromises.push(deleteDoc(doc(teamsRef, team.id)));
-                        } else {
-                            updatePromises.push(updateDoc(doc(teamsRef, team.id), { players: filteredPlayers }));
-                        }
-                    }
-                } else {
-                    currentWaitlistPlayers = team.players.filter(p => state.selectedPlayerIds.has(p.id));
-                }
-            }
-            
+            const normalTeams = state.drawnTeams.filter(t => !t.isWaitlist);
+
+            // 1. Coleta os IDs de todos os jogadores que já estão em times normais (para os proteger)
             const playersInNormalTeamsIds = new Set(
-                state.drawnTeams
-                    .filter(t => !t.isWaitlist)
-                    .flatMap(t => t.players.filter(p => state.selectedPlayerIds.has(p.id)).map(p => p.id))
+                normalTeams.flatMap(t => t.players.map(p => p.id))
             );
-            const playersInWaitlistIds = new Set(currentWaitlistPlayers.map(p => p.id));
-            
-            const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
-            const newPlayersToAdd = activePlayers.filter(p => !playersInNormalTeamsIds.has(p.id) && !playersInWaitlistIds.has(p.id));
-            
-            const newPlayersWithRounds = newPlayersToAdd.map(p => ({ ...p, waitlistRounds: 0 }));
-            
-            const updatedWaitlist = [...currentWaitlistPlayers, ...newPlayersWithRounds].sort((a, b) => {
+
+            // 2. Filtra quem deve estar na espera: Tem que estar selecionado E NÃO estar num time normal
+            const selectedForWaitlist = state.players.filter(p => 
+                state.selectedPlayerIds.has(p.id) && !playersInNormalTeamsIds.has(p.id)
+            );
+
+            // 3. Monta a nova lista de espera preservando o histórico de quem já estava lá
+            let updatedWaitlist = [];
+            if (waitlistTeamDoc) {
+                const existingWaitlistMap = new Map(waitlistTeamDoc.players.map(p => [p.id, p]));
+                selectedForWaitlist.forEach(p => {
+                    if (existingWaitlistMap.has(p.id)) {
+                        updatedWaitlist.push(existingWaitlistMap.get(p.id)); // Mantém rodadas antigas
+                    } else {
+                        updatedWaitlist.push({ ...p, waitlistRounds: 0 }); // Novo na espera
+                    }
+                });
+            } else {
+                updatedWaitlist = selectedForWaitlist.map(p => ({ ...p, waitlistRounds: 0 }));
+            }
+
+            // 4. Ordena por categoria e ordem alfabética
+            updatedWaitlist.sort((a, b) => {
                 const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
                 if (catDiff !== 0) return catDiff;
-                return a.name.localeCompare(b.name);
+                return (a.name || '').localeCompare(b.name || '');
             });
-            
+
+            // 5. Atualiza o banco de dados
             if (waitlistTeamDoc) {
                 if (updatedWaitlist.length > 0) {
-                    updatePromises.push(updateDoc(doc(teamsRef, waitlistTeamDoc.id), { players: updatedWaitlist }));
+                    await updateDoc(doc(teamsRef, waitlistTeamDoc.id), { players: updatedWaitlist });
                 } else {
-                    updatePromises.push(deleteDoc(doc(teamsRef, waitlistTeamDoc.id)));
+                    await deleteDoc(doc(teamsRef, waitlistTeamDoc.id));
                 }
             } else if (updatedWaitlist.length > 0) {
-                updatePromises.push(addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: updatedWaitlist }));
+                await addDoc(teamsRef, { label: 'DE FORA', isWaitlist: true, players: updatedWaitlist });
             }
             
-            await Promise.all(updatePromises);
-            showToast("Sincronização de presença concluída!", "success");
-        } catch (e) { 
+            showToast("Lista de espera atualizada com sucesso!", "success");
+        } catch (e) {
             console.error(e);
-            showToast("Erro ao atualizar presenças", "error"); 
+            showToast("Erro ao atualizar a lista de espera.", "error");
         }
     });
 };

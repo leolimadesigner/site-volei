@@ -3,14 +3,16 @@ import { initAuthObserver, loginAdmin, logoutAdmin } from './authService.js';
 import {
     switchView, showToast, openConfirmModal, closeConfirmModal,
     closeVictoryModalOnly, renderSorteioTable, renderAll, updateLiveEloPreview,
-    closeMoveModal, closePlayerHistoryModal, editPlayer, resetForm 
+    closeMoveModal, closePlayerHistoryModal, editPlayer, resetForm, openMoveModal,
+    updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, togglePlacarLock, 
+    forceUnlockPlacar
 } from './ui.js';
 import {
     drawTeams, createWaitlist, clearTeams, confirmMovePlayer, deleteTeam,
     redrawTeamWithWaitlist, promoteWaitlistToTeam 
 } from './controllers/draftController.js';
 import {
-    updateScore, resetScore, saveAndCloseVictoryModal, checkWinCondition
+    updateScore, resetScore, saveAndCloseVictoryModal, checkWinCondition, syncTeamsToCloud 
 } from './controllers/matchController.js';
 import {
     toggleEloSystem, togglePlayerSelection, toggleAllPlayers,
@@ -80,53 +82,24 @@ const initDatabaseListeners = () => {
     onSnapshot(settingsRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            state.eloEnabled = data.eloEnabled;
             
+            state.eloEnabled = data.eloEnabled ?? true;
             const toggle = document.getElementById('toggleElo');
             if (toggle) toggle.checked = state.eloEnabled;
 
-            let needsPreviewUpdate = false;
+            // LÓGICA DE BLOQUEIO
+            const matchActive = data.matchInProgress === true;
+            const ownerId = data.matchOwner;
+            const myId = state.localSessionId;
 
-            // Sincroniza Seleção de Times no Placar
-            if (data.team1 !== undefined) {
-                state.currentTeam1 = data.team1;
-                const t1 = document.getElementById('team1Select');
-                if (t1 && t1.value !== data.team1) { 
-                    t1.value = data.team1; 
-                    needsPreviewUpdate = true; 
-                }
-            }
-
-            if (data.team2 !== undefined) {
-                state.currentTeam2 = data.team2;
-                const t2 = document.getElementById('team2Select');
-                if (t2 && t2.value !== data.team2) { 
-                    t2.value = data.team2; 
-                    needsPreviewUpdate = true; 
-                }
-            }
-
-            // Sincroniza Pontos em Tempo Real
-            if (data.score1 !== undefined) {
-                state.score1 = data.score1;
-                const s1 = document.getElementById('score1');
-                if (s1) s1.innerText = state.score1;
-            }
-            if (data.score2 !== undefined) {
-                state.score2 = data.score2;
-                const s2 = document.getElementById('score2');
-                if (s2) s2.innerText = state.score2;
-            }
-
-            if (needsPreviewUpdate) updateLiveEloPreview();
-
-            // Verifica condições de vitória para abrir modais simultaneamente nas telas de todos
-            checkWinCondition();
-
-            // Fechamento sincronizado do modal
-            if (state.score1 === 0 && state.score2 === 0) {
-                closeVictoryModalOnly();
-            }
+            // Só bloqueia se houver jogo E o dono for diferente de mim
+            const shouldLock = matchActive && (ownerId !== myId);
+            
+            console.log(`[PLACAR] Em curso: ${matchActive} | Dono: ${ownerId} | Eu: ${myId} | Bloquear: ${shouldLock}`);
+            
+            togglePlacarLock(shouldLock);
+        } else {
+            togglePlacarLock(false);
         }
     });
 };
@@ -189,6 +162,7 @@ Object.assign(window, {
     createWaitlist,
     updateScore,
     resetScore,
+    syncTeamsToCloud,
     saveAndCloseVictoryModal,
     closeVictoryModalOnly,
     toggleAllPlayers,
@@ -208,8 +182,13 @@ Object.assign(window, {
     closePlayerHistoryModal,
     editPlayer, 
     resetForm,
+    openMoveModal,
     handleLogin,
-    handleLogout  
+    handleLogout,
+    updateSorteioCounters,
+    changeHistoryPage,
+    openPlayerHistoryModal,
+    forceUnlockPlacar  
 });
 
 // ============================================================================

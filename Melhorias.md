@@ -8,6 +8,7 @@
 - ~~Alterar a função do botão Ajuste Elo, para que ao inves de fazer incremostos no ele ele sirva para definir o valor do elo atual.~~
 - ~~Adicionar um botão de cancelar abaixo de salvar na tela de cadastrar e editar um jogador para suspender a edição ou cadastro de novo jogador. Atualmente se você clicar para editar não tem como cadastrar um novo jogador.~~
 - ~~Se um time estiver em partida e alguem fizer uma troca com a lista de espera por um desses times e Elo não atualiza para o novo time. Ou corrigir isso ou bloquar para também não poder fazer troca com a lista de espera.~~
+- O botão atualizar lista de espera não está funcioinando legal
 
 
 ## Funcionalidades Gerais
