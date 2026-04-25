@@ -1,6 +1,10 @@
 import { state } from '../state.js';
-import { db, doc, addDoc, updateDoc, deleteDoc, playersRef, settingsRef, matchHistoryRef, storage, ref, uploadBytes, getDownloadURL, deleteObject } from '../firebase.js';
-import { showToast, openConfirmModal, renderSorteioTable } from '../ui.js';
+import { 
+    db, doc, addDoc, updateDoc, deleteDoc, playersRef, settingsRef, matchHistoryRef, storage, ref, uploadBytes, getDownloadURL, deleteObject,
+    globalGroupsRef, 
+} from '../firebase.js';
+import { showToast, openConfirmModal, renderSorteioTable, resetForm } from '../ui.js';
+import { arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // NOVO IMPORT
 
 // ============================================================================
 // CONFIGURAÇÕES GLOBAIS
@@ -97,10 +101,15 @@ const deletePhotoFromStorage = async (photoUrl) => {
 // ============================================================================
 
 export const savePlayer = async () => {
-    const name = document.getElementById('playerName').value.trim();
-    const id = document.getElementById('editId').value;
-    const newPhotoUrl = document.getElementById('photoData').value; // A foto que está no form
+    const nameInput = document.getElementById('playerName');
+    const emailInput = document.getElementById('playerEmail');
+    const editIdInput = document.getElementById('editId');
+    const newPhotoUrl = document.getElementById('photoData').value; // Restaura captura da foto
     
+    const name = nameInput.value.trim();
+    const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+    const id = editIdInput.value;
+
     if(!name) {
         return showToast("Preencha o nome do atleta!", "error");
     }
@@ -112,6 +121,7 @@ export const savePlayer = async () => {
     try {
         const elo = Math.max(0, parseInt(document.getElementById('statBonus').value) || 150);
         
+        // Restaura todos os dados do jogador (Estatísticas, Categoria, Ícone, Foto)
         const playerData = { 
             name, 
             categoria: parseInt(document.getElementById('statCategoria').value), 
@@ -122,6 +132,8 @@ export const savePlayer = async () => {
             photo: newPhotoUrl,
             updatedAt: Date.now()
         };
+
+        if (email) playerData.email = email;
 
         // Guarda a URL da foto antiga para podermos deletar caso tenha sido trocada
         let oldPhotoUrl = null;
@@ -135,7 +147,7 @@ export const savePlayer = async () => {
         if (id) {
             await updateDoc(doc(playersRef, id), playerData);
             
-            // SE a foto mudou (ou foi removida), deletamos a antiga do Storage!
+            // SE a foto mudou (ou foi removida), deletamos a antiga do Storage (Limpeza Correta!)
             if (oldPhotoUrl && oldPhotoUrl !== newPhotoUrl) {
                 await deletePhotoFromStorage(oldPhotoUrl);
             }
@@ -147,6 +159,16 @@ export const savePlayer = async () => {
             showToast("Atleta cadastrado!"); 
         }
         
+        // NOVO: Adiciona o e-mail no Grupo para o SaaS
+        if (email && state.currentGroupId) {
+            const groupDocRef = doc(db, 'groups', state.currentGroupId);
+            // Puxamos dinamicamente o arrayUnion para evitar erros
+            const { arrayUnion } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            await updateDoc(groupDocRef, {
+                memberEmails: arrayUnion(email)
+            });
+        }
+
         // Limpamos o input escondido para a faxina automática não deletar a foto recém-salva!
         document.getElementById('photoData').value = '';
 

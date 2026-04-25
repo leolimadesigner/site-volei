@@ -13,46 +13,57 @@ export const state = {
             }
             return s;
         } catch (e) {
-            // Caso o navegador bloqueie o sessionStorage (ex: aba anônima restrita)
             return "temp-" + Math.random().toString(36).substring(2, 15);
         }
     })(),
 
     // ---------------------------------------------------
-    // 1. DADOS DO BANCO (Atualizados via onSnapshot)
+    // 1. DADOS DO BANCO (Agora referentes ao GRUPO ATUAL)
     // ---------------------------------------------------
-    players: [],            // Lista de todos os jogadores cadastrados
-    drawnTeams: [],         // Times atualmente sorteados (inclui a Lista de Espera)
-    matchHistory: [],       // Histórico de partidas jogadas
-    eloEnabled: false,      // Flag global que define se o Placar Aberto está ativo
-    isPlacarLocked: false,  // <-- NOVO: Controle absoluto de bloqueio da quadra
+    players: [],            // Jogadores do grupo selecionado
+    drawnTeams: [],         // Times sorteados do grupo selecionado
+    matchHistory: [],       // Histórico de partidas do grupo selecionado
+    eloEnabled: false,      // Configuração de placar aberto do grupo selecionado
+    isPlacarLocked: false,  // Controle de bloqueio da quadra do grupo selecionado
+
     // ---------------------------------------------------
     // 2. ESTADO DE AUTENTICAÇÃO E SEGURANÇA
     // ---------------------------------------------------
-    isAuthenticated: false, // Define se o utilizador atual é o Admin
-    user: null,             // Armazena o objeto de utilizador do Firebase (contém o UID)
+    isAuthenticated: false, // Define se o utilizador tem sessão iniciada
+    user: null,             // Objeto base de autenticação do Firebase (uid, email)
+    userProfile: null,      // Dados extras do utilizador vindos do banco (nome)
+    isMaster: false,        // Flag para o Admin Geral do Sistema (Pode ver tudo)
 
     // ---------------------------------------------------
-    // 3. ESTADO DA INTERFACE E NAVEGAÇÃO
+    // 3. CONTEXTO MULTI-GRUPOS (NOVO!)
+    // ---------------------------------------------------
+    userGroups: [],         // Lista de todos os rachas que o utilizador participa ou administra
+    currentGroupId: null,   // ID do Racha que está aberto na tela no momento
+    currentGroupName: '',   // Nome do Racha que está aberto
+    currentUserRole: null,  // Permissão no racha atual ('admin', 'player', ou 'guest')
+    unsubscribeGroup: null, // Guarda as funções que escutam o banco para podermos desligá-las ao trocar de grupo
+    unsubscribeGroupsList: null, // NOVO: Para desligar a escuta da lista de grupos
+
+    // ---------------------------------------------------
+    // 4. ESTADO DA INTERFACE E NAVEGAÇÃO
     // ---------------------------------------------------
     isFirstLoad: true,      // Flag para selecionar todos os jogadores na primeira vez que a lista carrega
     historyCurrentPage: 0,  // Controle de paginação/dias na aba de histórico
     
     // ---------------------------------------------------
-    // 4. ESTADO DO PLACAR DA PARTIDA ATUAL
+    // 5. ESTADO DO PLACAR DA PARTIDA ATUAL
     // ---------------------------------------------------
-    score1: 0,              // Pontos do Time 1 (Azul)
-    score2: 0,              // Pontos do Time 2 (Vermelho)
-    currentTeam1: '',       // ID/Label do Time 1 selecionado
-    currentTeam2: '',       // ID/Label do Time 2 selecionado
+    score1: 0,              
+    score2: 0,              
+    currentTeam1: '',       
+    currentTeam2: '',       
 
     // ---------------------------------------------------
-    // 5. ESTADO DE INTERAÇÃO DO UTILIZADOR (Modais e Seleções)
+    // 6. ESTADO DE INTERAÇÃO DO UTILIZADOR
     // ---------------------------------------------------
-    selectedPlayerIds: new Set(), // IDs dos jogadores selecionados para o próximo sorteio
-    confirmActionCallback: null,  // Guarda a função que será executada se o utilizador clicar em "Confirmar" no modal genérico
+    selectedPlayerIds: new Set(), 
+    confirmActionCallback: null,  
     
-    // Dados temporários para o modal de transferência de jogadores
     moveData: { 
         sourceTeamId: null, 
         playerId: null 

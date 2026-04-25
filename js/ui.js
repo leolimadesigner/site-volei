@@ -123,16 +123,27 @@ export const showToast = (msg, type = 'success') => {
 };
 
 export const switchView = (view) => {
-    ['public', 'sorteio', 'login', 'admin', 'placar'].forEach(v => { 
+    // 1. Esconde TODAS as views
+    ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups'].forEach(v => { 
         const e = document.getElementById(`view-${v}`); 
         if(e) e.classList.add('hidden-view'); 
     });
     
-    ['btn-public', 'btn-sorteio', 'btn-admin', 'btn-placar'].forEach(b => { 
+    // 2. Remove o status de "ativo" de todos os botões do menu topo
+    ['btn-public', 'btn-sorteio', 'btn-admin', 'btn-placar', 'btn-groups'].forEach(b => { 
         const e = document.getElementById(b); 
         if(e) e.classList.remove('active'); 
     });
     
+    // 3. Controle da visibilidade do Menu de Navegação (Só aparece se estiver DENTRO de um grupo)
+    const navButtons = document.getElementById('mainNavButtons');
+    if (view === 'auth' || view === 'groups') {
+        if(navButtons) navButtons.classList.add('hidden-view');
+    } else {
+        if(navButtons) navButtons.classList.remove('hidden-view');
+    }
+
+    // 4. Mostra a view correta e ativa o botão correspondente
     if (view === 'public') { 
         document.getElementById('view-public').classList.remove('hidden-view'); 
         document.getElementById('btn-public').classList.add('active'); 
@@ -142,15 +153,28 @@ export const switchView = (view) => {
     } else if (view === 'placar') { 
         document.getElementById('view-placar').classList.remove('hidden-view'); 
         document.getElementById('btn-placar').classList.add('active'); 
-    } else { 
-        document.getElementById('btn-admin').classList.add('active'); 
-        if (state.isAuthenticated) {
+    } else if (view === 'groups') {
+        document.getElementById('view-groups').classList.remove('hidden-view'); 
+        if(document.getElementById('btn-groups')) document.getElementById('btn-groups').classList.add('active');
+    } else if (view === 'auth') {
+        document.getElementById('view-auth').classList.remove('hidden-view');
+    } else if (view === 'admin') { 
+        // Proteção: Só entra no Admin se estiver logado E for Admin/Master do grupo atual
+        if (state.isAuthenticated && (state.currentUserRole === 'admin' || state.isMaster)) {
             document.getElementById('view-admin').classList.remove('hidden-view');
+            document.getElementById('btn-admin').classList.add('active'); 
+        } else if (state.isAuthenticated) {
+            showToast("Você não é administrador deste grupo.", "error");
+            switchView('public'); // Redireciona para o ranking
         } else {
-            document.getElementById('view-login').classList.remove('hidden-view');
+            document.getElementById('view-auth').classList.remove('hidden-view');
         }
     }
-    renderAll();
+    
+    // Atualiza os dados apenas se estiver numa tela de grupo
+    if(view !== 'auth' && view !== 'groups') {
+        renderAll();
+    }
 };
 
 export const openConfirmModal = (title, message, callback) => {
@@ -364,7 +388,7 @@ export const editPlayer = (id) => {
     const p = state.players.find(x => x.id === id);
     if (!p) return;
 
-    // 2. Preenche os campos do formulário
+    // 2. Preenche TODOS os campos do formulário (Restaurado!)
     document.getElementById('editId').value = p.id;
     document.getElementById('playerName').value = p.name;
     document.getElementById('statCategoria').value = p.categoria || 1;
@@ -372,8 +396,12 @@ export const editPlayer = (id) => {
     document.getElementById('statVit').value = p.vitorias || 0;
     document.getElementById('statBonus').value = p.eloRating ?? 150;
     document.getElementById('playerIcon').value = p.icon || 'user';
+    
+    // NOVO: Puxa o e-mail para edição, se existir
+    const emailInput = document.getElementById('playerEmail');
+    if(emailInput) emailInput.value = p.email || '';
 
-    // 3. Trata a foto de perfil
+    // 3. Trata a foto de perfil (Restaurado!)
     if (p.photo) {
         document.getElementById('photoPreview').src = p.photo;
         document.getElementById('photoPreview').classList.remove('hidden');
@@ -388,20 +416,20 @@ export const editPlayer = (id) => {
     document.getElementById('formTitle').innerHTML = '<i data-lucide="edit" class="w-5 h-5"></i> Editar Atleta';
     document.getElementById('btnSave').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> ATUALIZAR';
 
-    // 5. GARANTE QUE O FORMULÁRIO ABRA AUTOMATICAMENTE
+    // 5. GARANTE QUE O FORMULÁRIO ABRA AUTOMATICAMENTE (Restaurado!)
     const formContent = document.getElementById('formContent');
     const formIcon = document.getElementById('formToggleIcon');
     if (formContent) formContent.classList.remove('hidden');
-    if (formIcon) formIcon.classList.add('rotate-180'); // Gira a setinha para cima
+    if (formIcon) formIcon.classList.add('rotate-180');
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     
-    // 6. Rola a tela suavemente para o formulário (útil no telemóvel)
+    // 6. Rola a tela suavemente para o formulário
     document.getElementById('view-admin').scrollIntoView({ behavior: 'smooth' });
 };
 
 export const resetForm = () => {
-    // 1. Limpa todos os campos
+    // 1. Limpa os campos de texto
     document.getElementById('editId').value = '';
     document.getElementById('playerName').value = '';
     document.getElementById('statCategoria').value = '1';
@@ -410,18 +438,28 @@ export const resetForm = () => {
     document.getElementById('statBonus').value = '150';
     document.getElementById('playerIcon').value = 'user';
     
-    if (window.removePhoto) window.removePhoto();
+    const emailInput = document.getElementById('playerEmail');
+    if(emailInput) emailInput.value = '';
 
-    // 2. Restaura o visual para "Modo Criação"
+    // 2. Limpa a Foto APENAS VISUALMENTE (Sem deletar do Storage)
+    document.getElementById('photoPreview').src = '';
+    document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('photoPlaceholder').classList.remove('hidden');
+    document.getElementById('photoData').value = ''; 
+    document.getElementById('btnRemovePhoto').classList.add('hidden');
+    const fileInput = document.getElementById('playerPhoto');
+    if(fileInput) fileInput.value = '';
+
+    // 3. Restaura o visual do botão
     document.getElementById('formTitle').innerHTML = '<i data-lucide="user-plus" class="w-5 h-5"></i> Novo Atleta';
     document.getElementById('btnSave').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> SALVAR';
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // 3. FECHA O FORMULÁRIO AO CANCELAR (OU APÓS SALVAR)
+    // 4. Fecha o formulário
     const formContent = document.getElementById('formContent');
     const formIcon = document.getElementById('formToggleIcon');
     if (formContent) formContent.classList.add('hidden');
-    if (formIcon) formIcon.classList.remove('rotate-180'); // Gira a setinha para baixo
+    if (formIcon) formIcon.classList.remove('rotate-180');
 };
 
 // ============================================================================
@@ -937,6 +975,95 @@ export const forceUnlockPlacar = async () => {
             showToast("Placar desbloqueado à força.", "info");
         } catch(e) {}
     });
+};
+
+// ============================================================================
+// HELPERS DE UI PARA AUTENTICAÇÃO E GRUPOS
+// ============================================================================
+
+export const toggleAuthMode = (mode) => {
+    const isRegister = mode === 'register';
+    
+    // Altera os títulos
+    document.getElementById('authTitle').innerText = isRegister ? 'Criar Conta' : 'Bem-vindo';
+    document.getElementById('authSubtitle').innerText = isRegister ? 'Preencha seus dados para começar.' : 'Faça login para acessar seus grupos.';
+    
+    // Mostra/Esconde o campo de Nome
+    const nameContainer = document.getElementById('registerNameContainer');
+    if(isRegister) {
+        nameContainer.classList.remove('hidden');
+    } else {
+        nameContainer.classList.add('hidden');
+    }
+
+    // Atualiza os botões principais
+    const btnMain = document.getElementById('btnAuthMain');
+    btnMain.innerHTML = isRegister ? '<i data-lucide="user-plus" class="w-5 h-5"></i> CADASTRAR' : '<i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR';
+    
+    // Atualiza o texto do rodapé (alternar entre login e registro)
+    const btnToggle = document.getElementById('btnToggleAuth');
+    if (isRegister) {
+        btnToggle.innerHTML = 'Já tem conta? <span class="font-bold underline text-blue-400">Faça login</span>';
+        btnToggle.setAttribute('onclick', "toggleAuthMode('login')");
+    } else {
+        btnToggle.innerHTML = 'Ainda não tem conta? <span class="font-bold underline text-blue-400">Cadastre-se</span>';
+        btnToggle.setAttribute('onclick', "toggleAuthMode('register')");
+    }
+
+    // Se a função existir, recria os ícones Lucide recém-injetados
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // Salva na memória da página (num atributo do botão) em qual modo estamos para o main.js saber o que fazer
+    btnMain.setAttribute('data-mode', isRegister ? 'register' : 'login');
+};
+
+export const renderUserGroups = () => {
+    const grid = document.getElementById('userGroupsGrid');
+    const msg = document.getElementById('noGroupsMessage');
+    
+    if (!grid || !msg) return;
+
+    if (!state.userGroups || state.userGroups.length === 0) {
+        grid.innerHTML = '';
+        msg.classList.remove('hidden');
+        msg.classList.add('flex');
+        return;
+    }
+
+    msg.classList.add('hidden');
+    msg.classList.remove('flex');
+
+    grid.innerHTML = state.userGroups.map(group => {
+        // Determina a permissão visualmente
+        let roleTag = '';
+        let roleBg = '';
+        if (state.isMaster || (group.adminUids && group.adminUids.includes(state.user?.uid))) {
+            roleTag = '<i data-lucide="shield-check" class="w-3 h-3"></i> Admin';
+            roleBg = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        } else {
+            roleTag = '<i data-lucide="user" class="w-3 h-3"></i> Jogador';
+            roleBg = 'bg-slate-700/50 text-slate-300 border-slate-600/50';
+        }
+
+        const dateStr = group.createdAt ? new Date(group.createdAt).toLocaleDateString('pt-BR') : '--/--/----';
+
+        return `
+            <div onclick="selectGroup('${group.id}', '${group.name}')" class="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-green-500/10 group-card flex flex-col justify-between h-full min-h-[140px]">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-bold text-white group-card-hover:text-green-400 transition-colors">${group.name}</h3>
+                        <span class="px-2 py-1 rounded-md text-[10px] font-bold border flex items-center gap-1 ${roleBg}">${roleTag}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Criado em ${dateStr}</p>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <span class="text-sm font-bold text-green-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">ENTRAR <i data-lucide="arrow-right" class="w-4 h-4"></i></span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
 export const renderAll = () => { 

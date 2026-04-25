@@ -16,9 +16,12 @@
                 <div class="bg-green-500 p-1.5 rounded-lg">
                     <i data-lucide="volleyball" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-900"></i>
                 </div>
-                <span class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic hidden sm:block">TIME<span class="text-green-500">CERTO</span></span>
+                <span id="headerAppName" class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic hidden sm:block">TIME<span class="text-green-500">CERTO</span></span>
             </div>
-            <div class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end">
+            <div id="mainNavButtons" class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end hidden-view">
+                <button onclick="switchView('groups')" id="btn-groups" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap text-blue-400">
+                    <i data-lucide="users" class="w-3 h-3 sm:w-4 sm:h-4"></i> Grupos
+                </button>
                 <button onclick="switchView('public')" id="btn-public" class="nav-btn active px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
                     <i data-lucide="layout-grid" class="w-3 h-3 sm:w-4 sm:h-4"></i> Ranking
                 </button>
@@ -29,7 +32,7 @@
                     <i data-lucide="monitor-play" class="w-3 h-3 sm:w-4 sm:h-4"></i> Placar
                 </button>
                 <button onclick="switchView('admin')" id="btn-admin" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Admin
+                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Painel
                 </button>
             </div>
         </div>
@@ -254,18 +257,70 @@
             </div>
         </section>
 
-        <!-- ABA LOGIN (Apenas para Admin) -->
-        <section id="view-login" class="hidden-view flex justify-center py-12 sm:py-20 px-2">
-            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
-                <div class="text-center mb-8">
-                    <i data-lucide="lock" class="w-10 h-10 sm:w-12 sm:h-12 text-green-500 mx-auto mb-4"></i>
-                    <h2 class="text-xl sm:text-2xl font-bold">Acesso Restrito</h2>
+        <!-- ABA LOGIN -->
+        <section id="view-auth" class="hidden-view flex justify-center py-12 sm:py-20 px-2 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md relative overflow-hidden">
+                <div class="text-center mb-6">
+                    <div class="bg-slate-900 inline-block p-3 rounded-full mb-3 border border-slate-700">
+                        <i data-lucide="user-circle" class="w-10 h-10 sm:w-12 sm:h-12 text-green-500"></i>
+                    </div>
+                    <h2 id="authTitle" class="text-xl sm:text-2xl font-bold text-white">Bem-vindo</h2>
+                    <p id="authSubtitle" class="text-sm text-slate-400 mt-1">Faça login para acessar seus grupos.</p>
                 </div>
+
                 <div class="space-y-4">
-                    <input type="text" id="loginUser" placeholder="Usuário" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
-                    <input type="password" id="loginPass" placeholder="Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
-                    <button onclick="handleLogin()" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg">ENTRAR NO PAINEL</button>
+                    <div id="registerNameContainer" class="hidden">
+                        <input type="text" id="authName" placeholder="Seu Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <input type="email" id="authEmail" placeholder="Seu E-mail" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
+                    
+                    <div id="passwordContainer">
+                        <input type="password" id="authPass" placeholder="Sua Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+
+                    <button onclick="handleAuthAction()" id="btnAuthMain" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
+                        <i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR
+                    </button>
                 </div>
+
+                <div class="mt-6 flex flex-col gap-3 text-center text-sm font-medium">
+                    <button onclick="toggleAuthMode('register')" id="btnToggleAuth" class="text-slate-300 hover:text-green-400 transition-colors">Ainda não tem conta? <span class="font-bold underline">Cadastre-se</span></button>
+                    <button onclick="handlePasswordReset()" id="btnResetPass" class="text-slate-500 hover:text-white transition-colors text-xs">Esqueci minha senha</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-groups" class="hidden-view animate-in fade-in duration-500 py-6 sm:py-10">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+                        <i data-lucide="users" class="w-8 h-8 text-blue-500"></i> Meus Grupos
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Selecione um racha para acessar o painel ou crie o seu próprio.</p>
+                </div>
+                <div class="flex gap-3 w-full md:w-auto">
+                    <button onclick="handleLogout()" class="bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 text-sm flex-1 md:flex-none justify-center">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                    </button>
+                    <button onclick="document.getElementById('createGroupModal').classList.remove('hidden'); document.getElementById('createGroupModal').classList.add('flex');" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 text-sm shadow-lg shadow-blue-500/30 flex-1 md:flex-none justify-center">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Grupo
+                    </button>
+                </div>
+            </div>
+
+            <div id="userGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+
+            <div id="noGroupsMessage" class="hidden flex-col items-center justify-center py-16 bg-slate-800/30 rounded-3xl border border-slate-700 border-dashed text-center">
+                <div class="bg-slate-800 p-4 rounded-full mb-4">
+                    <i data-lucide="ghost" class="w-12 h-12 text-slate-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Você ainda não faz parte de nenhum grupo</h3>
+                <p class="text-slate-400 max-w-md mx-auto mb-6">Crie o seu próprio grupo para ser o administrador e gerenciar suas partidas, ou peça para um administrador te adicionar a um grupo existente pelo seu e-mail.</p>
+                <button onclick="document.getElementById('createGroupModal').classList.remove('hidden'); document.getElementById('createGroupModal').classList.add('flex');" class="bg-green-500 text-slate-900 px-6 py-3 rounded-xl font-black transition-all flex items-center gap-2">
+                    <i data-lucide="plus" class="w-5 h-5"></i> CRIAR MEU PRIMEIRO GRUPO
+                </button>
             </div>
         </section>
 
@@ -305,7 +360,12 @@
                         
                         <div id="formContent" class="space-y-4 mt-4 sm:mt-6 transition-all hidden border-t border-slate-700 pt-4">
                             <input type="hidden" id="editId" value="">
-                            <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-green-500">
+                            <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none focus:ring-2 focus:ring-green-500">
+                            <div class="mt-2 relative">
+                                <i data-lucide="mail" class="absolute left-3 top-3.5 w-4 h-4 text-slate-500"></i>
+                                <input type="email" id="playerEmail" placeholder="E-mail do Atleta (Para acesso)" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-3 pl-10 pr-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <p class="text-[9px] text-slate-400 mt-1 ml-1">Se preenchido, este usuário verá este grupo na tela inicial dele.</p>
+                            </div>
                             
                             <div class="mb-2 mt-4 flex flex-col items-center">
                                 <label class="relative cursor-pointer group/photo flex flex-col items-center">
@@ -423,6 +483,24 @@
                     <button onclick="closePlayerHistoryModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 <div id="playerHistoryList" class="overflow-y-auto space-y-2 flex-1 no-scrollbar"></div>
+            </div>
+        </div>
+    
+        <div id="createGroupModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm px-4 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-blue-500 max-w-md w-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="plus-circle" class="text-blue-500"></i> Novo Grupo</h3>
+                    <button onclick="document.getElementById('createGroupModal').classList.add('hidden'); document.getElementById('createGroupModal').classList.remove('flex');" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 mb-1 block">Nome do Racha / Grupo</label>
+                        <input type="text" id="newGroupName" placeholder="Ex: Vôlei de Sábado" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button onclick="handleCreateGroup()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-4">
+                        <i data-lucide="save" class="w-5 h-5"></i> CRIAR GRUPO
+                    </button>
+                </div>
             </div>
         </div>
 
