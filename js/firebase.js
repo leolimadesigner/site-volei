@@ -19,15 +19,15 @@ import {
     query,
     orderBy
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 // 1. Suas novas credenciais do Passo 4
-
-
 
 // 2. Inicialização
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // 3. Definição centralizada de caminhos (Evita caminhos redundantes)
 // Manteremos a estrutura de 'artifacts' para compatibilidade, 
@@ -55,5 +55,10 @@ export {
     addDoc, 
     updateDoc,
     query,
-    orderBy
+    orderBy,
+    storage,
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    deleteObject
 };

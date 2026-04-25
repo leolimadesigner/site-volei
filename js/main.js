@@ -26,30 +26,6 @@ import {
 // MANIPULAÇÃO DE IMAGENS (Formulário)
 // ============================================================================
 
-export const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('photoPreview').src = e.target.result;
-            document.getElementById('photoPreview').classList.remove('hidden');
-            document.getElementById('photoPlaceholder').classList.add('hidden');
-            document.getElementById('photoData').value = e.target.result;
-            document.getElementById('btnRemovePhoto').classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-};
-
-export const removePhoto = () => {
-    document.getElementById('photoPreview').src = '';
-    document.getElementById('photoPreview').classList.add('hidden');
-    document.getElementById('photoPlaceholder').classList.remove('hidden');
-    document.getElementById('photoData').value = '';
-    document.getElementById('playerPhoto').value = '';
-    document.getElementById('btnRemovePhoto').classList.add('hidden');
-};
-
 export const adjustBonus = (val) => {
     const el = document.getElementById('statBonus');
     el.value = Math.max(0, (parseInt(el.value) || 0) + val);

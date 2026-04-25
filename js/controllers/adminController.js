@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { db, doc, addDoc, updateDoc, deleteDoc, playersRef, settingsRef, matchHistoryRef } from '../firebase.js';
+import { db, doc, addDoc, updateDoc, deleteDoc, playersRef, settingsRef, matchHistoryRef, storage, ref, uploadBytes, getDownloadURL, deleteObject } from '../firebase.js';
 import { showToast, openConfirmModal, renderSorteioTable } from '../ui.js';
 
 // ============================================================================
@@ -135,4 +135,68 @@ export const deletePlayer = (id) => {
             showToast("Erro ao excluir", "error");
         }
     });
+};
+
+// ============================================================================
+// UPLOAD DE FOTOS (FIREBASE STORAGE)
+// ============================================================================
+
+window.handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Bloqueia o botão de salvar para o usuário não clicar antes da foto carregar
+    const btnSave = document.getElementById('btnSave');
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerText = "CARREGANDO FOTO...";
+    }
+    
+    showToast("A fazer upload da foto...", "info");
+
+    try {
+        // 1. Cria um nome único para o ficheiro (ex: jogadores/123456789_xpto.jpg)
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `jogadores/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+        
+        // 2. Prepara o espaço no Firebase Storage
+        const storageRef = ref(storage, fileName);
+
+        // 3. Envia o ficheiro para o Firebase
+        const snapshot = await uploadBytes(storageRef, file);
+        
+        // 4. Pede ao Firebase o Link (URL) público dessa imagem
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        // 5. Mostra a bolinha com a foto na tela para o utilizador
+        document.getElementById('photoPreview').src = downloadURL;
+        document.getElementById('photoPreview').classList.remove('hidden');
+        document.getElementById('photoPlaceholder').classList.add('hidden');
+        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+        
+        // 6. GUARDA O LINK NO CAMPO ESCONDIDO (É isto que vai para o Firestore ao salvar)
+        document.getElementById('photoData').value = downloadURL; 
+        
+        showToast("Foto pronta!");
+    } catch (error) {
+        console.error("Erro no upload:", error);
+        showToast("Erro ao fazer upload da imagem", "error");
+    } finally {
+        // Libera o botão de salvar novamente
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = "<i data-lucide='save' class='w-4 h-4'></i> SALVAR";
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+};
+
+// Função auxiliar para remover a foto caso o usuário clique em "Remover Foto"
+window.removePhoto = () => {
+    document.getElementById('photoPreview').src = '';
+    document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('photoPlaceholder').classList.remove('hidden');
+    document.getElementById('photoData').value = ''; // Limpa o link
+    document.getElementById('btnRemovePhoto').classList.add('hidden');
+    document.getElementById('playerPhoto').value = ''; // Reseta o input file
 };
