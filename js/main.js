@@ -5,14 +5,16 @@ import {
     closeVictoryModalOnly, renderSorteioTable, renderAll, updateLiveEloPreview,
     closeMoveModal, closePlayerHistoryModal, editPlayer, resetForm, openMoveModal,
     updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, togglePlacarLock, 
-    forceUnlockPlacar, toggleAuthMode, renderUserGroups, setFormMode, renderAdminTable
+    forceUnlockPlacar, toggleAuthMode, renderUserGroups, setFormMode, renderAdminTable,
+    openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, playBeepSound
 } from './ui.js';
 import {
     drawTeams, createWaitlist, clearTeams, confirmMovePlayer, deleteTeam,
     redrawTeamWithWaitlist, promoteWaitlistToTeam 
 } from './controllers/draftController.js';
 import {
-    updateScore, resetScore, saveAndCloseVictoryModal, checkWinCondition, syncTeamsToCloud 
+    updateScore, resetScore, saveAndCloseVictoryModal, checkWinCondition, syncTeamsToCloud,
+    toggleTimer, resetTimer
 } from './controllers/matchController.js';
 import {
     toggleEloSystem, togglePlayerSelection, toggleAllPlayers,
@@ -174,6 +176,19 @@ export const handleCreateGroup = async () => {
 
 // O Utilizador clicou num Racha para entrar
 export const selectGroup = (groupId, groupName) => {
+    // --- SALVA O ESTADO DO GRUPO ATUAL (SE HOUVER) ---
+    if (state.currentGroupId && state.currentGroupId !== groupId) {
+        state.groupMatchStates[state.currentGroupId] = {
+            score1: state.score1,
+            score2: state.score2,
+            currentTeam1: document.getElementById('team1Select')?.value || '',
+            currentTeam2: document.getElementById('team2Select')?.value || '',
+            matchConfig: state.matchConfig,
+            timer: state.matchTimer,
+            needsWinCheck: false
+        };
+    }
+
     state.currentGroupId = groupId;
     state.currentGroupName = groupName;
     
@@ -200,6 +215,62 @@ export const selectGroup = (groupId, groupName) => {
     }
     state.unsubscribeGroup = [];
 
+    // (O salvamento do grupo anterior agora é feito no início da função)
+
+    // --- CARREGA OU INICIALIZA O ESTADO DO NOVO GRUPO ---
+    if (!state.groupMatchStates[groupId]) {
+        state.groupMatchStates[groupId] = {
+            score1: 0,
+            score2: 0,
+            currentTeam1: '',
+            currentTeam2: '',
+            matchConfig: {
+                useTime: false, timeMinutes: 10,
+                usePoints1: true, points1: 21,
+                usePoints2: true, points2: 8,
+                twoPointsDiff: true
+            },
+            timer: { isRunning: false, secondsLeft: 0, intervalId: null },
+            needsWinCheck: false
+        };
+    }
+
+    const saved = state.groupMatchStates[groupId];
+
+    // Aplica no escopo global para a UI
+    state.score1 = saved.score1;
+    state.score2 = saved.score2;
+    state.currentTeam1 = saved.currentTeam1;
+    state.currentTeam2 = saved.currentTeam2;
+    state.matchConfig = saved.matchConfig;
+    state.matchTimer = saved.timer;
+    
+    // Atualiza a interface
+    const s1 = document.getElementById('score1'); if(s1) s1.innerText = state.score1; 
+    const s2 = document.getElementById('score2'); if(s2) s2.innerText = state.score2; 
+    const t1 = document.getElementById('team1Select'); if(t1) t1.value = state.currentTeam1; 
+    const t2 = document.getElementById('team2Select'); if(t2) t2.value = state.currentTeam2; 
+    const livePreview = document.getElementById('liveEloPreview'); 
+    if(livePreview) { 
+        livePreview.classList.add('hidden'); 
+        livePreview.classList.remove('flex'); 
+        if (typeof window.updateLiveEloPreview === 'function') window.updateLiveEloPreview();
+    }
+
+    // Atualiza visual do cronômetro se necessário
+    if (typeof window.updateTimerDisplay === 'function') {
+        window.updateTimerDisplay();
+    }
+    
+    // Se estourou no background, roda a checagem de vitória APÓS carregar os times da nuvem
+    if (saved.needsWinCheck) {
+        saved.needsWinCheck = false;
+        state.pendingWinCheck = true;
+    }
+    
+    state.selectedPlayerIds.clear();
+    state.isFirstLoad = true;
+
     initDatabaseListeners();
     switchView('public');
 };
@@ -225,6 +296,13 @@ const initDatabaseListeners = async () => {
     const unsubTeams = onSnapshot(teamsRef, (s) => {
         state.drawnTeams = s.docs.map(d => ({id: d.id, ...d.data()}));
         renderAll();
+        
+        if (state.pendingWinCheck) {
+            state.pendingWinCheck = false;
+            setTimeout(() => {
+                if (typeof window.checkWinCondition === 'function') window.checkWinCondition(true);
+            }, 100);
+        }
     });
 
     const unsubMatches = onSnapshot(matchHistoryRef, (s) => {
@@ -242,7 +320,23 @@ const initDatabaseListeners = async () => {
             const matchActive = data.matchInProgress === true;
             const ownerId = data.matchOwner;
             const myId = state.localSessionId;
-            const shouldLock = matchActive && (ownerId !== myId);
+            const isAdmin = state.currentUserRole === 'admin' || state.isMaster;
+            const shouldLock = matchActive && (ownerId !== myId) && !isAdmin;
+            
+            if (data.matchConfig) {
+                const oldConfigStr = JSON.stringify(state.matchConfig);
+                const newConfigStr = JSON.stringify(data.matchConfig);
+                state.matchConfig = data.matchConfig;
+                
+                // ATUALIZA NO CACHE DO GRUPO PARA NÃO VAZAR
+                if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+                    state.groupMatchStates[state.currentGroupId].matchConfig = data.matchConfig;
+                }
+                
+                if (oldConfigStr !== newConfigStr && typeof window.resetTimer === 'function' && !state.matchTimer.isRunning) {
+                    window.resetTimer();
+                }
+            }
             
             state.isPlacarLocked = shouldLock; 
             togglePlacarLock(shouldLock);
@@ -427,7 +521,9 @@ Object.assign(window, {
     openMoveModal, updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, forceUnlockPlacar, setFormMode,
     // NOVOS BINDINGS DE SAAS:
     handleAuthAction, toggleAuthMode, handlePasswordReset, handleLogout, 
-    handleCreateGroup, selectGroup, saveUserProfile, removeUserProfilePhoto, renderAdminTable
+    handleCreateGroup, selectGroup, saveUserProfile, removeUserProfilePhoto, renderAdminTable,
+    // NOVOS BINDINGS DE PLACAR:
+    openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, toggleTimer, resetTimer, playBeepSound, checkWinCondition
 });
 
 // ============================================================================

@@ -51,8 +51,10 @@ export const state = {
     historyCurrentPage: 0,  // Controle de paginação/dias na aba de histórico
     
     // ---------------------------------------------------
-    // 5. ESTADO DO PLACAR DA PARTIDA ATUAL
+    // 5. ESTADO DO PLACAR DA PARTIDA ATUAL (E DE OUTROS GRUPOS EM BACKGROUND)
     // ---------------------------------------------------
+    groupMatchStates: {},   // NOVO: Dicionário para guardar o estado do placar de cada grupo
+    pendingWinCheck: false, // Flag para checar vitória após carregamento dos times
     score1: 0,              
     score2: 0,              
     currentTeam1: '',       
@@ -67,5 +69,26 @@ export const state = {
     moveData: { 
         sourceTeamId: null, 
         playerId: null 
+    },
+
+    // ---------------------------------------------------
+    // 7. CONFIGURAÇÕES DO PLACAR E TEMPORIZADOR LOCAL
+    // ---------------------------------------------------
+    matchConfig: (() => {
+        try {
+            const saved = localStorage.getItem('tc_matchConfig');
+            if (saved) return JSON.parse(saved);
+        } catch(e) {}
+        return {
+            useTime: false, timeMinutes: 10,
+            usePoints1: true, points1: 21,
+            usePoints2: true, points2: 8,
+            twoPointsDiff: true
+        };
+    })(),
+    matchTimer: {
+        isRunning: false,
+        secondsLeft: 0,
+        intervalId: null
     }
 };

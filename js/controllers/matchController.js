@@ -4,13 +4,8 @@ import { db, doc, updateDoc, addDoc, playersRef, matchHistoryRef, settingsRef, s
 import { showToast, closeVictoryModalOnly, updateLiveEloPreview, getTeamName, openConfirmModal } from '../ui.js';
 
 // ============================================================================
-// CONFIGURAÇÕES DA PARTIDA (Podem vir do BD no futuro)
+// CONFIGURAÇÕES DA PARTIDA SÃO GLOBAIS AGORA (state.matchConfig)
 // ============================================================================
-const MATCH_CONFIG = {
-    TRADITIONAL_WIN_SCORE: 21,
-    CAPOTE_WIN_SCORE: 8,
-    MIN_SCORE_DIFF: 2
-};
 
 // ============================================================================
 // LÓGICA DE PLACAR
@@ -56,6 +51,8 @@ export const resetScore = () => {
         const s2 = document.getElementById('score2'); if(s2) s2.innerText = '0';
         const t1 = document.getElementById('team1Select'); if(t1) t1.value = '';
         const t2 = document.getElementById('team2Select'); if(t2) t2.value = '';
+        
+        resetTimer();
 
         // 3. Libera a quadra no Firebase (Sincronização)
         try {
@@ -114,25 +111,186 @@ export const syncTeamsToCloud = async () => {
 };
 
 // ============================================================================
+// TEMPORIZADOR LOCAL
+// ============================================================================
+
+export const updateTimerDisplay = () => {
+    const container = document.getElementById('timerContainer');
+    const display = document.getElementById('timerDisplay');
+    const playPauseIcon = document.getElementById('iconTimerPlayPause');
+    
+    if (!container || !display) return;
+    
+    if (state.matchConfig.useTime) {
+        container.classList.remove('hidden');
+        container.classList.add('flex');
+    } else {
+        container.classList.add('hidden');
+        container.classList.remove('flex');
+        return;
+    }
+    
+    const minutes = Math.floor(state.matchTimer.secondsLeft / 60);
+    const seconds = state.matchTimer.secondsLeft % 60;
+    display.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (playPauseIcon) {
+        if (state.matchTimer.isRunning) {
+            playPauseIcon.setAttribute('data-lucide', 'pause');
+        } else {
+            playPauseIcon.setAttribute('data-lucide', 'play');
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+};
+
+window.updateTimerDisplay = updateTimerDisplay;
+
+export const toggleTimer = () => {
+    if (state.isPlacarLocked) return;
+    
+    if (state.matchTimer.isRunning) {
+        // Pausar
+        clearInterval(state.matchTimer.intervalId);
+        state.matchTimer.intervalId = null;
+        state.matchTimer.isRunning = false;
+        updateTimerDisplay();
+    } else {
+        // Iniciar
+        const select1 = document.getElementById('team1Select');
+        const select2 = document.getElementById('team2Select');
+        
+        if (!select1?.value || !select2?.value || select1.value === select2.value) {
+            if (typeof window.showToast === 'function') {
+                window.showToast("Selecione dois times válidos antes de iniciar o tempo.", "warning");
+            }
+            return;
+        }
+
+        if (state.matchTimer.secondsLeft === 0) {
+            state.matchTimer.secondsLeft = state.matchConfig.timeMinutes * 60;
+        }
+        
+        // Captura as referências deste grupo específico para que o timer continue
+        // funcionando independentemente de trocas de grupo
+        const timerScope = state.matchTimer;
+        const groupIdScope = state.currentGroupId;
+        const groupNameScope = state.currentGroupName;
+        
+        timerScope.isRunning = true;
+        timerScope.intervalId = setInterval(() => {
+            timerScope.secondsLeft--;
+            
+            // Só atualiza o relógio na tela se estivermos olhando para este grupo
+            if (state.currentGroupId === groupIdScope) {
+                updateTimerDisplay();
+            }
+            
+            if (timerScope.secondsLeft <= 0) {
+                clearInterval(timerScope.intervalId);
+                timerScope.intervalId = null;
+                timerScope.isRunning = false;
+                
+                if (typeof window.playBeepSound === 'function') {
+                    window.playBeepSound();
+                }
+                
+                // Se ainda estivermos no mesmo grupo, lança a vitória na tela
+                if (state.currentGroupId === groupIdScope) {
+                    checkWinCondition(true);
+                } else {
+                    // Se estivermos em outro grupo, avisa e marca para checar depois
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`🚨 O tempo esgotou na partida do grupo ${groupNameScope}!`, "warning");
+                    }
+                    const savedState = state.groupMatchStates[groupIdScope];
+                    if (savedState) savedState.needsWinCheck = true;
+                }
+            }
+        }, 1000);
+        
+        updateTimerDisplay();
+        
+        // Bloqueia o placar na nuvem se não estiver bloqueado
+        if (!state.isPlacarLocked) {
+            syncTeamsToCloud();
+        }
+    }
+};
+
+export const resetTimer = () => {
+    if (state.matchTimer.intervalId) {
+        clearInterval(state.matchTimer.intervalId);
+        state.matchTimer.intervalId = null;
+    }
+    state.matchTimer.isRunning = false;
+    state.matchTimer.secondsLeft = state.matchConfig.timeMinutes * 60;
+    updateTimerDisplay();
+};
+
+// Quando carregar a página ou re-configurar, atualiza a tela do timer
+setTimeout(resetTimer, 500);
+
+// ============================================================================
 // LÓGICA DE VITÓRIA E ENCERRAMENTO
 // ============================================================================
 
 /**
  * Verifica se alguma das condições de vitória foi atingida
+ * @param {boolean} isTimeOut Indica se a chamada foi disparada pelo fim do timer
  */
-export const checkWinCondition = () => {
-    const isTradicionalWin = (state.score1 >= MATCH_CONFIG.TRADITIONAL_WIN_SCORE || state.score2 >= MATCH_CONFIG.TRADITIONAL_WIN_SCORE) && 
-                             Math.abs(state.score1 - state.score2) >= MATCH_CONFIG.MIN_SCORE_DIFF;
-    const isCapoteWin = (state.score1 >= MATCH_CONFIG.CAPOTE_WIN_SCORE && state.score2 === 0) || 
-                        (state.score2 >= MATCH_CONFIG.CAPOTE_WIN_SCORE && state.score1 === 0);
+export const checkWinCondition = (isTimeOut = false) => {
+    const c = state.matchConfig;
     
-    if (isTradicionalWin || isCapoteWin) {
+    // Condição 1 (Principal)
+    let isWin1 = false;
+    if (c.usePoints1) {
+        const reachedLimit = state.score1 >= c.points1 || state.score2 >= c.points1;
+        if (c.twoPointsDiff) {
+            isWin1 = reachedLimit && Math.abs(state.score1 - state.score2) >= 2;
+        } else {
+            isWin1 = reachedLimit;
+        }
+    }
+    
+    // Condição 2 (Secundária/Capote)
+    let isCapoteWin = false;
+    if (c.usePoints2) {
+        isCapoteWin = (state.score1 >= c.points2 && state.score2 === 0) || 
+                 (state.score2 >= c.points2 && state.score1 === 0);
+    }
+    
+    // Fim por Tempo
+    const isWinTime = c.useTime && isTimeOut;
+    
+    if (isWin1 || isCapoteWin || isWinTime) {
+        // Pausa o timer
+        if (state.matchTimer.intervalId) {
+            clearInterval(state.matchTimer.intervalId);
+            state.matchTimer.intervalId = null;
+            state.matchTimer.isRunning = false;
+            updateTimerDisplay();
+        }
+
+        const isTie = state.score1 === state.score2;
+        let winnerName = "";
+        
         const select1 = document.getElementById('team1Select');
         const select2 = document.getElementById('team2Select');
         
-        let winnerName = state.score1 > state.score2 
-            ? (select1.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)") 
-            : (select2.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)");
+        if (isTie) {
+            winnerName = "PARTIDA EMPATADA";
+            document.getElementById('victoryTitle').innerText = "Tempo Esgotado!";
+            document.getElementById('victoryIcon').setAttribute('data-lucide', 'clock');
+            document.getElementById('victoryTeamName').classList.replace('text-yellow-400', 'text-slate-300');
+        } else {
+            winnerName = state.score1 > state.score2 
+                ? (select1?.value && select1.selectedIndex > 0 ? select1.options[select1.selectedIndex].text : "TIME 1 (AZUL)") 
+                : (select2?.value && select2.selectedIndex > 0 ? select2.options[select2.selectedIndex].text : "TIME 2 (VERMELHO)");
+            document.getElementById('victoryTitle').innerText = "Fim de Jogo!";
+            document.getElementById('victoryIcon').setAttribute('data-lucide', 'trophy');
+            document.getElementById('victoryTeamName').classList.replace('text-slate-300', 'text-yellow-400');
+        }
             
         document.getElementById('victoryTeamName').innerText = winnerName;
         
@@ -143,7 +301,7 @@ export const checkWinCondition = () => {
         const isAdmin = state.currentUserRole === 'admin' || state.isMaster;
 
         // Validações de segurança para o Placar Público
-        if (!select1.value || !select2.value || select1.value === select2.value) { 
+        if (!select1?.value || !select2?.value || select1.value === select2.value) { 
             btnSaveResult.classList.add('hidden'); 
             warning.classList.remove('hidden'); 
             warning.innerText = "Selecione duas equipes válidas e diferentes.";
@@ -200,8 +358,9 @@ export const saveAndCloseVictoryModal = async () => {
     try {
         const updatePromises = [];
         const processedPlayerIds = new Set();
+        const isTie = previewData.isTie;
 
-        const processTeam = (team, change, isWinActual) => {
+        const processTeam = (team, change, isWinActual, isTieActual) => {
             team.players.forEach(p => {
                 if (processedPlayerIds.has(p.id)) return; 
                 processedPlayerIds.add(p.id);
@@ -209,11 +368,12 @@ export const saveAndCloseVictoryModal = async () => {
                 const dbPlayer = state.players.find(x => x.id === p.id);
                 if (dbPlayer) {
                     const partidas = (dbPlayer.partidas || 0) + 1;
-                    const vitorias = (dbPlayer.vitorias || 0) + (isWinActual ? 1 : 0);
+                    const vitorias = (dbPlayer.vitorias || 0) + ((isWinActual && !isTieActual) ? 1 : 0);
                     const currentStreak = dbPlayer.streak || 0;
-                    const newStreak = isWinActual ? (currentStreak >= 0 ? currentStreak + 1 : 1) : (currentStreak <= 0 ? currentStreak - 1 : -1);
                     
-                    const finalChange = calculatePlayerFinalEloChange(change, isWinActual, currentStreak);
+                    const newStreak = isTieActual ? 0 : (isWinActual ? (currentStreak >= 0 ? currentStreak + 1 : 1) : (currentStreak <= 0 ? currentStreak - 1 : -1));
+                    
+                    const finalChange = isTieActual ? 0 : calculatePlayerFinalEloChange(change, isWinActual, currentStreak);
                     const newElo = Math.max(0, (dbPlayer.eloRating ?? 150) + finalChange);
                     
                     updatePromises.push(updateDoc(doc(playersRef, p.id), {
@@ -223,8 +383,8 @@ export const saveAndCloseVictoryModal = async () => {
             });
         };
 
-        processTeam(team1, changeT1, isTeam1Winner);
-        processTeam(team2, changeT2, !isTeam1Winner);
+        processTeam(team1, changeT1, isTeam1Winner, isTie);
+        processTeam(team2, changeT2, !isTeam1Winner, isTie);
 
         // Salva Histórico
         updatePromises.push(addDoc(matchHistoryRef, {
@@ -232,8 +392,8 @@ export const saveAndCloseVictoryModal = async () => {
             dateString: new Date().toLocaleDateString('pt-BR'),
             team1: { name: getTeamName(team1), score: state.score1, players: team1.players.map(p => p.name) },
             team2: { name: getTeamName(team2), score: state.score2, players: team2.players.map(p => p.name) },
-            winner: isTeam1Winner ? 1 : 2,
-            eloGain: isTeam1Winner ? changeT1 : changeT2
+            winner: isTie ? 0 : (isTeam1Winner ? 1 : 2),
+            eloGain: isTie ? 0 : (isTeam1Winner ? changeT1 : changeT2)
         }));
 
         await Promise.all(updatePromises);

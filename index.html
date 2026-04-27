@@ -160,8 +160,26 @@
 
         <!-- ABA PLACAR -->
         <section id="view-placar" class="animate-in zoom-in-95 duration-500 hidden-view">
-            <div class="max-w-5xl mx-auto text-center px-1 sm:px-4 flex flex-col items-center">
-                <div class="relative w-full flex flex-row border-2 sm:border-4 border-slate-300/80 rounded-xl sm:rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden bg-slate-800 mt-2 sm:mt-4">
+            <div class="max-w-5xl mx-auto text-center px-1 sm:px-4 flex flex-col items-center relative">
+                
+                <!-- Barra de Ferramentas do Placar (Config & Timer) -->
+                <div class="w-full flex justify-between items-center mb-2 px-2 mt-4 h-14">
+                    <button id="btnPlacarConfig" onclick="openPlacarConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 sm:px-4 sm:py-2 rounded-xl border border-slate-700 shadow-lg transition-colors flex items-center gap-2">
+                        <i data-lucide="settings" class="w-5 h-5"></i> <span class="hidden sm:inline text-xs font-bold uppercase">Ajustes</span>
+                    </button>
+                    
+                    <div id="timerContainer" class="hidden flex-row items-center gap-3 bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-700 shadow-inner">
+                        <span id="timerDisplay" class="text-2xl sm:text-3xl font-black text-white font-['Oswald'] tracking-widest leading-none mt-0.5">00:00</span>
+                        <div class="flex items-center border-l border-slate-700 pl-3 py-1 gap-2">
+                            <button id="btnTimerPlayPause" onclick="toggleTimer()" class="bg-green-500/20 hover:bg-green-500/40 text-green-400 p-1.5 rounded-md transition-colors"><i id="iconTimerPlayPause" data-lucide="play" class="w-4 h-4"></i></button>
+                            <button onclick="resetTimer()" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 p-1.5 rounded-md transition-colors"><i data-lucide="square" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="w-[42px] sm:w-[104px]"></div> <!-- Spacer to keep timer centered -->
+                </div>
+
+                <div class="relative w-full flex flex-row border-2 sm:border-4 border-slate-300/80 rounded-xl sm:rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden bg-slate-800">
             
                     <div id="placar-lock-overlay" class="absolute inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-in fade-in hidden">
                         <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-700 flex flex-col items-center shadow-2xl">
@@ -492,17 +510,17 @@
             </div>
         </section>
 
-        <!-- Modais (Victory, Confirm, Move) mantidos originais -->
+        <!-- Modais (Victory, Confirm, Move, Config Placar) -->
         <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">
             <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center">
-                <i data-lucide="trophy" class="w-16 h-16 text-yellow-400 mb-4 animate-bounce"></i>
-                <h2 class="text-2xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
+                <i id="victoryIcon" data-lucide="trophy" class="w-16 h-16 text-yellow-400 mb-4 animate-bounce"></i>
+                <h2 id="victoryTitle" class="text-2xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
                 <div id="victoryTeamName" class="text-xl font-black text-yellow-400 mb-3 px-4 py-3 bg-slate-900 rounded-2xl w-full truncate">EQUIPE</div>
                 <div id="victoryEloInfo" class="w-full text-sm mb-6 hidden bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-inner"></div>
                 <p id="victoryTeamWarning" class="text-xs text-red-400 mb-4 hidden"></p>
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
-                    <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 text-white font-bold py-3 rounded-xl text-xs">APENAS ZERAR</button>
-                    <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 text-slate-900 font-bold py-3 rounded-xl text-sm">SALVAR RANKING</button>
+                    <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 transition-colors text-white font-bold py-3 rounded-xl text-xs">APENAS ZERAR</button>
+                    <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 hover:bg-green-600 transition-colors text-slate-900 font-bold py-3 rounded-xl text-sm">SALVAR RANKING</button>
                 </div>
             </div>
         </div>
@@ -554,6 +572,67 @@
                     </div>
                     <button onclick="handleCreateGroup()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-4">
                         <i data-lucide="save" class="w-5 h-5"></i> CRIAR GRUPO
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Configuração do Placar -->
+        <div id="placarConfigModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm px-4 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-600 max-w-md w-full">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings-2" class="text-slate-400"></i> Regras da Partida</h3>
+                    <button onclick="closePlacarConfigModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Configuração de Tempo -->
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <label class="flex items-center gap-3 cursor-pointer mb-3 group">
+                            <input type="checkbox" id="cfgUseTime" class="w-5 h-5 accent-blue-500 cursor-pointer" onchange="document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !this.checked)">
+                            <span class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Terminar por Tempo</span>
+                        </label>
+                        <div id="cfgTimeDiv" class="flex items-center gap-3 pl-8 opacity-50 transition-opacity">
+                            <input type="number" id="cfgTimeMinutes" min="1" max="90" value="10" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
+                            <span class="text-xs text-slate-400 font-bold uppercase">Minutos</span>
+                        </div>
+                    </div>
+
+                    <!-- Configuração de Pontos -->
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <div class="mb-4 pb-4 border-b border-slate-700/50">
+                            <label class="flex items-center gap-3 cursor-pointer mb-3 group">
+                                <input type="checkbox" id="cfgUsePoints1" class="w-5 h-5 accent-green-500 cursor-pointer" onchange="document.getElementById('cfgPoints1Div').classList.toggle('opacity-50', !this.checked)">
+                                <span class="text-sm font-bold text-white group-hover:text-green-400 transition-colors">Vitória Normal</span>
+                            </label>
+                            <div id="cfgPoints1Div" class="flex flex-col gap-3 pl-8 transition-opacity">
+                                <div class="flex items-center gap-3">
+                                    <input type="number" id="cfgPoints1" min="1" max="100" value="21" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
+                                    <span class="text-xs text-slate-400 font-bold uppercase">Pontos/Gols</span>
+                                </div>
+                                <label class="flex items-center gap-2 cursor-pointer mt-1">
+                                    <input type="checkbox" id="cfgTwoPointsDiff" class="w-4 h-4 accent-green-500 cursor-pointer" checked>
+                                    <span class="text-xs text-slate-400">Exigir diferença de 2 pontos</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="flex items-center gap-3 cursor-pointer mb-3 group">
+                                <input type="checkbox" id="cfgUsePoints2" class="w-5 h-5 accent-red-500 cursor-pointer" onchange="document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !this.checked)">
+                                <span class="text-sm font-bold text-white group-hover:text-red-400 transition-colors">Vitória Secundária (Ex: Capote)</span>
+                            </label>
+                            <div id="cfgPoints2Div" class="flex items-center gap-3 pl-8 transition-opacity">
+                                <input type="number" id="cfgPoints2" min="1" max="100" value="8" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
+                                <span class="text-xs text-slate-400 font-bold uppercase">Pontos a zero</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="text-[10px] text-center text-slate-500">Se mais de uma condição estiver ativada, a partida terminará quando a primeira ocorrer. Em caso de fim por tempo com empate, a partida é encerrada sem vencedor.</p>
+
+                    <button onclick="savePlacarConfig()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-4 transition-colors">
+                        <i data-lucide="check" class="w-5 h-5"></i> SALVAR E APLICAR
                     </button>
                 </div>
             </div>

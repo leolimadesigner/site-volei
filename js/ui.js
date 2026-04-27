@@ -199,15 +199,37 @@ export const closeVictoryModalOnly = async () => {
     state.score1 = 0; state.score2 = 0;
     state.currentTeam1 = ''; state.currentTeam2 = '';
 
+    // GARANTE QUE O CACHE DO GRUPO TAMBÉM SEJA ZERADO
+    if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+        state.groupMatchStates[state.currentGroupId].score1 = 0;
+        state.groupMatchStates[state.currentGroupId].score2 = 0;
+        state.groupMatchStates[state.currentGroupId].currentTeam1 = '';
+        state.groupMatchStates[state.currentGroupId].currentTeam2 = '';
+    }
+
     const s1 = document.getElementById('score1'); if(s1) s1.innerText = '0'; 
     const s2 = document.getElementById('score2'); if(s2) s2.innerText = '0'; 
     const t1 = document.getElementById('team1Select'); if(t1) t1.value = ''; 
     const t2 = document.getElementById('team2Select'); if(t2) t2.value = ''; 
 
-    // Liberta o placar na nuvem para que outros possam usar
+    // Liberta o placar na nuvem para que outros possam usar e zera tudo lá
     try { 
-        await updateDoc(settingsRef, { matchInProgress: false, matchOwner: null }); 
-    } catch(e) {}
+        if (settingsRef) {
+            await updateDoc(settingsRef, { 
+                matchInProgress: false, 
+                matchOwner: null,
+                score1: 0,
+                score2: 0,
+                currentTeam1: '',
+                currentTeam2: ''
+            }); 
+        }
+    } catch(e) { console.warn("Erro ao limpar placar na nuvem", e); }
+    
+    // Zera o cronômetro para a próxima partida do grupo
+    if (typeof window.resetTimer === 'function') {
+        window.resetTimer();
+    }
     
     if (typeof updateLiveEloPreview === 'function') updateLiveEloPreview();
 };
@@ -268,22 +290,31 @@ export const updateLiveEloPreview = () => {
     
     // Chama o serviço puramente matemático
     const matchPreview = calculateEloMatch(eloT1, eloT2);
+    const isTie = state.score1 === state.score2 && state.score1 > 0;
 
-    previewDiv.innerHTML = `
-        <div class="flex-1 text-center">
-            <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
-            <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT1} ELO</p>
-            <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT1} ELO se perder</p>
-        </div>
-        <div class="shrink-0 bg-slate-800 p-2 sm:p-3 rounded-full border border-slate-700">
-            <i data-lucide="swords" class="w-4 h-4 sm:w-6 sm:h-6 text-slate-400"></i>
-        </div>
-        <div class="flex-1 text-center">
-            <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
-            <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT2} ELO</p>
-            <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT2} ELO se perder</p>
-        </div>
-    `;
+    if (isTie) {
+        previewDiv.innerHTML = `
+            <div class="flex-1 text-center text-slate-400 font-bold uppercase tracking-widest py-2">
+                EMPATE (+0 ELO)
+            </div>
+        `;
+    } else {
+        previewDiv.innerHTML = `
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT1} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT1} ELO se perder</p>
+            </div>
+            <div class="shrink-0 bg-slate-800 p-2 sm:p-3 rounded-full border border-slate-700">
+                <i data-lucide="swords" class="w-4 h-4 sm:w-6 sm:h-6 text-slate-400"></i>
+            </div>
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT2} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT2} ELO se perder</p>
+            </div>
+        `;
+    }
     
     previewDiv.classList.remove('hidden');
     previewDiv.classList.add('flex');
@@ -294,9 +325,10 @@ export const updateLiveEloPreview = () => {
         ...matchPreview,
         team1,
         team2,
-        changeT1: state.score1 > state.score2 ? matchPreview.winT1 : matchPreview.loseT1,
-        changeT2: state.score1 > state.score2 ? matchPreview.loseT2 : matchPreview.winT2,
-        isTeam1Winner: state.score1 > state.score2
+        changeT1: isTie ? 0 : (state.score1 > state.score2 ? matchPreview.winT1 : matchPreview.loseT1),
+        changeT2: isTie ? 0 : (state.score1 > state.score2 ? matchPreview.loseT2 : matchPreview.winT2),
+        isTeam1Winner: state.score1 > state.score2,
+        isTie: isTie
     };
 };
 
@@ -987,6 +1019,7 @@ export const togglePlacarLock = (isLocked) => {
 
     // Lista de controles que devem ser desativados visualmente
     const controlsToDisable = [
+        'btnPlacarConfig',
         'btnSaveResult', 
         'btnClearHistory',
         'teamSize', 
@@ -1139,3 +1172,101 @@ export const renderAll = () => {
 //updateSorteioCounters 
 // changeHistoryPage 
 // openPlayerHistoryModal 
+
+// ============================================================================
+// CONFIGURAÇÕES DE PLACAR E TEMPORIZADOR
+// ============================================================================
+
+export const openPlacarConfigModal = () => {
+    if (state.isPlacarLocked) return;
+    
+    const c = state.matchConfig;
+    document.getElementById('cfgUseTime').checked = c.useTime;
+    document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !c.useTime);
+    document.getElementById('cfgTimeMinutes').value = c.timeMinutes;
+
+    document.getElementById('cfgUsePoints1').checked = c.usePoints1;
+    document.getElementById('cfgPoints1Div').classList.toggle('opacity-50', !c.usePoints1);
+    document.getElementById('cfgPoints1').value = c.points1;
+    document.getElementById('cfgTwoPointsDiff').checked = c.twoPointsDiff;
+
+    document.getElementById('cfgUsePoints2').checked = c.usePoints2;
+    document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !c.usePoints2);
+    document.getElementById('cfgPoints2').value = c.points2;
+
+    const modal = document.getElementById('placarConfigModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+export const closePlacarConfigModal = () => {
+    const modal = document.getElementById('placarConfigModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+};
+
+export const savePlacarConfig = async () => {
+    state.matchConfig = {
+        useTime: document.getElementById('cfgUseTime').checked,
+        timeMinutes: parseInt(document.getElementById('cfgTimeMinutes').value) || 10,
+        usePoints1: document.getElementById('cfgUsePoints1').checked,
+        points1: parseInt(document.getElementById('cfgPoints1').value) || 21,
+        twoPointsDiff: document.getElementById('cfgTwoPointsDiff').checked,
+        usePoints2: document.getElementById('cfgUsePoints2').checked,
+        points2: parseInt(document.getElementById('cfgPoints2').value) || 8
+    };
+
+    localStorage.setItem('tc_matchConfig', JSON.stringify(state.matchConfig));
+    
+    // ATUALIZA NO CACHE DO GRUPO PARA NÃO VAZAR
+    if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+        state.groupMatchStates[state.currentGroupId].matchConfig = state.matchConfig;
+    }
+    
+    try {
+        const { setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        await setDoc(settingsRef, { matchConfig: state.matchConfig }, { merge: true });
+        showToast("Configurações salvas e aplicadas para o grupo!", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao salvar regras no servidor.", "error");
+    }
+    
+    closePlacarConfigModal();
+    
+    if (typeof window.resetTimer === 'function') {
+        window.resetTimer();
+    }
+};
+
+export const playBeepSound = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playOsc = (timeOffset, duration) => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime + timeOffset);
+            oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + timeOffset + duration);
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime + timeOffset);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + timeOffset + 0.05);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + timeOffset + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start(audioCtx.currentTime + timeOffset);
+            oscillator.stop(audioCtx.currentTime + timeOffset + duration);
+        };
+
+        playOsc(0, 0.4);
+        playOsc(0.6, 0.4);
+        playOsc(1.2, 0.8);
+    } catch(e) {
+        console.error("Audio API not supported", e);
+    }
+};
