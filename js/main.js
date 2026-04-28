@@ -225,6 +225,7 @@ export const selectGroup = (groupId, groupName) => {
             currentTeam1: '',
             currentTeam2: '',
             matchConfig: {
+                sportMode: 'volei',
                 useTime: false, timeMinutes: 10,
                 usePoints1: true, points1: 21,
                 usePoints2: true, points2: 8,

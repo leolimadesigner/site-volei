@@ -80,6 +80,7 @@ export const state = {
             if (saved) return JSON.parse(saved);
         } catch(e) {}
         return {
+            sportMode: 'volei',
             useTime: false, timeMinutes: 10,
             usePoints1: true, points1: 21,
             usePoints2: true, points2: 8,

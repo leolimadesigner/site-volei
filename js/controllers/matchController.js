@@ -291,7 +291,10 @@ export const checkWinCondition = (isTimeOut = false) => {
             updateTimerDisplay();
         }
 
-        const isTie = state.score1 === state.score2;
+        const isFutebol = (state.matchConfig.sportMode || 'volei') === 'futebol';
+        // Futebol: empate ocorre quando os placares são iguais (inclusive 0x0)
+        // Vôlei: empate nunca ocorre pois o jogo não termina empatado
+        const isTie = isFutebol && state.score1 === state.score2;
         let winnerName = "";
         
         const select1 = document.getElementById('team1Select');
@@ -390,9 +393,11 @@ export const saveAndCloseVictoryModal = async () => {
                     const vitorias = (dbPlayer.vitorias || 0) + ((isWinActual && !isTieActual) ? 1 : 0);
                     const currentStreak = dbPlayer.streak || 0;
                     
-                    const newStreak = isTieActual ? 0 : (isWinActual ? (currentStreak >= 0 ? currentStreak + 1 : 1) : (currentStreak <= 0 ? currentStreak - 1 : -1));
+                    // Empate: mantém a streak atual (não avança nem reseta)
+                    const newStreak = isTieActual ? currentStreak : (isWinActual ? (currentStreak >= 0 ? currentStreak + 1 : 1) : (currentStreak <= 0 ? currentStreak - 1 : -1));
                     
-                    const finalChange = isTieActual ? 0 : calculatePlayerFinalEloChange(change, isWinActual, currentStreak);
+                    // Empate: aplica o cálculo de Elo padrão (S=0.5), sem bônus de streak
+                    const finalChange = isTieActual ? change : calculatePlayerFinalEloChange(change, isWinActual, currentStreak);
                     const newElo = Math.max(0, (dbPlayer.eloRating ?? 150) + finalChange);
                     
                     updatePromises.push(updateDoc(doc(playersRef, p.id), {
@@ -412,11 +417,17 @@ export const saveAndCloseVictoryModal = async () => {
             team1: { name: getTeamName(team1), score: state.score1, players: team1.players.map(p => p.name) },
             team2: { name: getTeamName(team2), score: state.score2, players: team2.players.map(p => p.name) },
             winner: isTie ? 0 : (isTeam1Winner ? 1 : 2),
-            eloGain: isTie ? 0 : (isTeam1Winner ? changeT1 : changeT2)
+            eloChangeT1: changeT1,
+            eloChangeT2: changeT2,
+            eloGain: isTie ? Math.max(Math.abs(changeT1), Math.abs(changeT2)) : (isTeam1Winner ? changeT1 : changeT2)
         }));
 
         await Promise.all(updatePromises);
-        showToast(`Ranking Atualizado! +${isTeam1Winner ? changeT1 : changeT2} Elo.`, "success");
+        if (isTie) {
+            showToast(`Ranking Atualizado! Empate processado (${changeT1 >= 0 ? '+' : ''}${changeT1} / ${changeT2 >= 0 ? '+' : ''}${changeT2} Elo).`, "success");
+        } else {
+            showToast(`Ranking Atualizado! +${isTeam1Winner ? changeT1 : changeT2} Elo.`, "success");
+        }
 
         // 2. DISPARA O RESET COMPLETO (Limpa placar e desmarca times)
         await closeVictoryModalOnly();

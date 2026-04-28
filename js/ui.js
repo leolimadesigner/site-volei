@@ -39,14 +39,17 @@ export const getDailyPlayerStats = () => {
     todaysMatches.forEach(m => {
         const t1Won = m.winner === 1; 
         const t2Won = m.winner === 2;
+        const isTie = m.winner === 0;
         
         if (m.team1?.players) m.team1.players.forEach(name => { 
             if (!stats[name]) stats[name] = { wins: 0, losses: 0 }; 
-            t1Won ? stats[name].wins++ : stats[name].losses++; 
+            if (t1Won) stats[name].wins++;
+            else if (!isTie) stats[name].losses++;
         });
         if (m.team2?.players) m.team2.players.forEach(name => { 
             if (!stats[name]) stats[name] = { wins: 0, losses: 0 }; 
-            t2Won ? stats[name].wins++ : stats[name].losses++; 
+            if (t2Won) stats[name].wins++;
+            else if (!isTie) stats[name].losses++;
         });
     });
     
@@ -290,15 +293,35 @@ export const updateLiveEloPreview = () => {
     
     // Chama o serviço puramente matemático
     const matchPreview = calculateEloMatch(eloT1, eloT2);
-    const isTie = state.score1 === state.score2 && state.score1 > 0;
+    const isFutebol = (state.matchConfig.sportMode || 'volei') === 'futebol';
+    // Futebol: empate pode ocorrer inclusive no 0x0. Vôlei: empate nunca ocorre.
+    const isTie = isFutebol && state.score1 === state.score2;
 
-    if (isTie) {
+    if (isFutebol) {
+        // Futebol: sempre mostra vitória, derrota E empate de cada lado
+        const drawT1Sign = matchPreview.drawT1 >= 0 ? '+' : '';
+        const drawT2Sign = matchPreview.drawT2 >= 0 ? '+' : '';
+        const drawT1Color = matchPreview.drawT1 > 0 ? 'text-green-400' : (matchPreview.drawT1 < 0 ? 'text-red-400' : 'text-slate-400');
+        const drawT2Color = matchPreview.drawT2 > 0 ? 'text-green-400' : (matchPreview.drawT2 < 0 ? 'text-red-400' : 'text-slate-400');
         previewDiv.innerHTML = `
-            <div class="flex-1 text-center text-slate-400 font-bold uppercase tracking-widest py-2">
-                EMPATE (+0 ELO)
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT1} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT1} ELO se perder</p>
+                <p class="${drawT1Color} font-bold text-[10px] sm:text-xs mt-1 opacity-80">${drawT1Sign}${matchPreview.drawT1} ELO se empatar</p>
+            </div>
+            <div class="shrink-0 bg-slate-800 p-2 sm:p-3 rounded-full border border-slate-700">
+                <i data-lucide="swords" class="w-4 h-4 sm:w-6 sm:h-6 text-slate-400"></i>
+            </div>
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT2} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT2} ELO se perder</p>
+                <p class="${drawT2Color} font-bold text-[10px] sm:text-xs mt-1 opacity-80">${drawT2Sign}${matchPreview.drawT2} ELO se empatar</p>
             </div>
         `;
     } else {
+        // Vôlei (sem empate): mostra somente vitória e derrota
         previewDiv.innerHTML = `
             <div class="flex-1 text-center">
                 <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
@@ -325,8 +348,8 @@ export const updateLiveEloPreview = () => {
         ...matchPreview,
         team1,
         team2,
-        changeT1: isTie ? 0 : (state.score1 > state.score2 ? matchPreview.winT1 : matchPreview.loseT1),
-        changeT2: isTie ? 0 : (state.score1 > state.score2 ? matchPreview.loseT2 : matchPreview.winT2),
+        changeT1: isTie ? matchPreview.drawT1 : (state.score1 > state.score2 ? matchPreview.winT1 : matchPreview.loseT1),
+        changeT2: isTie ? matchPreview.drawT2 : (state.score1 > state.score2 ? matchPreview.loseT2 : matchPreview.winT2),
         isTeam1Winner: state.score1 > state.score2,
         isTie: isTie
     };
@@ -365,21 +388,44 @@ export const openPlayerHistoryModal = (playerName) => {
         list.innerHTML = pMatches.map((m, idx) => {
             const inT1 = m.team1.players && m.team1.players.includes(playerName);
             const myTeam = inT1 ? 1 : 2;
-            const isWin = m.winner === myTeam;
-            const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
-            const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
+            const isTieMatch = m.winner === 0;
+            const isWin = !isTieMatch && m.winner === myTeam;
             
+            const t1Color = isTieMatch ? 'text-slate-300' : (m.winner === 1 ? 'text-blue-400' : 'text-slate-400');
+            const t2Color = isTieMatch ? 'text-slate-300' : (m.winner === 2 ? 'text-red-400' : 'text-slate-400');
+            
+            // Usa os campos individuais de Elo quando disponíveis (partidas novas)
             const eloGain = m.eloGain || 0;
-            const eloLoss = Math.round(eloGain * 0.7); // Mantém a sua regra dos 70%
-            const myEloChange = isWin ? `+${eloGain}` : `-${eloLoss}`;
-            const eloColor = isWin ? 'text-green-400' : 'text-red-400';
+            const eloLoss = Math.round(eloGain * 0.7);
+            const t1EloChange = m.eloChangeT1 ?? (m.winner === 1 ? eloGain : -eloLoss);
+            const t2EloChange = m.eloChangeT2 ?? (m.winner === 2 ? eloGain : -eloLoss);
+            const myEloChange = inT1 ? t1EloChange : t2EloChange;
+            const myEloDisplay = `${myEloChange >= 0 ? '+' : ''}${myEloChange}`;
+            
+            let statusLabel, eloColor;
+            if (isTieMatch) {
+                statusLabel = 'EMPATE';
+                eloColor = myEloChange > 0 ? 'text-green-400' : (myEloChange < 0 ? 'text-red-400' : 'text-slate-400');
+            } else if (isWin) {
+                statusLabel = 'VITÓRIA';
+                eloColor = 'text-green-400';
+            } else {
+                statusLabel = 'DERROTA';
+                eloColor = 'text-red-400';
+            }
+
+            // Elo detalhado por time na expansão
+            const t1EloDisplay = `${t1EloChange >= 0 ? '+' : ''}${t1EloChange}`;
+            const t2EloDisplay = `${t2EloChange >= 0 ? '+' : ''}${t2EloChange}`;
+            const t1DetailColor = isTieMatch ? (t1EloChange > 0 ? 'text-green-400' : (t1EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 1 ? 'text-green-400' : 'text-red-400');
+            const t2DetailColor = isTieMatch ? (t2EloChange > 0 ? 'text-green-400' : (t2EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 2 ? 'text-green-400' : 'text-red-400');
 
             return `
                 <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-2">
                     <div class="p-3 cursor-pointer hover:bg-slate-800 transition-colors" onclick="document.getElementById('p-match-det-${idx}').classList.toggle('hidden')">
                         <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
                             <span class="text-slate-400 font-bold">${m.dateString}</span>
-                            <span class="font-black ${eloColor} bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-[10px]">${isWin ? 'VITÓRIA' : 'DERROTA'} (${myEloChange} ELO)</span>
+                            <span class="font-black ${eloColor} bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-[10px]">${statusLabel} (${myEloDisplay} ELO)</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="flex-1 text-right font-bold text-[11px] ${t1Color} truncate">${m.team1.name}</div>
@@ -392,12 +438,12 @@ export const openPlayerHistoryModal = (playerName) => {
                             <div class="flex-1 text-right">
                                 <p class="text-slate-500 font-bold uppercase mb-1">Time Azul</p>
                                 <p>${(m.team1.players || []).join('<br>')}</p>
-                                <p class="mt-2 font-bold ${m.winner === 1 ? 'text-green-400' : 'text-red-400'}">${m.winner === 1 ? '+'+eloGain : '-'+eloLoss} ELO</p>
+                                <p class="mt-2 font-bold ${t1DetailColor}">${t1EloDisplay} ELO</p>
                             </div>
                             <div class="flex-1 text-left">
                                 <p class="text-slate-500 font-bold uppercase mb-1">Time Vermelho</p>
                                 <p>${(m.team2.players || []).join('<br>')}</p>
-                                <p class="mt-2 font-bold ${m.winner === 2 ? 'text-green-400' : 'text-red-400'}">${m.winner === 2 ? '+'+eloGain : '-'+eloLoss} ELO</p>
+                                <p class="mt-2 font-bold ${t2DetailColor}">${t2EloDisplay} ELO</p>
                             </div>
                         </div>
                     </div>
@@ -972,32 +1018,46 @@ export const renderMatchHistory = () => {
     paginationHTML += '</div>';
 
     let matchesHTML = activeGroup.matches.map((m, mIdx) => {
-        const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
-        const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
+        const isTieMatch = m.winner === 0;
+        const t1Color = isTieMatch ? 'text-slate-300' : (m.winner === 1 ? 'text-blue-400' : 'text-slate-400');
+        const t2Color = isTieMatch ? 'text-slate-300' : (m.winner === 2 ? 'text-red-400' : 'text-slate-400');
+        
         const eloGain = m.eloGain || 0;
         const eloLoss = Math.round(eloGain * 0.7);
+        const t1EloChange = m.eloChangeT1 ?? (m.winner === 1 ? eloGain : -eloLoss);
+        const t2EloChange = m.eloChangeT2 ?? (m.winner === 2 ? eloGain : -eloLoss);
+        const t1EloDisplay = `${t1EloChange >= 0 ? '+' : ''}${t1EloChange}`;
+        const t2EloDisplay = `${t2EloChange >= 0 ? '+' : ''}${t2EloChange}`;
+        const t1DetailColor = isTieMatch ? (t1EloChange > 0 ? 'text-green-400' : (t1EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 1 ? 'text-green-400' : 'text-red-400');
+        const t2DetailColor = isTieMatch ? (t2EloChange > 0 ? 'text-green-400' : (t2EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 2 ? 'text-green-400' : 'text-red-400');
+        const resultLabel = isTieMatch ? '<span class="text-slate-400 text-[9px] font-bold">EMPATE</span>' : '';
 
         return `
             <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-3">
-                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors group" onclick="document.getElementById('match-details-${mIdx}').classList.toggle('hidden')">
-                    <div class="flex-1 text-right font-bold text-sm ${t1Color}">${m.team1.name}</div>
-                    <div class="px-3 font-black text-lg">${m.team1.score} x ${m.team2.score}</div>
-                    <div class="flex-1 text-left font-bold text-sm ${t2Color}">${m.team2.name}</div>
+                <div class="p-3 cursor-pointer hover:bg-slate-800 transition-colors group" onclick="document.getElementById('match-details-${mIdx}').classList.toggle('hidden')">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1 text-right font-bold text-sm ${t1Color}">${m.team1.name}</div>
+                        <div class="px-3 text-center">
+                            <div class="font-black text-lg">${m.team1.score} x ${m.team2.score}</div>
+                            ${resultLabel}
+                        </div>
+                        <div class="flex-1 text-left font-bold text-sm ${t2Color}">${m.team2.name}</div>
+                    </div>
                 </div>
                 <div id="match-details-${mIdx}" class="hidden p-3 bg-slate-950/80 border-t border-slate-800/50 text-xs text-slate-300">
                     <div class="flex justify-between gap-4">
                         <div class="flex-1 text-right border-r border-slate-800 pr-4">
                             <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Time Azul</p>
                             <p class="mb-3">${(m.team1.players || []).join('<br>')}</p>
-                            <p class="font-black text-sm ${m.winner === 1 ? 'text-green-400' : 'text-red-400'}">
-                                ${m.winner === 1 ? '+' + eloGain : '-' + eloLoss} ELO
+                            <p class="font-black text-sm ${t1DetailColor}">
+                                ${t1EloDisplay} ELO
                             </p>
                         </div>
                         <div class="flex-1 text-left pl-4">
                             <p class="text-[10px] text-red-400 font-bold uppercase mb-2">Time Vermelho</p>
                             <p class="mb-3">${(m.team2.players || []).join('<br>')}</p>
-                            <p class="font-black text-sm ${m.winner === 2 ? 'text-green-400' : 'text-red-400'}">
-                                ${m.winner === 2 ? '+' + eloGain : '-' + eloLoss} ELO
+                            <p class="font-black text-sm ${t2DetailColor}">
+                                ${t2EloDisplay} ELO
                             </p>
                         </div>
                     </div>
@@ -1194,6 +1254,21 @@ export const openPlacarConfigModal = () => {
     document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !c.usePoints2);
     document.getElementById('cfgPoints2').value = c.points2;
 
+    // Modalidade esportiva
+    const sportMode = c.sportMode || 'volei';
+    document.getElementById('cfgSportMode').value = sportMode;
+    const btnVolei = document.getElementById('cfgSportVolei');
+    const btnFutebol = document.getElementById('cfgSportFutebol');
+    const activeClass = 'flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2';
+    const inactiveClass = 'flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2';
+    if (sportMode === 'futebol') {
+        btnFutebol.className = activeClass;
+        btnVolei.className = inactiveClass;
+    } else {
+        btnVolei.className = activeClass;
+        btnFutebol.className = inactiveClass;
+    }
+
     const modal = document.getElementById('placarConfigModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -1208,6 +1283,7 @@ export const closePlacarConfigModal = () => {
 
 export const savePlacarConfig = async () => {
     state.matchConfig = {
+        sportMode: document.getElementById('cfgSportMode').value || 'volei',
         useTime: document.getElementById('cfgUseTime').checked,
         timeMinutes: parseInt(document.getElementById('cfgTimeMinutes').value) || 10,
         usePoints1: document.getElementById('cfgUsePoints1').checked,

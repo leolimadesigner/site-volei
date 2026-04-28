@@ -32,7 +32,10 @@ export const calculateEloMatch = (team1Elo, team2Elo) => {
         winT1: Math.round(K_FACTOR * (1 - expectedT1)),
         loseT1: Math.round(K_FACTOR * (0 - expectedT1) * LOSS_PENALTY_FACTOR),
         winT2: Math.round(K_FACTOR * (1 - expectedT2)),
-        loseT2: Math.round(K_FACTOR * (0 - expectedT2) * LOSS_PENALTY_FACTOR)
+        loseT2: Math.round(K_FACTOR * (0 - expectedT2) * LOSS_PENALTY_FACTOR),
+        // Empate: S = 0.5. Favorito perde Elo, azarão ganha Elo.
+        drawT1: Math.round(K_FACTOR * (0.5 - expectedT1)),
+        drawT2: Math.round(K_FACTOR * (0.5 - expectedT2))
     };
 };
 
