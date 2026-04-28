@@ -184,9 +184,7 @@ export const toggleTimer = () => {
         const select2 = document.getElementById('team2Select');
         
         if (!select1?.value || !select2?.value || select1.value === select2.value) {
-            if (typeof window.showToast === 'function') {
-                window.showToast("Selecione dois times válidos antes de iniciar o tempo.", "warning");
-            }
+            showToast("Selecione dois times válidos antes de iniciar o tempo.", "warning");
             return;
         }
 
@@ -223,9 +221,7 @@ export const toggleTimer = () => {
                     checkWinCondition(true);
                 } else {
                     // Se estivermos em outro grupo, avisa e marca para checar depois
-                    if (typeof window.showToast === 'function') {
-                        window.showToast(`🚨 O tempo esgotou na partida do grupo ${groupNameScope}!`, "warning");
-                    }
+                    showToast(`🚨 O tempo esgotou na partida do grupo ${groupNameScope}!`, "warning");
                     const savedState = state.groupMatchStates[groupIdScope];
                     if (savedState) savedState.needsWinCheck = true;
                 }
