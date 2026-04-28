@@ -27,7 +27,12 @@ export const updateScore = (team, change) => {
     
     if (typeof updateLiveEloPreview === 'function') updateLiveEloPreview();
     checkWinCondition();
-    // 2. Repare que removemos o updateDoc(settingsRef). O Firebase não recebe mais os pontos.
+    
+    // 2. Salva no cache do grupo IMEDIATAMENTE para não perder ao trocar de aba
+    if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+        state.groupMatchStates[state.currentGroupId].score1 = state.score1;
+        state.groupMatchStates[state.currentGroupId].score2 = state.score2;
+    }
 };
 
 /**
@@ -46,13 +51,25 @@ export const resetScore = () => {
         state.currentTeam1 = '';
         state.currentTeam2 = '';
 
-        // 2. Limpa a Interface (UI)
+        // 3. Atualiza na UI
         const s1 = document.getElementById('score1'); if(s1) s1.innerText = '0';
         const s2 = document.getElementById('score2'); if(s2) s2.innerText = '0';
-        const t1 = document.getElementById('team1Select'); if(t1) t1.value = '';
-        const t2 = document.getElementById('team2Select'); if(t2) t2.value = '';
+        
+        // 4. Salva no cache do grupo imediatamente
+        if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+            state.groupMatchStates[state.currentGroupId].score1 = 0;
+            state.groupMatchStates[state.currentGroupId].score2 = 0;
+        }
+        
+        // 5. Zera e sincroniza os times
+        const t1 = document.getElementById('team1Select'); if (t1) t1.value = '';
+        const t2 = document.getElementById('team2Select'); if (t2) t2.value = '';
+        
+        state.currentTeam1 = '';
+        state.currentTeam2 = '';
         
         resetTimer();
+        syncTeamsToCloud();
 
         // 3. Libera a quadra no Firebase (Sincronização)
         try {
@@ -92,6 +109,12 @@ export const syncTeamsToCloud = async () => {
     
     state.currentTeam1 = t1;
     state.currentTeam2 = t2;
+    
+    // Salva no cache do grupo imediatamente para não perder
+    if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+        state.groupMatchStates[state.currentGroupId].currentTeam1 = t1;
+        state.groupMatchStates[state.currentGroupId].currentTeam2 = t2;
+    }
     
     const isMatchActive = t1 !== '' || t2 !== '';
     
