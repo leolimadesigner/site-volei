@@ -177,3 +177,29 @@ export const balanceStrongOutside = (playersList, playersPerTeam) => {
 
     return { teams, waitlist };
 };
+
+/**
+ * Estratégia "Aleatória": Distribui jogadores aleatoriamente, ignorando níveis.
+ */
+export const drawRandom = (playersList, playersPerTeam) => {
+    const numberOfTeams = Math.floor(playersList.length / playersPerTeam);
+    const waitlistSize = playersList.length % playersPerTeam;
+    
+    if (numberOfTeams === 0) return { teams: [], waitlist: playersList.map(p => ({...p, waitlistRounds: 0})) };
+
+    // Embaralha perfeitamente a lista (Fisher-Yates)
+    let shuffledPlayers = [...playersList].map(p => ({...p, waitlistRounds: 0}));
+    for (let i = shuffledPlayers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
+    }
+
+    const teams = [];
+    for (let i = 0; i < numberOfTeams; i++) {
+        teams.push(shuffledPlayers.slice(i * playersPerTeam, (i + 1) * playersPerTeam));
+    }
+    
+    const waitlist = waitlistSize > 0 ? shuffledPlayers.slice(numberOfTeams * playersPerTeam) : [];
+
+    return { teams, waitlist };
+};

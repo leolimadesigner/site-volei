@@ -1,6 +1,6 @@
 import { state } from '../state.js';
-import { balanceStrongInside, balanceStrongOutside } from '../services/rankingService.js';
-import { teamsRef, doc, addDoc, deleteDoc, updateDoc } from '../firebase.js';
+import { balanceStrongInside, balanceStrongOutside, drawRandom } from '../services/rankingService.js';
+import { teamsRef, settingsRef, setDoc, doc, addDoc, deleteDoc, updateDoc } from '../firebase.js';
 import { showToast, openConfirmModal, closeMoveModal } from '../ui.js';
 
 // ============================================================================
@@ -13,8 +13,50 @@ export const drawTeams = async () => {
         return;
     }
 
+    const mode = document.getElementById('draftMode')?.value || 'balanceado';
+
+    if (mode === 'manual') {
+        const activePlayers = state.players.filter(p => state.selectedPlayerIds.has(p.id));
+        if (activePlayers.length === 0) {
+            showToast("Selecione os atletas para o time manual!", "error");
+            return;
+        }
+        
+        openConfirmModal("Criar Time Manual", `Deseja criar um time com os ${activePlayers.length} atletas selecionados?`, async () => {
+            try {
+                const existingTeams = state.drawnTeams.filter(t => !t.isWaitlist);
+                let nextLabelNumber = 1;
+                if (existingTeams.length > 0) {
+                    const maxLabel = Math.max(...existingTeams.map(t => parseInt(t.label) || 0));
+                    nextLabelNumber = maxLabel + 1;
+                }
+                
+                const sortedTeam = activePlayers.sort((a, b) => {
+                    const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                    if (catDiff !== 0) return catDiff;
+                    return (a.name || '').localeCompare(b.name || ''); 
+                }).map(p => ({ ...p, waitlistRounds: 0 }));
+                
+                await addDoc(teamsRef, { label: nextLabelNumber.toString(), players: sortedTeam });
+                
+                activePlayers.forEach(p => state.selectedPlayerIds.delete(p.id));
+                if (typeof window.renderSorteioTable === 'function') window.renderSorteioTable();
+                
+                showToast(`Time ${nextLabelNumber} criado manualmente!`, "success");
+            } catch(e) {
+                console.error(e);
+                showToast("Erro ao criar time manual", "error");
+            }
+        });
+        return;
+    }
+
     const sizeInput = document.getElementById('teamSize');
     const size = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
+
+    if (settingsRef) {
+        setDoc(settingsRef, { teamSize: size }, { merge: true }).catch(e => console.error(e));
+    }
 
     // Trava de segurança: impede sorteios se um jogo estiver rolando
     const t1 = document.getElementById('team1Select')?.value;
@@ -38,10 +80,14 @@ export const drawTeams = async () => {
 
     const strategy = document.getElementById('draftStrategy').value;
     
-    // Delega a matemática pesada para o rankingService
-    let result = strategy === 'FORA' 
-        ? balanceStrongOutside(activePlayers, size) 
-        : balanceStrongInside(activePlayers, size);
+    let result;
+    if (mode === 'aleatorio') {
+        result = drawRandom(activePlayers, size);
+    } else {
+        result = strategy === 'FORA' 
+            ? balanceStrongOutside(activePlayers, size) 
+            : balanceStrongInside(activePlayers, size);
+    }
 
     openConfirmModal("Sorteio Geral", "Todas as equipes atuais serão desfeitas e os contadores zerados.", async () => {
         try {

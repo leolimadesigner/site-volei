@@ -3,6 +3,43 @@ import { calculateEloMatch } from './services/rankingService.js';
 import { settingsRef, updateDoc } from './firebase.js';
 
 // ============================================================================
+// HELPERS DE UI ADICIONAIS
+// ============================================================================
+export const toggleDraftMode = () => {
+    const draftMode = document.getElementById('draftMode')?.value;
+    const draftStrategy = document.getElementById('draftStrategy');
+    const btnDrawTeams = document.getElementById('btnDrawTeams');
+    const teamSizeContainer = document.getElementById('teamSizeContainer');
+    
+    if (draftMode === 'manual') {
+        if (draftStrategy) draftStrategy.classList.add('hidden');
+        if (teamSizeContainer) teamSizeContainer.classList.add('hidden');
+        if (btnDrawTeams) {
+            btnDrawTeams.innerHTML = '<i data-lucide="users" class="w-4 h-4"></i> CRIAR TIME';
+            btnDrawTeams.className = "flex-[2] sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full";
+        }
+    } else {
+        if (draftMode === 'balanceado') {
+            if (draftStrategy) draftStrategy.classList.remove('hidden');
+        } else {
+            if (draftStrategy) draftStrategy.classList.add('hidden');
+        }
+        
+        if (teamSizeContainer) teamSizeContainer.classList.remove('hidden');
+        if (btnDrawTeams) {
+            btnDrawTeams.innerHTML = '<i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES';
+            btnDrawTeams.className = "flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full";
+        }
+    }
+    
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+};
+
+window.toggleDraftMode = toggleDraftMode;
+
+// ============================================================================
 // HELPERS DE FORMATAÇÃO VISUAL
 // ============================================================================
 

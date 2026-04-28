@@ -95,19 +95,25 @@
                 <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2 text-white"><i data-lucide="dices" class="w-5 h-5 sm:w-6 sm:h-6 text-green-500"></i> Área de Sorteio</h2>
                 
                 <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto items-stretch sm:items-center">
+                    <select id="draftMode" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto" onchange="window.toggleDraftMode && window.toggleDraftMode()">
+                        <option value="balanceado" selected>Sorteio Balanceado</option>
+                        <option value="aleatorio">Sorteio Aleatório</option>
+                        <option value="manual">Escolha Manual</option>
+                    </select>
+
                     <select id="draftStrategy" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto">
                         <option value="FORA" selected>Estratégia: Fora Forte</option>
                         <option value="DENTRO">Estratégia: Dentro Forte</option>
                     </select>
                     
                     <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
-                        <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none justify-center">
+                        <div id="teamSizeContainer" class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none justify-center">
                             <span class="pl-3 pr-1 py-2 text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">Time de:</span>
                             <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.max(2, parseInt(t.value) - 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">-</button>
                             <input type="number" id="teamSize" value="4" min="2" max="10" class="w-6 sm:w-8 bg-transparent py-2 px-0 text-sm sm:text-base font-bold text-white text-center outline-none appearance-none m-0 pointer-events-none">
                             <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.min(10, parseInt(t.value) + 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">+</button>
                         </div>
-                        <button onclick="drawTeams()" class="flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES</button>
+                        <button id="btnDrawTeams" onclick="drawTeams()" class="flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES</button>
                     </div>
                 </div>
             </div>

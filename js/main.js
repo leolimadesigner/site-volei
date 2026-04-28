@@ -324,6 +324,11 @@ const initDatabaseListeners = async () => {
             const isAdmin = state.currentUserRole === 'admin' || state.isMaster;
             const shouldLock = matchActive && (ownerId !== myId) && !isAdmin;
             
+            if (data.teamSize !== undefined) {
+                const teamSizeInput = document.getElementById('teamSize');
+                if (teamSizeInput) teamSizeInput.value = data.teamSize;
+            }
+            
             if (data.matchConfig) {
                 const oldConfigStr = JSON.stringify(state.matchConfig);
                 const newConfigStr = JSON.stringify(data.matchConfig);
