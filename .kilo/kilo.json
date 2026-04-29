@@ -1,0 +1,16 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "firebase": {
+      "type": "local",
+      "command": [
+        "cmd",
+        "/c",
+        "npx",
+        "-y",
+        "firebase-tools@14.15.2",
+        "experimental:mcp"
+      ]
+    }
+  }
+}
