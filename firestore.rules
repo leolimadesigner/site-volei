@@ -47,6 +47,18 @@ service cloud.firestore {
                             )
                      );
       }
+
+      // ====================================================================
+      // 3. AUTO-ATUALIZAÇÃO DE PERFIL (Membro atualiza seu próprio jogador)
+      // Permite que o usuário atualize apenas seu próprio documento de player
+      // ao salvar o perfil (nome e foto), sem precisar ser admin.
+      // ====================================================================
+      match /players/{playerId} {
+        allow update: if request.auth != null
+                      && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails
+                      && resource.data.email == request.auth.token.email
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photo', 'updatedAt']);
+      }
     }
   }
 }
