@@ -158,7 +158,8 @@ export const savePlayer = async () => {
             partidas: parseInt(document.getElementById('statJogos').value), 
             vitorias: parseInt(document.getElementById('statVit').value), 
             eloRating: elo, 
-            icon: document.getElementById('playerIcon').value, 
+            role: document.getElementById('playerRole').value, 
+            icon: 'user', 
             photo: newPhotoUrl, 
             updatedAt: Date.now()
         };
@@ -255,12 +256,22 @@ export const savePlayer = async () => {
         // 5. VINCULA OU DESVINCULA O JOGADOR NO GRUPO GLOBAL
         if (state.currentGroupId) {
             const groupDocRef = doc(db, 'groups', state.currentGroupId);
+            const role = document.getElementById('playerRole').value;
             
             if (mode === 'email' && email) {
-                await updateDoc(groupDocRef, { memberEmails: arrayUnion(email) });
+                let updates = { memberEmails: arrayUnion(email) };
+                if (role === 'moderador') {
+                    updates.moderatorEmails = arrayUnion(email);
+                } else {
+                    updates.moderatorEmails = arrayRemove(email);
+                }
+                await updateDoc(groupDocRef, updates);
             } else if (mode === 'manual' && oldEmail) {
                 // Se mudou de e-mail para manual, remove o e-mail antigo da lista de acesso do grupo
-                await updateDoc(groupDocRef, { memberEmails: arrayRemove(oldEmail) });
+                await updateDoc(groupDocRef, { 
+                    memberEmails: arrayRemove(oldEmail),
+                    moderatorEmails: arrayRemove(oldEmail)
+                });
             }
         }
 
@@ -307,12 +318,12 @@ export const deletePlayer = (id) => {
                 await deletePhotoFromStorage(photoUrlToDelete);
             }
 
-            // 3. Se tinha e-mail vinculado, NÃO apagamos a foto global, apenas removemos o acesso dele ao grupo
             if (playerEmail && state.currentGroupId) {
                 const groupDocRef = doc(db, 'groups', state.currentGroupId);
                 const { arrayRemove } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                 await updateDoc(groupDocRef, {
-                    memberEmails: arrayRemove(playerEmail)
+                    memberEmails: arrayRemove(playerEmail),
+                    moderatorEmails: arrayRemove(playerEmail)
                 });
             }
 

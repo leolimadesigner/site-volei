@@ -15,7 +15,7 @@ service cloud.firestore {
       // Leitura, criação e edição do grupo em si
       allow read: if isMaster() || (request.auth != null && request.auth.token.email in resource.data.memberEmails);
       allow create: if request.auth != null;
-      allow update, delete: if isMaster() || (request.auth != null && request.auth.uid in resource.data.adminUids);
+      allow update, delete: if isMaster() || (request.auth != null && (request.auth.uid in resource.data.adminUids || request.auth.token.email in resource.data.moderatorEmails));
 
       // ====================================================================
       // 1. SORTEIO E QUADRA (Livres para todos os membros)
@@ -36,7 +36,10 @@ service cloud.firestore {
         allow write: if (collection == 'players' || collection == 'matchHistory') 
                      && (
                          isMaster() 
-                         || (request.auth != null && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids)
+                         || (request.auth != null && (
+                              request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids ||
+                              request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails
+                            ))
                          || (
                               request.auth != null 
                               && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails 

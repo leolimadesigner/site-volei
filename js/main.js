@@ -194,7 +194,10 @@ export const selectGroup = (groupId, groupName) => {
     
     // Define a permissão (role)
     const group = state.userGroups.find(g => g.id === groupId);
-    if (state.isMaster || (group && group.adminUids && group.adminUids.includes(state.user.uid))) {
+    const isCreatorOrAdmin = state.isMaster || (group && group.adminUids && group.adminUids.includes(state.user.uid));
+    const isModerator = group && group.moderatorEmails && group.moderatorEmails.includes(state.user.email);
+    
+    if (isCreatorOrAdmin || isModerator) {
         state.currentUserRole = 'admin';
     } else {
         state.currentUserRole = 'player';

@@ -532,7 +532,8 @@ export const editPlayer = (id) => {
     document.getElementById('statJogos').value = p.partidas || 0;
     document.getElementById('statVit').value = p.vitorias || 0;
     document.getElementById('statBonus').value = p.eloRating ?? 150;
-    document.getElementById('playerIcon').value = p.icon || 'user';
+    const roleSelect = document.getElementById('playerRole');
+    if (roleSelect) roleSelect.value = p.role || 'jogador';
     
     // Puxa o e-mail para edição, se existir
     const emailInput = document.getElementById('playerEmail');
@@ -580,7 +581,8 @@ export const resetForm = () => {
     document.getElementById('statJogos').value = '0';
     document.getElementById('statVit').value = '0';
     document.getElementById('statBonus').value = '150';
-    document.getElementById('playerIcon').value = 'user';
+    const roleSelect = document.getElementById('playerRole');
+    if (roleSelect) roleSelect.value = 'jogador';
     
     const emailInput = document.getElementById('playerEmail');
     if(emailInput) emailInput.value = '';
@@ -667,7 +669,7 @@ export const renderPublic = () => {
                         <span class="font-bold text-[8px] opacity-90 tracking-[0.15em]">ELO</span>
                     </div>
                     <div class="w-24 h-24 mt-3 mb-1 flex items-center justify-center bg-black/10 rounded-full border-2 ${isDestaque ? 'border-yellow-400/60 text-yellow-200' : 'border-black/10'} shrink-0 overflow-hidden">
-                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-12 h-12 opacity-80"></i>`}
+                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-12 h-12 opacity-80"></i>`}
                     </div>
                     <div class="player-name ${isDestaque ? 'text-yellow-100' : ''}">${p.name}</div>
                     <div class="w-full mt-2 flex justify-evenly items-center px-4">
@@ -812,7 +814,7 @@ export const renderSorteioTable = () => {
                 </td>
                 <td class="px-3 py-3 font-bold text-slate-200 flex items-center gap-2 whitespace-nowrap">
                     <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-3 h-3 text-slate-400"></i>`}
+                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-3 h-3 text-slate-400"></i>`}
                     </div>
                     ${p.name}
                 </td>
@@ -861,7 +863,7 @@ export const renderAdminTable = () => {
                 <td class="px-3 py-3 whitespace-nowrap">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 border-2 ${catInfo.border}">
-                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
+                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
                         </div>
                         <div class="flex flex-col">
                             <span class="font-bold text-slate-200">${p.name}</span>
@@ -1207,17 +1209,34 @@ export const renderUserGroups = () => {
     msg.classList.remove('flex');
 
     grid.innerHTML = state.userGroups.map(group => {
-        const isAdmin = state.isMaster || (group.adminUids && group.adminUids.includes(state.user?.uid));
+        const isCreatorOrAdmin = state.isMaster || (group.adminUids && group.adminUids.includes(state.user?.uid));
+        const isModerator = group.moderatorEmails && group.moderatorEmails.includes(state.user?.email);
         
         let roleTag = '';
         let roleBg = '';
         let menuDots = '';
 
-        if (isAdmin) {
+        if (isCreatorOrAdmin) {
             roleTag = '<i data-lucide="shield-check" class="w-3 h-3"></i> Admin';
             roleBg = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
             
             // Adiciona os três pontinhos para admins
+            menuDots = `
+                <div class="relative z-20" onclick="event.stopPropagation();">
+                    <button onclick="document.getElementById('menu-${group.id}').classList.toggle('hidden')" class="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-700 transition-colors">
+                        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                    </button>
+                    <div id="menu-${group.id}" class="hidden absolute right-0 top-8 w-40 bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden">
+                        <button onclick="renameGroup('${group.id}', '${group.name}'); document.getElementById('menu-${group.id}').classList.add('hidden')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="edit-2" class="w-4 h-4"></i> Renomear</button>
+                        <button onclick="deleteGroup('${group.id}'); document.getElementById('menu-${group.id}').classList.add('hidden')" class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-slate-800 flex items-center gap-2 border-t border-slate-800"><i data-lucide="trash-2" class="w-4 h-4"></i> Excluir</button>
+                    </div>
+                </div>
+            `;
+        } else if (isModerator) {
+            roleTag = '<i data-lucide="shield" class="w-3 h-3"></i> Moderador';
+            roleBg = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+            
+            // Moderadores também recebem os três pontinhos (mesmas permissões que admin por agora)
             menuDots = `
                 <div class="relative z-20" onclick="event.stopPropagation();">
                     <button onclick="document.getElementById('menu-${group.id}').classList.toggle('hidden')" class="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-700 transition-colors">
