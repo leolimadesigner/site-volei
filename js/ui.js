@@ -164,13 +164,13 @@ export const showToast = (msg, type = 'success') => {
 
 export const switchView = (view) => {
     // 1. Esconde TODAS as views
-    ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups'].forEach(v => { 
+    ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups', 'pagamentos'].forEach(v => { 
         const e = document.getElementById(`view-${v}`); 
         if(e) e.classList.add('hidden-view'); 
     });
     
     // 2. Remove o status de "ativo" de todos os botões do menu topo
-    ['btn-public', 'btn-sorteio', 'btn-admin', 'btn-placar', 'btn-groups'].forEach(b => { 
+    ['btn-public', 'btn-sorteio', 'btn-admin', 'btn-placar', 'btn-groups', 'btn-pagamentos'].forEach(b => { 
         const e = document.getElementById(b); 
         if(e) e.classList.remove('active'); 
     });
@@ -206,6 +206,27 @@ export const switchView = (view) => {
         } else if (state.isAuthenticated) {
             showToast("Você não é administrador deste grupo.", "error");
             switchView('public'); // Redireciona para o ranking
+        } else {
+            document.getElementById('view-auth').classList.remove('hidden-view');
+        }
+    } else if (view === 'pagamentos') {
+        if (state.isAuthenticated) {
+            document.getElementById('view-pagamentos').classList.remove('hidden-view');
+            document.getElementById('btn-pagamentos').classList.add('active');
+            
+            // Check if user is admin, if so show admin panel
+            if (state.currentUserRole === 'admin' || state.isMaster) {
+                document.querySelector('.admin-only-section').classList.remove('hidden');
+                document.querySelector('.admin-only-section').classList.add('flex');
+            } else {
+                document.querySelector('.admin-only-section').classList.add('hidden');
+                document.querySelector('.admin-only-section').classList.remove('flex');
+            }
+            
+            // Call render payments function (will be defined in paymentController)
+            if (typeof window.renderPaymentsView === 'function') {
+                window.renderPaymentsView();
+            }
         } else {
             document.getElementById('view-auth').classList.remove('hidden-view');
         }

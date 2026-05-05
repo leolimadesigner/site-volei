@@ -20,13 +20,33 @@ service cloud.firestore {
       // ====================================================================
       // 1. SORTEIO E QUADRA (Livres para todos os membros)
       // Permite usar a aba Sorteio e jogar amistosos no Placar.
+      // E exclui paymentSettings e charges da regra geral.
       // ====================================================================
       match /{collection}/{document=**} {
-        allow read: if isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails);
+        allow read: if (collection != 'paymentSettings' && collection != 'charges') 
+                    && (isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails));
         
         // Se a coleção for 'teams' ou 'settings', qualquer membro pode interagir
         allow write: if (collection == 'teams' || collection == 'settings') 
                      && (isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails));
+      }
+
+      // ====================================================================
+      // 1.5 PAGAMENTOS (paymentSettings e charges)
+      // ====================================================================
+      match /paymentSettings/{document=**} {
+        // Admin pode ler/escrever
+        allow read, write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
+      }
+
+      match /charges/{chargeId} {
+        // Admin pode ler todas. Usuário só as suas.
+        allow read: if isMaster() 
+                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails))
+                    || (request.auth != null && resource.data.playerEmail == request.auth.token.email);
+        
+        // Apenas Admin pode criar/escrever cobranças pelo painel
+        allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
       }
 
       // ====================================================================

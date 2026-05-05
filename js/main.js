@@ -20,6 +20,10 @@ import {
     toggleEloSystem, togglePlayerSelection, toggleAllPlayers,
     selectOnlyPlayersInTeams, savePlayer, deletePlayer, clearMatchHistory
 } from './controllers/adminController.js';
+import {
+    setPaymentAdminTab, renderPaymentsView, savePaymentSettings,
+    generateDailyCharges, generatePixForCharge, copyPixString
+} from './controllers/paymentController.js';
 
 // Importação das novas variáveis e métodos do Firebase
 import { 
@@ -531,6 +535,8 @@ Object.assign(window, {
     // NOVOS BINDINGS DE SAAS:
     handleAuthAction, toggleAuthMode, handlePasswordReset, handleLogout, 
     handleCreateGroup, selectGroup, saveUserProfile, removeUserProfilePhoto, renderAdminTable,
+    // NOVOS BINDINGS DE PAGAMENTOS:
+    setPaymentAdminTab, renderPaymentsView, savePaymentSettings, generateDailyCharges, generatePixForCharge, copyPixString,
     // NOVOS BINDINGS DE PLACAR:
     openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, toggleTimer, resetTimer, playBeepSound, checkWinCondition
 });

@@ -23,12 +23,14 @@ import {
     where                           // NOVO: Para filtrar grupos do utilizador
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
 // 1. Inicialização
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const functions = getFunctions(app);
 
 // ============================================================================
 // 2. REFERÊNCIAS GLOBAIS (Não dependem do grupo selecionado)
@@ -85,5 +87,7 @@ export {
     ref,
     uploadBytes,
     getDownloadURL,
-    deleteObject
+    deleteObject,
+    functions,
+    httpsCallable
 };
