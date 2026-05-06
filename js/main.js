@@ -6,7 +6,7 @@ import {
     closeMoveModal, closePlayerHistoryModal, editPlayer, resetForm, openMoveModal,
     updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, togglePlacarLock, 
     forceUnlockPlacar, toggleAuthMode, renderUserGroups, setFormMode, renderAdminTable,
-    openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, playBeepSound
+    openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, playBeepSound, goHome
 } from './ui.js';
 import {
     drawTeams, createWaitlist, clearTeams, confirmMovePlayer, deleteTeam,
@@ -531,7 +531,7 @@ Object.assign(window, {
     renderSorteioTable, savePlayer, deletePlayer, closeConfirmModal, updateLiveEloPreview, 
     handleImageUpload, removePhoto, adjustBonus, confirmMovePlayer, clearMatchHistory, 
     selectOnlyPlayersInTeams, closeMoveModal, closePlayerHistoryModal, editPlayer, resetForm, 
-    openMoveModal, updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, forceUnlockPlacar, setFormMode,
+    openMoveModal, updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, forceUnlockPlacar, setFormMode, goHome,
     // NOVOS BINDINGS DE SAAS:
     handleAuthAction, toggleAuthMode, handlePasswordReset, handleLogout, 
     handleCreateGroup, selectGroup, saveUserProfile, removeUserProfilePhoto, renderAdminTable,
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnRemove) btnRemove.classList.add('hidden');
 
             clearAllListeners();
-            switchView('auth');
+            switchView('landing');
         }
     });
 

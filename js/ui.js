@@ -164,7 +164,7 @@ export const showToast = (msg, type = 'success') => {
 
 export const switchView = (view) => {
     // 1. Esconde TODAS as views
-    ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups', 'pagamentos'].forEach(v => { 
+    ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups', 'pagamentos', 'landing'].forEach(v => { 
         const e = document.getElementById(`view-${v}`); 
         if(e) e.classList.add('hidden-view'); 
     });
@@ -177,10 +177,18 @@ export const switchView = (view) => {
     
     // 3. Controle da visibilidade do Menu de Navegação (Só aparece se estiver DENTRO de um grupo)
     const navButtons = document.getElementById('mainNavButtons');
-    if (view === 'auth' || view === 'groups') {
+    const mainNav = document.querySelector('nav');
+    
+    if (view === 'auth' || view === 'groups' || view === 'landing') {
         if(navButtons) navButtons.classList.add('hidden-view');
     } else {
         if(navButtons) navButtons.classList.remove('hidden-view');
+    }
+
+    if (view === 'landing') {
+        if (mainNav) mainNav.classList.add('hidden');
+    } else {
+        if (mainNav) mainNav.classList.remove('hidden');
     }
 
     // 4. Mostra a view correta e ativa o botão correspondente
@@ -198,6 +206,8 @@ export const switchView = (view) => {
         if(document.getElementById('btn-groups')) document.getElementById('btn-groups').classList.add('active');
     } else if (view === 'auth') {
         document.getElementById('view-auth').classList.remove('hidden-view');
+    } else if (view === 'landing') {
+        document.getElementById('view-landing').classList.remove('hidden-view');
     } else if (view === 'admin') { 
         // Proteção: Só entra no Admin se estiver logado E for Admin/Master do grupo atual
         if (state.isAuthenticated && (state.currentUserRole === 'admin' || state.isMaster)) {
@@ -233,7 +243,7 @@ export const switchView = (view) => {
     }
     
     // Atualiza os dados apenas se estiver numa tela de grupo
-    if(view !== 'auth' && view !== 'groups') {
+    if(view !== 'auth' && view !== 'groups' && view !== 'landing') {
         renderAll();
     }
 };
@@ -1422,4 +1432,13 @@ export const playBeepSound = () => {
     } catch(e) {
         console.error("Audio API not supported", e);
     }
+};
+
+export const goHome = () => {
+    if (state.isAuthenticated) {
+        switchView('groups');
+    } else {
+        switchView('landing');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };

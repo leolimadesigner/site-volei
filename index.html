@@ -12,7 +12,7 @@
 
     <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-2 sm:px-4 flex justify-between items-center h-16">
-            <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0 mr-2" onclick="switchView('groups'); window.scrollTo({ top: 0, behavior: 'smooth' });">
+            <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0 mr-2" onclick="goHome()">
                 <div class="bg-green-500 p-1.5 rounded-lg">
                     <i data-lucide="volleyball" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-900"></i>
                 </div>
@@ -282,6 +282,181 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- ABA LANDING PAGE -->
+        <section id="view-landing" class="hidden-view flex-col w-full animate-in fade-in duration-700">
+            <!-- Navbar Landing -->
+            <header class="flex justify-between items-center py-6 px-4 sm:px-8 bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-700 shadow-lg mb-12">
+                <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="goHome()">
+                    <div class="bg-green-500 p-2 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                        <i data-lucide="volleyball" class="w-6 h-6 text-slate-900"></i>
+                    </div>
+                    <span class="font-black text-2xl tracking-tighter uppercase italic text-white">TIME<span class="text-green-500">CERTO</span></span>
+                </div>
+                <div class="hidden md:flex items-center gap-8 font-bold text-slate-300">
+                    <a href="#hero" class="hover:text-green-400 transition-colors">Início</a>
+                    <a href="#features" class="hover:text-green-400 transition-colors">Funcionalidades</a>
+                    <a href="#about" class="hover:text-green-400 transition-colors">Vantagens</a>
+                </div>
+                <button onclick="switchView('auth'); window.scrollTo(0,0);" class="bg-green-500 hover:bg-green-400 text-slate-900 font-black px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all transform hover:scale-105 flex items-center gap-2">
+                    <i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR
+                </button>
+            </header>
+
+            <!-- Hero Section -->
+            <div id="hero" class="flex flex-col lg:flex-row items-center gap-12 mb-24 px-4">
+                <div class="flex-1 text-center lg:text-left">
+                    <div class="inline-block bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold px-4 py-1.5 rounded-full mb-6 text-sm">
+                        🚀 A plataforma definitiva para organizadores de rachas
+                    </div>
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-tight mb-6 tracking-tight font-['Oswald'] uppercase">
+                        O fim dos times <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 drop-shadow-md">desequilibrados</span> nas suas partidas
+                    </h1>
+                    <p class="text-lg sm:text-xl text-slate-400 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        Esqueça os sorteios no papel e as panelinhas. O <strong>TimeCerto</strong> avalia os jogadores com um sistema inteligente de Elo, nivela as equipes e facilita toda a gestão do seu esporte.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                        <button onclick="switchView('auth'); window.scrollTo(0,0);" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                            Começar Agora <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                        <a href="#features" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg px-8 py-4 rounded-2xl border border-slate-600 transition-all text-center">
+                            Conhecer Recursos
+                        </a>
+                    </div>
+                </div>
+                <div class="flex-1 w-full max-w-lg lg:max-w-none relative">
+                    <!-- Decorational background glow -->
+                    <div class="absolute inset-0 bg-gradient-to-tr from-green-500/20 to-blue-500/20 blur-[100px] rounded-full z-0"></div>
+                    <!-- Mockup UI representation -->
+                    <div class="relative z-10 bg-slate-800/80 backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-slate-600/50 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h3 class="font-black text-white text-xl flex items-center gap-2"><i data-lucide="dices" class="text-green-400"></i> Sorteio Balanceado</h3>
+                            <div class="bg-slate-900 px-3 py-1 rounded-full text-xs font-bold text-slate-400">Fora Forte</div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-blue-900/30 border border-blue-500/30 p-4 rounded-2xl flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-blue-400 border border-slate-700"><i data-lucide="user"></i></div>
+                                    <div>
+                                        <p class="text-white font-bold text-sm">Time Azul</p>
+                                        <p class="text-[10px] text-blue-400 font-bold">Média: 540 ELO</p>
+                                    </div>
+                                </div>
+                                <span class="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-1 rounded-md">4 Jogadores</span>
+                            </div>
+                            <div class="flex justify-center text-slate-500 font-bold italic text-xs">VS</div>
+                            <div class="bg-red-900/30 border border-red-500/30 p-4 rounded-2xl flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-red-400 border border-slate-700"><i data-lucide="user"></i></div>
+                                    <div>
+                                        <p class="text-white font-bold text-sm">Time Vermelho</p>
+                                        <p class="text-[10px] text-red-400 font-bold">Média: 535 ELO</p>
+                                    </div>
+                                </div>
+                                <span class="bg-red-500/20 text-red-400 text-xs font-bold px-2 py-1 rounded-md">4 Jogadores</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Grid -->
+            <div id="features" class="mb-24 px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">Tudo o que o seu grupo precisa</h2>
+                    <p class="text-slate-400 max-w-2xl mx-auto">Automatize o chato, foque no esporte. Nossas ferramentas foram criadas para organizar qualquer grupo de atletas de forma justa e rápida.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                    <!-- Feature 1 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-green-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-green-500/30 transition-colors">
+                            <i data-lucide="bar-chart-2" class="w-7 h-7 text-green-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Nivelamento Inteligente</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Sistema de Ranking (Elo) dinâmico baseado em categorias. Cada vitória e derrota afeta o ranking individual, garantindo pareamentos justos.
+                        </p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-blue-500/30 transition-colors">
+                            <i data-lucide="dices" class="w-7 h-7 text-blue-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Sorteio Estratégico</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Sorteios configuráveis para times de múltiplos tamanhos. Escolha entre balanceado, aleatório ou estratégias como "Fora Forte" e "Dentro Forte".
+                        </p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-yellow-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-yellow-500/30 transition-colors">
+                            <i data-lucide="monitor-play" class="w-7 h-7 text-yellow-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Placar e Cronômetro</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Acompanhe os pontos em tempo real. O placar sincroniza com as nuvens e exibe previsões automáticas de pontos ganhos ou perdidos por partida.
+                        </p>
+                    </div>
+                    <!-- Feature 4 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-purple-500/30 transition-colors">
+                            <i data-lucide="wallet" class="w-7 h-7 text-purple-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Gestão de Pagamentos</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Controle mensalidades e cobranças de diárias usando a integração de pagamentos com split automático e geração de Pix na hora.
+                        </p>
+                    </div>
+                    <!-- Feature 5 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-orange-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-orange-500/30 transition-colors">
+                            <i data-lucide="users" class="w-7 h-7 text-orange-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Gestão de Elenco</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Controle total sobre quem vai jogar hoje. Adicione fotos aos perfis, gerencie listas de espera e mova jogadores entre equipes.
+                        </p>
+                    </div>
+                    <!-- Feature 6 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-cyan-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-cyan-500/30 transition-colors">
+                            <i data-lucide="shield-check" class="w-7 h-7 text-cyan-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Modo Admin & Moderadores</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Defina administradores e moderadores para o seu grupo de vôlei ou futebol. Delegue responsabilidades de forma segura e prática.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Final & Footer -->
+            <div id="about" class="px-4 mb-8">
+                <div class="bg-gradient-to-br from-green-600 to-blue-700 rounded-[2.5rem] p-10 sm:p-16 text-center relative overflow-hidden shadow-2xl">
+                    <div class="absolute top-0 left-0 w-full h-full bg-black/10"></div>
+                    <div class="relative z-10 flex flex-col items-center">
+                        <h2 class="text-3xl sm:text-5xl font-black text-white mb-6 uppercase tracking-tight">Pronto para transformar seu Racha?</h2>
+                        <p class="text-green-100 text-lg sm:text-xl mb-10 max-w-2xl">Crie sua conta agora mesmo. É simples, rápido e garantimos que a qualidade das suas partidas nunca mais será a mesma.</p>
+                        <button onclick="toggleAuthMode('register'); switchView('auth'); window.scrollTo(0,0);" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-lg px-10 py-5 rounded-2xl shadow-xl transition-transform transform hover:-translate-y-1 flex items-center gap-3">
+                            Criar Conta Grátis <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple Footer -->
+            <footer class="border-t border-slate-800 py-8 px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 mt-auto">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="volleyball" class="w-5 h-5 text-slate-600"></i>
+                    <span class="font-bold text-slate-400">TIME CERTO &copy; 2026</span>
+                </div>
+                <div class="flex gap-6 font-bold">
+                    <a href="#" class="hover:text-white transition-colors">Termos</a>
+                    <a href="#" class="hover:text-white transition-colors">Privacidade</a>
+                    <a href="#" class="hover:text-white transition-colors">Suporte</a>
+                </div>
+            </footer>
         </section>
 
         <!-- ABA LOGIN -->
