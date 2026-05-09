@@ -1334,19 +1334,46 @@ export const renderAll = () => {
  * Aplica a visibilidade das seções de configuração com base no modo esportivo.
  * - Vôlei: esconde timer, esconde checkbox "diferença de 2 pontos" (aplicada automaticamente), mostra capote.
  * - Futebol: mostra timer, mostra vitória normal, esconde capote e diferença de 2 pontos.
+ * - Basquete: mostra timer e pontos, sem capote, sem diferença de 2 pontos, botões +3/+2/+1.
  */
 const applySportModeVisibility = (sportMode) => {
     const timeSection = document.getElementById('cfgTimeSection');
     const twoPointsRow = document.getElementById('cfgTwoPointsRow');
     const capoteSection = document.getElementById('cfgCapoteSection');
 
-    if (sportMode === 'futebol') {
+    // Botões de pontuação do placar
+    const scoreButtons1 = document.getElementById('scoreButtons1');
+    const scoreButtons2 = document.getElementById('scoreButtons2');
+    const scoreButtonsBasket1 = document.getElementById('scoreButtonsBasket1');
+    const scoreButtonsBasket2 = document.getElementById('scoreButtonsBasket2');
+
+    const isBasquete = sportMode === 'basquete';
+    const isFutebol = sportMode === 'futebol';
+    const isVolei = sportMode === 'volei' || (!isFutebol && !isBasquete);
+
+    // Alterna botões de pontuação
+    if (scoreButtons1) scoreButtons1.classList.toggle('hidden', isBasquete);
+    if (scoreButtons2) scoreButtons2.classList.toggle('hidden', isBasquete);
+    if (scoreButtonsBasket1) scoreButtonsBasket1.classList.toggle('hidden', !isBasquete);
+    if (scoreButtonsBasket2) scoreButtonsBasket2.classList.toggle('hidden', !isBasquete);
+
+    if (isFutebol) {
         // Futebol: mostrar timer, esconder capote e diferença de 2 pontos
         if (timeSection) timeSection.classList.remove('hidden');
         if (twoPointsRow) twoPointsRow.classList.add('hidden');
         if (capoteSection) capoteSection.classList.add('hidden');
 
         // Desmarcar capote e diferença de 2 pontos
+        const cfgUsePoints2 = document.getElementById('cfgUsePoints2');
+        if (cfgUsePoints2) cfgUsePoints2.checked = false;
+        const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
+        if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = false;
+    } else if (isBasquete) {
+        // Basquete: mostrar timer e pontos, sem capote e sem diferença de 2 pontos
+        if (timeSection) timeSection.classList.remove('hidden');
+        if (twoPointsRow) twoPointsRow.classList.add('hidden');
+        if (capoteSection) capoteSection.classList.add('hidden');
+
         const cfgUsePoints2 = document.getElementById('cfgUsePoints2');
         if (cfgUsePoints2) cfgUsePoints2.checked = false;
         const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
@@ -1366,6 +1393,7 @@ const applySportModeVisibility = (sportMode) => {
 };
 
 window.onSportModeChange = applySportModeVisibility;
+window.applySportModeVisibility = applySportModeVisibility;
 
 export const openPlacarConfigModal = () => {
     if (state.isPlacarLocked) return;
@@ -1387,17 +1415,16 @@ export const openPlacarConfigModal = () => {
     // Modalidade esportiva
     const sportMode = c.sportMode || 'volei';
     document.getElementById('cfgSportMode').value = sportMode;
-    const btnVolei = document.getElementById('cfgSportVolei');
-    const btnFutebol = document.getElementById('cfgSportFutebol');
-    const activeClass = 'flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2';
-    const inactiveClass = 'flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2';
-    if (sportMode === 'futebol') {
-        btnFutebol.className = activeClass;
-        btnVolei.className = inactiveClass;
-    } else {
-        btnVolei.className = activeClass;
-        btnFutebol.className = inactiveClass;
-    }
+    const activeClass = 'flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-1';
+    const inactiveClass = 'flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1';
+    ['cfgSportVolei', 'cfgSportFutebol', 'cfgSportBasquete'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.className = inactiveClass;
+    });
+    const activeBtn = document.getElementById(
+        sportMode === 'futebol' ? 'cfgSportFutebol' : (sportMode === 'basquete' ? 'cfgSportBasquete' : 'cfgSportVolei')
+    );
+    if (activeBtn) activeBtn.className = activeClass;
 
     // Aplica visibilidade baseada no modo esportivo
     applySportModeVisibility(sportMode);
@@ -1418,18 +1445,19 @@ export const savePlacarConfig = async () => {
     const sportMode = document.getElementById('cfgSportMode').value || 'volei';
     const isVolei = sportMode === 'volei';
     const isFutebol = sportMode === 'futebol';
+    const isBasquete = sportMode === 'basquete';
 
     state.matchConfig = {
         sportMode: sportMode,
-        // Vôlei: sem timer; Futebol: respeita checkbox
+        // Vôlei: sem timer; Futebol/Basquete: respeita checkbox
         useTime: isVolei ? false : document.getElementById('cfgUseTime').checked,
         timeMinutes: parseInt(document.getElementById('cfgTimeMinutes').value) || 10,
         usePoints1: document.getElementById('cfgUsePoints1').checked,
         points1: parseInt(document.getElementById('cfgPoints1').value) || 21,
-        // Vôlei: sempre exige diferença de 2 pontos; Futebol: nunca
+        // Vôlei: sempre exige diferença de 2 pontos; Futebol/Basquete: nunca
         twoPointsDiff: isVolei ? true : false,
-        // Vôlei: respeita checkbox; Futebol: sem capote
-        usePoints2: isFutebol ? false : document.getElementById('cfgUsePoints2').checked,
+        // Vôlei: respeita checkbox; Futebol/Basquete: sem capote
+        usePoints2: (isFutebol || isBasquete) ? false : document.getElementById('cfgUsePoints2').checked,
         points2: parseInt(document.getElementById('cfgPoints2').value) || 8
     };
 
@@ -1448,6 +1476,9 @@ export const savePlacarConfig = async () => {
         console.error(e);
         showToast("Erro ao salvar regras no servidor.", "error");
     }
+    
+    // Aplica visibilidade de botões no placar após salvar
+    applySportModeVisibility(sportMode);
     
     closePlacarConfigModal();
     

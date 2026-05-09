@@ -269,6 +269,10 @@ export const selectGroup = (groupId, groupName) => {
     if (typeof window.updateTimerDisplay === 'function') {
         window.updateTimerDisplay();
     }
+    // Aplica visibilidade dos botões do placar conforme modalidade
+    if (typeof window.applySportModeVisibility === 'function') {
+        window.applySportModeVisibility(state.matchConfig.sportMode || 'volei');
+    }
     
     // Se estourou no background, roda a checagem de vitória APÓS carregar os times da nuvem
     if (saved.needsWinCheck) {
@@ -365,6 +369,10 @@ const initDatabaseListeners = async () => {
                 
                 if (oldConfigStr !== newConfigStr && typeof window.resetTimer === 'function' && !state.matchTimer.isRunning) {
                     window.resetTimer();
+                }
+                // Aplica visibilidade dos botões do placar conforme modalidade
+                if (typeof window.applySportModeVisibility === 'function') {
+                    window.applySportModeVisibility(data.matchConfig.sportMode || 'volei');
                 }
             }
             

@@ -291,10 +291,11 @@ export const checkWinCondition = (isTimeOut = false) => {
             updateTimerDisplay();
         }
 
-        const isFutebol = (state.matchConfig.sportMode || 'volei') === 'futebol';
-        // Futebol: empate ocorre quando os placares são iguais (inclusive 0x0)
-        // Vôlei: empate nunca ocorre pois o jogo não termina empatado
-        const isTie = isFutebol && state.score1 === state.score2;
+        const sportMode = state.matchConfig.sportMode || 'volei';
+        const isFutebol = sportMode === 'futebol';
+        const isBasquete = sportMode === 'basquete';
+        // Futebol e Basquete: empate é possível. Vôlei: nunca empata.
+        const isTie = (isFutebol || isBasquete) && state.score1 === state.score2;
         let winnerName = "";
         
         const select1 = document.getElementById('team1Select');
