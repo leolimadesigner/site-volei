@@ -1336,7 +1336,7 @@ export const renderAll = () => {
  * - Futebol: mostra timer, mostra vitória normal, esconde capote e diferença de 2 pontos.
  * - Basquete: mostra timer e pontos, sem capote, sem diferença de 2 pontos, botões +3/+2/+1.
  */
-const applySportModeVisibility = (sportMode) => {
+const applySportModeVisibility = (sportMode, resetDefaults = false) => {
     const timeSection = document.getElementById('cfgTimeSection');
     const twoPointsRow = document.getElementById('cfgTwoPointsRow');
     const capoteSection = document.getElementById('cfgCapoteSection');
@@ -1356,6 +1356,31 @@ const applySportModeVisibility = (sportMode) => {
     if (scoreButtons2) scoreButtons2.classList.toggle('hidden', isBasquete);
     if (scoreButtonsBasket1) scoreButtonsBasket1.classList.toggle('hidden', !isBasquete);
     if (scoreButtonsBasket2) scoreButtonsBasket2.classList.toggle('hidden', !isBasquete);
+
+    if (resetDefaults) {
+        if (isVolei) {
+            if (document.getElementById('cfgUseTime')) document.getElementById('cfgUseTime').checked = false;
+            if (document.getElementById('cfgUsePoints1')) document.getElementById('cfgUsePoints1').checked = true;
+            if (document.getElementById('cfgPoints1')) document.getElementById('cfgPoints1').value = 25;
+            if (document.getElementById('cfgTwoPointsDiff')) document.getElementById('cfgTwoPointsDiff').checked = true;
+            if (document.getElementById('cfgUsePoints2')) document.getElementById('cfgUsePoints2').checked = false;
+            if (document.getElementById('cfgPoints2')) document.getElementById('cfgPoints2').value = 8;
+        } else if (isFutebol) {
+            if (document.getElementById('cfgUseTime')) document.getElementById('cfgUseTime').checked = true;
+            if (document.getElementById('cfgTimeMinutes')) document.getElementById('cfgTimeMinutes').value = 10;
+            if (document.getElementById('cfgUsePoints1')) document.getElementById('cfgUsePoints1').checked = false;
+            if (document.getElementById('cfgPoints1')) document.getElementById('cfgPoints1').value = 2;
+            if (document.getElementById('cfgTwoPointsDiff')) document.getElementById('cfgTwoPointsDiff').checked = false;
+            if (document.getElementById('cfgUsePoints2')) document.getElementById('cfgUsePoints2').checked = false;
+        } else if (isBasquete) {
+            if (document.getElementById('cfgUseTime')) document.getElementById('cfgUseTime').checked = true;
+            if (document.getElementById('cfgTimeMinutes')) document.getElementById('cfgTimeMinutes').value = 10;
+            if (document.getElementById('cfgUsePoints1')) document.getElementById('cfgUsePoints1').checked = false;
+            if (document.getElementById('cfgPoints1')) document.getElementById('cfgPoints1').value = 21;
+            if (document.getElementById('cfgTwoPointsDiff')) document.getElementById('cfgTwoPointsDiff').checked = false;
+            if (document.getElementById('cfgUsePoints2')) document.getElementById('cfgUsePoints2').checked = false;
+        }
+    }
 
     if (isFutebol) {
         // Futebol: mostrar timer, esconder capote e diferença de 2 pontos
@@ -1390,6 +1415,14 @@ const applySportModeVisibility = (sportMode) => {
         const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
         if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = true;
     }
+
+    // Toggle opacity for divs based on checkboxes (so it updates visually if resetDefaults fired)
+    const timeChk = document.getElementById('cfgUseTime');
+    const pts1Chk = document.getElementById('cfgUsePoints1');
+    const pts2Chk = document.getElementById('cfgUsePoints2');
+    if (timeChk && document.getElementById('cfgTimeDiv')) document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !timeChk.checked);
+    if (pts1Chk && document.getElementById('cfgPoints1Div')) document.getElementById('cfgPoints1Div').classList.toggle('opacity-50', !pts1Chk.checked);
+    if (pts2Chk && document.getElementById('cfgPoints2Div')) document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !pts2Chk.checked);
 
     // Alterna visual do divisor do placar
     const divider = document.getElementById('placar-divider');
