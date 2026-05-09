@@ -335,6 +335,23 @@ const initDatabaseListeners = async () => {
                 const teamSizeInput = document.getElementById('teamSize');
                 if (teamSizeInput) teamSizeInput.value = data.teamSize;
             }
+            if (data.draftMode !== undefined) {
+                const draftModeInput = document.getElementById('draftMode');
+                if (draftModeInput) {
+                    draftModeInput.value = data.draftMode;
+                    if (window.toggleDraftMode) window.toggleDraftMode();
+                }
+            }
+            if (data.draftStrategy !== undefined) {
+                const draftStrategyInput = document.getElementById('draftStrategy');
+                if (draftStrategyInput) draftStrategyInput.value = data.draftStrategy;
+            }
+            if (data.waitlistStrategy !== undefined) {
+                const waitlistStrategyInput = document.getElementById('waitlistStrategy');
+                if (waitlistStrategyInput) waitlistStrategyInput.value = data.waitlistStrategy;
+                const waitlistStrategyPlacarInput = document.getElementById('waitlistStrategyPlacar');
+                if (waitlistStrategyPlacarInput) waitlistStrategyPlacarInput.value = data.waitlistStrategy;
+            }
             
             if (data.matchConfig) {
                 const oldConfigStr = JSON.stringify(state.matchConfig);
@@ -360,6 +377,28 @@ const initDatabaseListeners = async () => {
     });
 
     state.unsubscribeGroup.push(unsubPlayers, unsubTeams, unsubMatches, unsubSettings);
+};
+
+// --- NOVAS FUNÇÕES: CONFIG DE SORTEIO ---
+export const syncDraftSettings = async () => {
+    if (!settingsRef) return;
+    
+    const teamSize = parseInt(document.getElementById('teamSize')?.value) || 4;
+    const draftMode = document.getElementById('draftMode')?.value || 'balanceado';
+    const draftStrategy = document.getElementById('draftStrategy')?.value || 'FORA';
+    const waitlistStrategy = document.getElementById('waitlistStrategy')?.value || 'BALANCEADO';
+    
+    try {
+        const { setDoc } = await import('./firebase.js');
+        await setDoc(settingsRef, {
+            teamSize,
+            draftMode,
+            draftStrategy,
+            waitlistStrategy
+        }, { merge: true });
+    } catch(e) {
+        console.error("Erro ao sincronizar config de sorteio:", e);
+    }
 };
 
 // --- NOVAS FUNÇÕES: PERFIL DO USUÁRIO ---
@@ -538,7 +577,8 @@ Object.assign(window, {
     // NOVOS BINDINGS DE PAGAMENTOS:
     setPaymentAdminTab, renderPaymentsView, savePaymentSettings, generateDailyCharges, generatePixForCharge, copyPixString,
     // NOVOS BINDINGS DE PLACAR:
-    openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, toggleTimer, resetTimer, playBeepSound, checkWinCondition
+    openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, toggleTimer, resetTimer, playBeepSound, checkWinCondition,
+    syncDraftSettings
 });
 
 // ============================================================================

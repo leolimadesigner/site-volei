@@ -163,6 +163,12 @@ export const showToast = (msg, type = 'success') => {
 };
 
 export const switchView = (view) => {
+    // Early return para o admin (Painel)
+    if (view === 'admin' && state.isAuthenticated && !(state.currentUserRole === 'admin' || state.isMaster)) {
+        showToast("Você não é administrador deste grupo.", "error");
+        return;
+    }
+
     // 1. Esconde TODAS as views
     ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups', 'pagamentos', 'landing'].forEach(v => { 
         const e = document.getElementById(`view-${v}`); 
@@ -209,13 +215,10 @@ export const switchView = (view) => {
     } else if (view === 'landing') {
         document.getElementById('view-landing').classList.remove('hidden-view');
     } else if (view === 'admin') { 
-        // Proteção: Só entra no Admin se estiver logado E for Admin/Master do grupo atual
-        if (state.isAuthenticated && (state.currentUserRole === 'admin' || state.isMaster)) {
+        // Proteção resolvida no início da função
+        if (state.isAuthenticated) {
             document.getElementById('view-admin').classList.remove('hidden-view');
             document.getElementById('btn-admin').classList.add('active'); 
-        } else if (state.isAuthenticated) {
-            showToast("Você não é administrador deste grupo.", "error");
-            switchView('public'); // Redireciona para o ranking
         } else {
             document.getElementById('view-auth').classList.remove('hidden-view');
         }
