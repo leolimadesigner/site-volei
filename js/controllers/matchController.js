@@ -399,7 +399,7 @@ export const saveAndCloseVictoryModal = async () => {
                     
                     // Empate: aplica o cálculo de Elo padrão (S=0.5), sem bônus de streak
                     const finalChange = isTieActual ? change : calculatePlayerFinalEloChange(change, isWinActual, currentStreak);
-                    const newElo = Math.max(0, (dbPlayer.eloRating ?? 150) + finalChange);
+                    const newElo = Math.max(0, (dbPlayer.eloRating ?? 0) + finalChange);
                     
                     updatePromises.push(updateDoc(doc(playersRef, p.id), {
                         eloRating: newElo, partidas, vitorias, streak: newStreak, updatedAt: Date.now()

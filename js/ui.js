@@ -44,12 +44,12 @@ window.toggleDraftMode = toggleDraftMode;
 // ============================================================================
 
 export const getLevelInfo = (elo) => {
-    const e = elo ?? 150;
-    if (e < 250) return { type: 'nivel1', label: 'BRONZE', bg: 'bg-orange-900/40', text: 'text-orange-400', dot: 'bg-orange-500' };
-    if (e < 350) return { type: 'nivel2', label: 'PRATA', bg: 'bg-slate-500/20', text: 'text-slate-400', dot: 'bg-slate-400' };
-    if (e < 450) return { type: 'nivel3', label: 'OURO', bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500' };
-    if (e < 550) return { type: 'nivel4', label: 'PLATINA', bg: 'bg-cyan-500/20', text: 'text-cyan-400', dot: 'bg-cyan-500' };
-    if (e < 700) return { type: 'nivel5', label: 'DIAMANTE', bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', dot: 'bg-fuchsia-500' };
+    const e = elo ?? 0;
+    if (e < 100) return { type: 'nivel1', label: 'BRONZE', bg: 'bg-orange-900/40', text: 'text-orange-400', dot: 'bg-orange-500' };
+    if (e < 200) return { type: 'nivel2', label: 'PRATA', bg: 'bg-slate-500/20', text: 'text-slate-400', dot: 'bg-slate-400' };
+    if (e < 300) return { type: 'nivel3', label: 'OURO', bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500' };
+    if (e < 400) return { type: 'nivel4', label: 'PLATINA', bg: 'bg-cyan-500/20', text: 'text-cyan-400', dot: 'bg-cyan-500' };
+    if (e < 500) return { type: 'nivel5', label: 'DIAMANTE', bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', dot: 'bg-fuchsia-500' };
     return { type: 'nivel6', label: 'MESTRE', bg: 'bg-red-600/20', text: 'text-red-500', dot: 'bg-red-600' };
 };
 
@@ -357,7 +357,7 @@ export const updateLiveEloPreview = () => {
         if (team.players.length === 0) return 150;
         const sum = team.players.reduce((acc, p) => {
             const dbPlayer = state.players.find(x => x.id === p.id);
-            return acc + (dbPlayer?.eloRating ?? 150);
+            return acc + (dbPlayer?.eloRating ?? 0);
         }, 0);
         return sum / team.players.length;
     };
@@ -568,7 +568,7 @@ export const editPlayer = (id) => {
     document.getElementById('statCategoria').value = p.categoria || 1;
     document.getElementById('statJogos').value = p.partidas || 0;
     document.getElementById('statVit').value = p.vitorias || 0;
-    document.getElementById('statBonus').value = p.eloRating ?? 150;
+    document.getElementById('statBonus').value = p.eloRating ?? 0;
     const roleSelect = document.getElementById('playerRole');
     if (roleSelect) roleSelect.value = p.role || 'jogador';
     
@@ -617,7 +617,7 @@ export const resetForm = () => {
     document.getElementById('statCategoria').value = '1';
     document.getElementById('statJogos').value = '0';
     document.getElementById('statVit').value = '0';
-    document.getElementById('statBonus').value = '150';
+    document.getElementById('statBonus').value = '0';
     const roleSelect = document.getElementById('playerRole');
     if (roleSelect) roleSelect.value = 'jogador';
     
@@ -661,11 +661,11 @@ export const renderPublic = () => {
     }
     
     const { stats, craques, bagres } = getDailyPlayerStats();
-    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
-    const globalEloRank = [...state.players].sort((a, b) => (b.eloRating ?? 150) - (a.eloRating ?? 150) || a.name.localeCompare(b.name));
+    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 0)) : 0;
+    const globalEloRank = [...state.players].sort((a, b) => (b.eloRating ?? 0) - (a.eloRating ?? 0) || a.name.localeCompare(b.name));
     
     const sortFn = (a, b) => { 
-        const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+        const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0); 
         if (eloDiff !== 0) return eloDiff; 
         return (a.name || '').localeCompare(b.name || ''); 
     };
@@ -674,9 +674,9 @@ export const renderPublic = () => {
         if (list.length === 0) return '';
         
         const cardsHTML = list.map(p => {
-            const lvlInfo = getLevelInfo(p.eloRating ?? 150);
-            const ptsValue = p.eloRating ?? 150;
-            const isDestaque = ptsValue === maxElo && maxElo > 150;
+            const lvlInfo = getLevelInfo(p.eloRating ?? 0);
+            const ptsValue = p.eloRating ?? 0;
+            const isDestaque = ptsValue === maxElo && maxElo > 0;
             const vitorias = p.vitorias || 0;
             const derrotas = (p.partidas || 0) - vitorias;
             
@@ -741,12 +741,12 @@ export const renderPublic = () => {
     };
 
     grid.innerHTML = 
-        renderGroup('Mestre', 'flame', 'text-red-500', state.players.filter(p => (p.eloRating ?? 150) >= 700).sort(sortFn)) + 
-        renderGroup('Diamante', 'gem', 'text-fuchsia-500', state.players.filter(p => (p.eloRating ?? 150) >= 550 && (p.eloRating ?? 150) < 700).sort(sortFn)) + 
-        renderGroup('Platina', 'shield', 'text-cyan-500', state.players.filter(p => (p.eloRating ?? 150) >= 450 && (p.eloRating ?? 150) < 550).sort(sortFn)) + 
-        renderGroup('Ouro', 'award', 'text-yellow-500', state.players.filter(p => (p.eloRating ?? 150) >= 350 && (p.eloRating ?? 150) < 450).sort(sortFn)) + 
-        renderGroup('Prata', 'medal', 'text-slate-400', state.players.filter(p => (p.eloRating ?? 150) >= 250 && (p.eloRating ?? 150) < 350).sort(sortFn)) + 
-        renderGroup('Bronze', 'medal', 'text-orange-500', state.players.filter(p => (p.eloRating ?? 150) < 250).sort(sortFn));
+        renderGroup('Mestre', 'flame', 'text-red-500', state.players.filter(p => (p.eloRating ?? 0) >= 500).sort(sortFn)) + 
+        renderGroup('Diamante', 'gem', 'text-fuchsia-500', state.players.filter(p => (p.eloRating ?? 0) >= 400 && (p.eloRating ?? 0) < 500).sort(sortFn)) + 
+        renderGroup('Platina', 'shield', 'text-cyan-500', state.players.filter(p => (p.eloRating ?? 0) >= 300 && (p.eloRating ?? 0) < 400).sort(sortFn)) + 
+        renderGroup('Ouro', 'award', 'text-yellow-500', state.players.filter(p => (p.eloRating ?? 0) >= 200 && (p.eloRating ?? 0) < 300).sort(sortFn)) + 
+        renderGroup('Prata', 'medal', 'text-slate-400', state.players.filter(p => (p.eloRating ?? 0) >= 100 && (p.eloRating ?? 0) < 200).sort(sortFn)) + 
+        renderGroup('Bronze', 'medal', 'text-orange-500', state.players.filter(p => (p.eloRating ?? 0) < 100).sort(sortFn));
         
     lucide.createIcons();
 };
@@ -755,7 +755,7 @@ export const renderRanking = () => {
     const list = document.getElementById('rankingList');
     
     const sortedPlayers = [...state.players].sort((a,b) => { 
-        const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+        const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0); 
         if (eloDiff !== 0) return eloDiff; 
         return (a.name || '').localeCompare(b.name || ''); 
     });
@@ -790,7 +790,7 @@ export const renderRanking = () => {
                     </div>
                     <div class="w-full ${heightClass} ${bgClass} border-t-4 rounded-t-lg flex flex-col items-center pt-2 shadow-[inset_0_10px_20px_rgba(0,0,0,0.3)] relative overflow-hidden">
                         <div class="flex flex-col items-center">
-                            <span class="text-xl font-black ${textColor}">${p.eloRating ?? 150}</span>
+                            <span class="text-xl font-black ${textColor}">${p.eloRating ?? 0}</span>
                             <span class="text-[8px] font-bold text-slate-400 uppercase mt-[-4px]">ELO</span>
                         </div>
                     </div>
@@ -831,7 +831,7 @@ export const renderSorteioTable = () => {
             if(catDiff !== 0) return catDiff; 
             
             // 2º Critério: Elo (Maior para menor)
-            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0);
             if (eloDiff !== 0) return eloDiff;
             
             // 3º Critério: Ordem Alfabética
@@ -840,7 +840,7 @@ export const renderSorteioTable = () => {
     });
     
     tbody.innerHTML = sorted.map(p => {
-        const lvlInfo = getLevelInfo(p.eloRating ?? 150);
+        const lvlInfo = getLevelInfo(p.eloRating ?? 0);
         const catInfo = getCategoryInfo(p.categoria);
         const isSelected = state.selectedPlayerIds.has(p.id);
         
@@ -860,7 +860,7 @@ export const renderSorteioTable = () => {
                 </td>
                 <td class="px-3 py-3 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center justify-center">
-                        <span class="font-bold text-white text-sm">${p.eloRating ?? 150}</span>
+                        <span class="font-bold text-white text-sm">${p.eloRating ?? 0}</span>
                         <span class="px-2 py-0.5 mt-0.5 rounded-md text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
                     </div>
                 </td>
@@ -883,7 +883,7 @@ export const renderAdminTable = () => {
         if (sortMode === 'level') {
             const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
             if(c !== 0) return c; 
-            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0);
             if(eloDiff !== 0) return eloDiff;
             return (a.name || '').localeCompare(b.name || '');
         } else {
@@ -892,7 +892,7 @@ export const renderAdminTable = () => {
     });
     
     tbody.innerHTML = sorted.map(p => {
-        const lvlInfo = getLevelInfo(p.eloRating ?? 150);
+        const lvlInfo = getLevelInfo(p.eloRating ?? 0);
         const catInfo = getCategoryInfo(p.categoria);
         
         return `
@@ -913,7 +913,7 @@ export const renderAdminTable = () => {
                 </td>
                 <td class="px-3 py-3 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center justify-center">
-                        <span class="font-bold text-white text-sm">${p.eloRating ?? 150}</span>
+                        <span class="font-bold text-white text-sm">${p.eloRating ?? 0}</span>
                         <span class="px-2 py-0.5 mt-0.5 rounded-md text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
                     </div>
                 </td>
@@ -948,7 +948,7 @@ export const renderTeams = () => {
     const sortedTeams = state.drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label)));
     
     const { stats, craques, bagres } = getDailyPlayerStats();
-    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
+    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 0)) : 0;
     
     const content = sortedTeams.map(t => {
         const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 mr-1"></i> Lista de Espera' : getTeamName(t);
@@ -979,12 +979,12 @@ export const renderTeams = () => {
         const playersHTML = pSorted.map(p => {
             const dbPlayer = state.players.find(x => x.id === p.id) || p;
             const catInfo = getCategoryInfo(dbPlayer.categoria);
-            const ptsValue = dbPlayer.eloRating ?? 150;
+            const ptsValue = dbPlayer.eloRating ?? 0;
             
             const pStats = stats[dbPlayer.name] || { wins: 0, losses: 0 };
             const isCraque = craques.has(dbPlayer.name);
             const isBagre = bagres.has(dbPlayer.name);
-            const isDestaque = ptsValue === maxElo && maxElo > 150;
+            const isDestaque = ptsValue === maxElo && maxElo > 0;
             const waitlistBadge = (t.isWaitlist && p.waitlistRounds > 0) ? `<span class="bg-blue-500/20 text-blue-400 text-[8px] font-black px-1.5 py-0.5 rounded ml-1" title="Rodadas na Espera">${p.waitlistRounds}R</span>` : '';
 
             return `

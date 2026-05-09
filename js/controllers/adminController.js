@@ -150,7 +150,7 @@ export const savePlayer = async () => {
         }
 
         // 2. CÁLCULO DO ELO E MONTAGEM DO OBJETO
-        const elo = Math.max(0, parseInt(document.getElementById('statBonus').value) || 150);
+        const elo = Math.max(0, parseInt(document.getElementById('statBonus').value) || 0);
 
         const playerData = { 
             name, 
