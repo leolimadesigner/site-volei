@@ -18,10 +18,7 @@
                 </div>
                 <span class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic hidden sm:block">TIME<span class="text-green-500">CERTO</span></span>
             </div>
-            <div id="mainNavButtons" class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end hidden-view">
-                <button onclick="switchView('groups')" id="btn-groups" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap text-blue-400">
-                    <i data-lucide="user-circle" class="w-3 h-3 sm:w-4 sm:h-4"></i> Perfil
-                </button>
+            <div class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end">
                 <button onclick="switchView('public')" id="btn-public" class="nav-btn active px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
                     <i data-lucide="layout-grid" class="w-3 h-3 sm:w-4 sm:h-4"></i> Ranking
                 </button>
@@ -32,7 +29,7 @@
                     <i data-lucide="monitor-play" class="w-3 h-3 sm:w-4 sm:h-4"></i> Placar
                 </button>
                 <button onclick="switchView('admin')" id="btn-admin" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Painel
+                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Admin
                 </button>
                 <button onclick="switchView('pagamentos')" id="btn-pagamentos" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
                     <i data-lucide="wallet" class="w-3 h-3 sm:w-4 sm:h-4"></i> Pagamentos
@@ -48,11 +45,11 @@
 
     <main class="max-w-7xl mx-auto w-full p-2 sm:p-4 md:p-8 flex-1">
         
-        <!-- ABA (RANKING) -->
+        <!-- ABA PÚBLICA (RANKING) -->
         <section id="view-public" class="animate-in fade-in duration-500">
             <header class="mb-8 sm:mb-12 mt-4 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 shadow-lg">
                 <div class="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left">
-                    <h2 id="publicGroupName" class="text-4xl sm:text-5xl md:text-6xl font-black mb-2 tracking-tight text-white font-['Oswald'] drop-shadow-md uppercase">
+                    <h2 class="text-4xl sm:text-5xl md:text-6xl font-black mb-2 tracking-tight text-white font-['Oswald'] drop-shadow-md">
                         TURMA DO <span class="text-green-500">VÔLEI</span>
                     </h2>
                     <p class="text-sm sm:text-base text-slate-400 font-bold flex items-center justify-center md:justify-start gap-2 bg-slate-900/50 px-4 py-2 rounded-full border border-slate-700/50">
@@ -110,13 +107,13 @@
                     </select>
                     
                     <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
-                        <div id="teamSizeContainer" class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none justify-center">
+                        <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none justify-center">
                             <span class="pl-3 pr-1 py-2 text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">Time de:</span>
                             <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.max(2, parseInt(t.value) - 1); window.syncDraftSettings && window.syncDraftSettings();" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">-</button>
                             <input type="number" id="teamSize" value="4" min="2" max="10" class="w-6 sm:w-8 bg-transparent py-2 px-0 text-sm sm:text-base font-bold text-white text-center outline-none appearance-none m-0 pointer-events-none" onchange="window.syncDraftSettings && window.syncDraftSettings()">
                             <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.min(10, parseInt(t.value) + 1); window.syncDraftSettings && window.syncDraftSettings();" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">+</button>
                         </div>
-                        <button id="btnDrawTeams" onclick="drawTeams()" class="flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES</button>
+                        <button onclick="drawTeams()" class="flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES</button>
                     </div>
                 </div>
             </div>
@@ -500,93 +497,11 @@
                     <h2 id="authTitle" class="text-xl sm:text-2xl font-bold text-white">Bem-vindo</h2>
                     <p id="authSubtitle" class="text-sm text-slate-400 mt-1">Faça login para acessar seus grupos.</p>
                 </div>
-
                 <div class="space-y-4">
-                    <div id="registerNameContainer" class="hidden">
-                        <input type="text" id="authName" placeholder="Seu Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
-                    </div>
-                    
-                    <input type="email" id="authEmail" placeholder="Seu E-mail" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
-                    
-                    <div id="passwordContainer">
-                        <input type="password" id="authPass" placeholder="Sua Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
-                    </div>
-
-                    <button onclick="handleAuthAction()" id="btnAuthMain" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
-                        <i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR
-                    </button>
+                    <input type="text" id="loginUser" placeholder="Usuário" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
+                    <input type="password" id="loginPass" placeholder="Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
+                    <button onclick="handleLogin()" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg">ENTRAR NO PAINEL</button>
                 </div>
-
-                <div class="mt-6 flex flex-col gap-3 text-center text-sm font-medium">
-                    <button onclick="toggleAuthMode('register')" id="btnToggleAuth" class="text-slate-300 hover:text-green-400 transition-colors">Ainda não tem conta? <span class="font-bold underline">Cadastre-se</span></button>
-                    <button onclick="handlePasswordReset()" id="btnResetPass" class="text-slate-500 hover:text-white transition-colors text-xs">Esqueci minha senha</button>
-                </div>
-            </div>
-        </section>
-
-        <section id="view-groups" class="hidden-view animate-in fade-in duration-500 py-6 sm:py-10">
-            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-700 mb-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
-                <label class="relative group/photo flex flex-col items-center shrink-0">
-                    <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-900 border-4 border-slate-700 flex items-center justify-center overflow-hidden group-hover/photo:border-blue-500 transition-colors">
-                        <img id="userProfilePhotoPreview" class="w-full h-full object-cover hidden" src="" alt="Sua Foto">
-                        <div id="userProfilePhotoPlaceholder" class="text-slate-500 flex flex-col items-center">
-                            <i data-lucide="camera" class="w-8 h-8 mb-1"></i>
-                            <span class="text-[10px] font-bold uppercase">Sua Foto</span>
-                        </div>
-                    </div>
-    
-                    <input type="file" id="userProfilePhotoInput" accept="image/*" class="hidden" onchange="handleUserProfilePhotoUpload(event)">
-                    <input type="hidden" id="userProfilePhotoData" value="">
-    
-                    <div class="absolute bottom-2 right-2 bg-blue-500 p-2 rounded-full border-2 border-slate-800 shadow-lg cursor-pointer hover:bg-blue-400 transition-colors" onclick="document.getElementById('userProfilePhotoInput').click()">
-                        <i data-lucide="edit-2" class="w-4 h-4 text-white"></i>
-                    </div>
-
-                    <div id="btnRemoveProfilePhoto" class="absolute top-0 right-0 bg-red-500 p-2 rounded-full border-2 border-slate-800 shadow-lg cursor-pointer hover:bg-red-400 transition-colors hidden" onclick="event.preventDefault(); removeUserProfilePhoto();">
-                        <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
-                    </div>
-                </label>
-                <div class="flex-1 w-full space-y-4 text-center sm:text-left">
-                    <div>
-                        <h2 class="text-2xl font-black text-white mb-1">Seu Perfil</h2>
-                        <p class="text-sm text-slate-400 mb-4">Seus dados oficiais no TimeCerto.</p>
-                        <label class="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider">Como você quer ser chamado?</label>
-                        <input type="text" id="userProfileNameInput" placeholder="Seu nome de jogador" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 transition-colors font-bold text-lg text-center sm:text-left">
-                    </div>
-                    <button onclick="saveUserProfile()" id="btnSaveProfile" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 mx-auto sm:mx-0">
-                        <i data-lucide="save" class="w-5 h-5"></i> SALVAR PERFIL
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                <div>
-                    <h2 class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-                        <i data-lucide="users" class="w-8 h-8 text-blue-500"></i> Meus Grupos
-                    </h2>
-                    <p class="text-slate-400 text-sm mt-1">Selecione um racha para acessar o painel ou crie o seu próprio.</p>
-                </div>
-                <div class="flex gap-3 w-full md:w-auto">
-                    <button onclick="handleLogout()" class="bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 text-sm flex-1 md:flex-none justify-center">
-                        <i data-lucide="log-out" class="w-4 h-4"></i> Sair
-                    </button>
-                    <button onclick="document.getElementById('createGroupModal').classList.remove('hidden'); document.getElementById('createGroupModal').classList.add('flex');" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 text-sm shadow-lg shadow-blue-500/30 flex-1 md:flex-none justify-center">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Grupo
-                    </button>
-                </div>
-            </div>
-
-            <div id="userGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-
-            <div id="noGroupsMessage" class="hidden flex-col items-center justify-center py-16 bg-slate-800/30 rounded-3xl border border-slate-700 border-dashed text-center">
-                <div class="bg-slate-800 p-4 rounded-full mb-4">
-                    <i data-lucide="ghost" class="w-12 h-12 text-slate-500"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">Você ainda não faz parte de nenhum grupo</h3>
-                <p class="text-slate-400 max-w-md mx-auto mb-6">Crie o seu próprio grupo para ser o administrador e gerenciar suas partidas, ou peça para um administrador te adicionar a um grupo existente pelo seu e-mail.</p>
-                <button onclick="document.getElementById('createGroupModal').classList.remove('hidden'); document.getElementById('createGroupModal').classList.add('flex');" class="bg-green-500 text-slate-900 px-6 py-3 rounded-xl font-black transition-all flex items-center gap-2">
-                    <i data-lucide="plus" class="w-5 h-5"></i> CRIAR MEU PRIMEIRO GRUPO
-                </button>
             </div>
         </section>
 
@@ -626,38 +541,18 @@
                         
                         <div id="formContent" class="space-y-4 mt-4 sm:mt-6 transition-all hidden border-t border-slate-700 pt-4">
                             <input type="hidden" id="editId" value="">
+                            <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-green-500">
                             
-                            <div class="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700 mb-4">
-                                <button type="button" id="btnModeManual" onclick="setFormMode('manual')" class="flex-1 py-2 text-xs font-bold rounded-md bg-slate-800 text-white transition-all shadow">
-                                    Cadastro Manual
-                                </button>
-                                <button type="button" id="btnModeEmail" onclick="setFormMode('email')" class="flex-1 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
-                                    Vincular E-mail
-                                </button>
-                            </div>
-                            <input type="hidden" id="formMode" value="manual">
-
-                            <div id="emailFields" class="hidden mt-2 relative">
-                                <i data-lucide="mail" class="absolute left-3 top-3.5 w-4 h-4 text-blue-500"></i>
-                                <input type="email" id="playerEmail" placeholder="E-mail da conta do jogador" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-3 pl-10 pr-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500">
-                                <p class="text-[9px] text-slate-400 mt-2 ml-1">
-                                    <span class="font-bold text-blue-400">Nota:</span> O nome e a foto serão importados automaticamente do perfil do usuário associado a este e-mail.
-                                </p>
-                            </div>
-
-                            <div id="manualFields" class="space-y-4">
-                                <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none focus:ring-2 focus:ring-green-500">
-                                <div class="mb-2 mt-4 flex flex-col items-center">
-                                    <label class="relative cursor-pointer group/photo flex flex-col items-center">
-                                        <div class="w-20 h-20 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover/photo:border-green-500 transition-colors">
-                                            <div id="photoPlaceholder" class="text-slate-500 flex flex-col items-center"><i data-lucide="camera" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-bold uppercase">Foto</span></div>
-                                            <img id="photoPreview" class="w-full h-full object-cover hidden" src="" alt="Preview">
-                                        </div>
-                                        <input type="file" id="playerPhoto" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                                        <input type="hidden" id="photoData" value="">
-                                    </label>
-                                    <button type="button" id="btnRemovePhoto" onclick="removePhoto()" class="mt-2 text-xs text-red-400 hidden flex items-center gap-1"><i data-lucide="trash-2" class="w-3 h-3"></i> Remover Foto</button>
-                                </div>
+                            <div class="mb-2 mt-4 flex flex-col items-center">
+                                <label class="relative cursor-pointer group/photo flex flex-col items-center">
+                                    <div class="w-20 h-20 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover/photo:border-green-500 transition-colors">
+                                        <div id="photoPlaceholder" class="text-slate-500 flex flex-col items-center"><i data-lucide="camera" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-bold uppercase">Foto</span></div>
+                                        <img id="photoPreview" class="w-full h-full object-cover hidden" src="" alt="Preview">
+                                    </div>
+                                    <input type="file" id="playerPhoto" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                                    <input type="hidden" id="photoData" value="">
+                                </label>
+                                <button type="button" id="btnRemovePhoto" onclick="removePhoto()" class="mt-2 text-xs text-red-400 hidden flex items-center gap-1"><i data-lucide="trash-2" class="w-3 h-3"></i> Remover Foto</button>
                             </div>
 
                             <div class="mb-4">
@@ -678,10 +573,11 @@
                             </div>
                             
                             <div>
-                                <label class="block text-[10px] font-medium text-slate-400 mb-1 mt-2">Tipo de Usuário</label>
-                                <select id="playerRole" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs">
-                                    <option value="jogador">👤 Jogador</option>
-                                    <option value="moderador">🛡️ Moderador</option>
+                                <label class="block text-[10px] font-medium text-slate-400 mb-1 mt-2">Ícone Padrão</label>
+                                <select id="playerIcon" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs">
+                                    <option value="user">👤 Usuário</option>
+                                    <option value="zap">⚡ Raio</option>
+                                    <option value="flame">🔥 Fogo</option>
                                 </select>
                             </div>
 
@@ -696,15 +592,8 @@
                 <!-- TABELA ADMIN (SÓ COM EDITAR/EXCLUIR) -->
                 <div class="lg:col-span-2">
                     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
-                        <div class="p-4 sm:p-6 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900/30 gap-3">
+                        <div class="p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
                             <h2 class="text-lg sm:text-xl font-bold">Base de Atletas Cadastrados</h2>
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <input type="text" id="searchAdmin" placeholder="Buscar atleta..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-slate-300 outline-none w-full sm:w-48 focus:border-green-500" oninput="clearTimeout(window.adminSearchTimeout); window.adminSearchTimeout = setTimeout(() => window.renderAdminTable(), 300)">
-                                <select id="sortAdmin" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-slate-300 outline-none focus:border-green-500" onchange="window.renderAdminTable()">
-                                    <option value="alpha">A-Z</option>
-                                    <option value="level">Por Nível</option>
-                                </select>
-                            </div>
                         </div>
                         <div class="overflow-x-auto w-full max-h-[600px] overflow-y-auto">
                             <table class="w-full text-left min-w-[500px]">
@@ -923,14 +812,14 @@
         <!-- Modais (Victory, Confirm, Move, Config Placar) -->
         <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">
             <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center">
-                <i id="victoryIcon" data-lucide="trophy" class="w-16 h-16 text-yellow-400 mb-4 animate-bounce"></i>
-                <h2 id="victoryTitle" class="text-2xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
+                <i data-lucide="trophy" class="w-16 h-16 text-yellow-400 mb-4 animate-bounce"></i>
+                <h2 class="text-2xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
                 <div id="victoryTeamName" class="text-xl font-black text-yellow-400 mb-3 px-4 py-3 bg-slate-900 rounded-2xl w-full truncate">EQUIPE</div>
                 <div id="victoryEloInfo" class="w-full text-sm mb-6 hidden bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-inner"></div>
                 <p id="victoryTeamWarning" class="text-xs text-red-400 mb-4 hidden"></p>
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
-                    <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 transition-colors text-white font-bold py-3 rounded-xl text-xs">APENAS ZERAR</button>
-                    <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 hover:bg-green-600 transition-colors text-slate-900 font-bold py-3 rounded-xl text-sm">SALVAR RANKING</button>
+                    <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 text-white font-bold py-3 rounded-xl text-xs">APENAS ZERAR</button>
+                    <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 text-slate-900 font-bold py-3 rounded-xl text-sm">SALVAR RANKING</button>
                 </div>
             </div>
         </div>
