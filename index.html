@@ -12,13 +12,16 @@
 
     <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-2 sm:px-4 flex justify-between items-center h-16">
-            <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0 mr-2" onclick="switchView('public'); window.scrollTo({ top: 0, behavior: 'smooth' });">
+            <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0 mr-2" onclick="goHome()">
                 <div class="bg-green-500 p-1.5 rounded-lg">
                     <i data-lucide="volleyball" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-900"></i>
                 </div>
                 <span class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic hidden sm:block">TIME<span class="text-green-500">CERTO</span></span>
             </div>
-            <div class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end">
+            <div id="mainNavButtons" class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end hidden-view">
+                <button onclick="switchView('groups')" id="btn-groups" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap text-blue-400">
+                    <i data-lucide="user-circle" class="w-3 h-3 sm:w-4 sm:h-4"></i> Perfil
+                </button>
                 <button onclick="switchView('public')" id="btn-public" class="nav-btn active px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
                     <i data-lucide="layout-grid" class="w-3 h-3 sm:w-4 sm:h-4"></i> Ranking
                 </button>
@@ -29,7 +32,10 @@
                     <i data-lucide="monitor-play" class="w-3 h-3 sm:w-4 sm:h-4"></i> Placar
                 </button>
                 <button onclick="switchView('admin')" id="btn-admin" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Admin
+                    <i data-lucide="shield-check" class="w-3 h-3 sm:w-4 sm:h-4"></i> Painel
+                </button>
+                <button onclick="switchView('pagamentos')" id="btn-pagamentos" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                    <i data-lucide="wallet" class="w-3 h-3 sm:w-4 sm:h-4"></i> Pagamentos
                 </button>
             </div>
         </div>
@@ -42,11 +48,11 @@
 
     <main class="max-w-7xl mx-auto w-full p-2 sm:p-4 md:p-8 flex-1">
         
-        <!-- ABA PÚBLICA (RANKING) -->
+        <!-- ABA (RANKING) -->
         <section id="view-public" class="animate-in fade-in duration-500">
             <header class="mb-8 sm:mb-12 mt-4 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 shadow-lg">
                 <div class="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left">
-                    <h2 class="text-4xl sm:text-5xl md:text-6xl font-black mb-2 tracking-tight text-white font-['Oswald'] drop-shadow-md">
+                    <h2 id="publicGroupName" class="text-4xl sm:text-5xl md:text-6xl font-black mb-2 tracking-tight text-white font-['Oswald'] drop-shadow-md uppercase">
                         TURMA DO <span class="text-green-500">VÔLEI</span>
                     </h2>
                     <p class="text-sm sm:text-base text-slate-400 font-bold flex items-center justify-center md:justify-start gap-2 bg-slate-900/50 px-4 py-2 rounded-full border border-slate-700/50">
@@ -92,19 +98,25 @@
                 <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2 text-white"><i data-lucide="dices" class="w-5 h-5 sm:w-6 sm:h-6 text-green-500"></i> Área de Sorteio</h2>
                 
                 <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto items-stretch sm:items-center">
-                    <select id="draftStrategy" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto">
+                    <select id="draftMode" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto" onchange="window.toggleDraftMode && window.toggleDraftMode(); window.syncDraftSettings && window.syncDraftSettings()">
+                        <option value="balanceado" selected>Sorteio Balanceado</option>
+                        <option value="aleatorio">Sorteio Aleatório</option>
+                        <option value="manual">Escolha Manual</option>
+                    </select>
+
+                    <select id="draftStrategy" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-slate-300 outline-none font-bold w-full sm:w-auto" onchange="window.syncDraftSettings && window.syncDraftSettings()">
                         <option value="FORA" selected>Estratégia: Fora Forte</option>
                         <option value="DENTRO">Estratégia: Dentro Forte</option>
                     </select>
                     
                     <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
-                        <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none justify-center">
+                        <div id="teamSizeContainer" class="flex items-center bg-slate-900 border border-slate-700 rounded-lg overflow-hidden flex-1 sm:flex-none justify-center">
                             <span class="pl-3 pr-1 py-2 text-xs sm:text-sm font-bold text-slate-400 whitespace-nowrap">Time de:</span>
-                            <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.max(2, parseInt(t.value) - 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">-</button>
-                            <input type="number" id="teamSize" value="4" min="2" max="10" class="w-6 sm:w-8 bg-transparent py-2 px-0 text-sm sm:text-base font-bold text-white text-center outline-none appearance-none m-0 pointer-events-none">
-                            <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.min(10, parseInt(t.value) + 1);" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">+</button>
+                            <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.max(2, parseInt(t.value) - 1); window.syncDraftSettings && window.syncDraftSettings();" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">-</button>
+                            <input type="number" id="teamSize" value="4" min="2" max="10" class="w-6 sm:w-8 bg-transparent py-2 px-0 text-sm sm:text-base font-bold text-white text-center outline-none appearance-none m-0 pointer-events-none" onchange="window.syncDraftSettings && window.syncDraftSettings()">
+                            <button type="button" onclick="const t = document.getElementById('teamSize'); t.value = Math.min(10, parseInt(t.value) + 1); window.syncDraftSettings && window.syncDraftSettings();" class="px-2 sm:px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-bold text-base">+</button>
                         </div>
-                        <button onclick="drawTeams()" class="flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES</button>
+                        <button id="btnDrawTeams" onclick="drawTeams()" class="flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full"><i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES</button>
                     </div>
                 </div>
             </div>
@@ -142,9 +154,11 @@
                     <div class="p-4 sm:p-6 border-b border-slate-700 bg-slate-900/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <h2 class="text-lg sm:text-xl font-bold text-green-400 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Equipes Atuais</h2>
                         <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                            <select id="waitlistStrategy" onchange="const wsp = document.getElementById('waitlistStrategyPlacar'); if(wsp) wsp.value = this.value;" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-[10px] sm:text-xs text-slate-300 outline-none font-bold">
+                            <select id="waitlistStrategy" onchange="const wsp = document.getElementById('waitlistStrategyPlacar'); if(wsp) wsp.value = this.value; window.syncDraftSettings && window.syncDraftSettings();" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-[10px] sm:text-xs text-slate-300 outline-none font-bold">
                                 <option value="BALANCEADO" selected>Sortear Time de Fora</option>
                                 <option value="FORCAR">Time Fora Sempre Entra</option>
+                                <option value="MANTER_FORTE">Manter Jogador Forte</option>
+                                <option value="ALEATORIO">Aleatório</option>
                             </select>
                             <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> ATUALIZAR ESPERA</button>
                             <button onclick="clearTeams()" class="flex-1 sm:flex-none bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-red-500/30 flex items-center justify-center gap-2 transition-colors"><i data-lucide="trash-2" class="w-3 h-3 sm:w-4 sm:h-4"></i> LIMPAR TODAS</button>
@@ -156,12 +170,38 @@
         </section>
 
         <!-- ABA PLACAR -->
-        <section id="view-placar" class="hidden-view animate-in zoom-in-95 duration-500">
-            <div class="max-w-5xl mx-auto text-center px-1 sm:px-4 flex flex-col items-center">
-                <!-- QUADRA DE VÔLEI -->
-                <div class="relative w-full flex flex-row border-2 sm:border-4 border-slate-300/80 rounded-xl sm:rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden bg-slate-800 mt-2 sm:mt-4">
-                    <div class="absolute z-30 flex items-center justify-center pointer-events-none left-1/2 top-0 bottom-0 -translate-x-1/2 w-4 sm:w-6 md:w-8 h-full">
-                        <div class="absolute inset-0 border-x-2 sm:border-x-4 border-white/80 shadow-[0_0_10px_rgba(0,0,0,0.8)]" style="background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.4) 0, rgba(255,255,255,0.4) 2px, transparent 2px, transparent 8px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.4) 0, rgba(255,255,255,0.4) 2px, transparent 2px, transparent 8px); background-color: rgba(15, 23, 42, 0.4);"></div>
+        <section id="view-placar" class="animate-in zoom-in-95 duration-500 hidden-view">
+            <div class="max-w-5xl mx-auto text-center px-1 sm:px-4 flex flex-col items-center relative">
+                
+                <!-- Barra de Ferramentas do Placar (Config & Timer) -->
+                <div class="w-full flex justify-between items-center mb-2 px-2 mt-4 h-14">
+                    <button id="btnPlacarConfig" onclick="openPlacarConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 sm:px-4 sm:py-2 rounded-xl border border-slate-700 shadow-lg transition-colors flex items-center gap-2">
+                        <i data-lucide="settings" class="w-5 h-5"></i> <span class="hidden sm:inline text-xs font-bold uppercase">Ajustes</span>
+                    </button>
+                    
+                    <div id="timerContainer" class="hidden flex-row items-center gap-3 bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-700 shadow-inner">
+                        <span id="timerDisplay" class="text-2xl sm:text-3xl font-black text-white font-['Oswald'] tracking-widest leading-none mt-0.5">00:00</span>
+                        <div class="flex items-center border-l border-slate-700 pl-3 py-1 gap-2">
+                            <button id="btnTimerPlayPause" onclick="toggleTimer()" class="bg-green-500/20 hover:bg-green-500/40 text-green-400 p-1.5 rounded-md transition-colors"><i id="iconTimerPlayPause" data-lucide="play" class="w-4 h-4"></i></button>
+                            <button onclick="resetTimer()" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 p-1.5 rounded-md transition-colors"><i data-lucide="square" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="w-[42px] sm:w-[104px]"></div> <!-- Spacer to keep timer centered -->
+                </div>
+
+                <div class="relative w-full flex flex-row border-2 sm:border-4 border-slate-300/80 rounded-xl sm:rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden bg-slate-800">
+            
+                    <div id="placar-lock-overlay" class="absolute inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-in fade-in hidden">
+                        <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-700 flex flex-col items-center shadow-2xl">
+                            <i data-lucide="lock" class="w-8 h-8 text-yellow-500 mb-2"></i>
+                            <p class="text-xs font-bold text-white uppercase tracking-widest text-center">
+                                Partida em Andamento<br>
+                                <span class="text-[10px] text-slate-400 font-normal">Placar controlado por outro aparelho</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div id="placar-divider" class="absolute z-30 flex items-center justify-center pointer-events-none left-1/2 top-0 bottom-0 -translate-x-1/2 w-4 sm:w-6 md:w-8 h-full divider-volei">
                     </div>
 
                     <!-- METADE AZUL -->
@@ -175,9 +215,23 @@
                         <div class="flex-1 w-full flex items-center justify-center relative z-10 py-2">
                             <span id="score1" class="select-none text-[120px] sm:text-[130px] md:text-[150px] landscape:text-[140px] md:landscape:text-[150px] font-black text-white font-['Oswald'] drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all leading-none">0</span>
                         </div>
-                        <div class="flex gap-2 sm:gap-3 md:gap-4 w-full max-w-[200px] sm:max-w-[240px] md:max-w-[280px] relative z-20 shrink-0">
+                        <!-- Botões de pontuação Time 1 (azul) - modo normal/basquete -->
+                        <div id="scoreButtons1" class="flex gap-2 sm:gap-3 md:gap-4 w-full max-w-[200px] sm:max-w-[240px] md:max-w-[280px] relative z-20 shrink-0">
                             <button onclick="updateScore(1, -1)" class="select-none flex-1 bg-slate-900/80 hover:bg-slate-800 text-white font-bold py-1.5 sm:py-2 md:py-3 rounded-md sm:rounded-xl text-sm sm:text-lg md:text-xl transition-all border border-slate-600/50 shadow-lg active:scale-95">-1</button>
                             <button onclick="updateScore(1, 1)" class="select-none flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-black py-1.5 sm:py-2 md:py-3 rounded-md sm:rounded-xl text-xl sm:text-2xl md:text-3xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.5)] border border-blue-400/50 active:scale-95">+1</button>
+                        </div>
+                        <!-- Botões de pontuação Time 1 - modo basquete -->
+                        <div id="scoreButtonsBasket1" class="hidden w-full max-w-[220px] sm:max-w-[260px] relative z-20 shrink-0">
+                            <div class="grid grid-cols-3 gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
+                                <button onclick="updateScore(1, 3)" class="select-none bg-blue-700 hover:bg-blue-600 text-white font-black py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-all border border-blue-500/50 shadow active:scale-95">+3</button>
+                                <button onclick="updateScore(1, 2)" class="select-none bg-blue-600 hover:bg-blue-500 text-white font-black py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-all border border-blue-400/50 shadow-[0_0_10px_rgba(37,99,235,0.4)] active:scale-95">+2</button>
+                                <button onclick="updateScore(1, 1)" class="select-none bg-blue-500 hover:bg-blue-400 text-white font-black py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-all border border-blue-300/50 active:scale-95">+1</button>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 sm:gap-1.5">
+                                <button onclick="updateScore(1, -3)" class="select-none bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold py-1 sm:py-1.5 rounded-md text-xs sm:text-sm transition-all border border-slate-600/50 active:scale-95">-3</button>
+                                <button onclick="updateScore(1, -2)" class="select-none bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold py-1 sm:py-1.5 rounded-md text-xs sm:text-sm transition-all border border-slate-600/50 active:scale-95">-2</button>
+                                <button onclick="updateScore(1, -1)" class="select-none bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold py-1 sm:py-1.5 rounded-md text-xs sm:text-sm transition-all border border-slate-600/50 active:scale-95">-1</button>
+                            </div>
                         </div>
                     </div>
 
@@ -192,9 +246,23 @@
                         <div class="flex-1 w-full flex items-center justify-center relative z-10 py-2">
                             <span id="score2" class="select-none text-[120px] sm:text-[130px] md:text-[150px] landscape:text-[140px] md:landscape:text-[150px] font-black text-white font-['Oswald'] drop-shadow-[0_0_20px_rgba(239,68,68,0.6)] transition-all leading-none">0</span>
                         </div>
-                        <div class="flex gap-2 sm:gap-3 md:gap-4 w-full max-w-[200px] sm:max-w-[240px] md:max-w-[280px] relative z-20 shrink-0">
+                        <!-- Botões de pontuação Time 2 (vermelho) - modo normal/basquete -->
+                        <div id="scoreButtons2" class="flex gap-2 sm:gap-3 md:gap-4 w-full max-w-[200px] sm:max-w-[240px] md:max-w-[280px] relative z-20 shrink-0">
                             <button onclick="updateScore(2, -1)" class="select-none flex-1 bg-slate-900/80 hover:bg-slate-800 text-white font-bold py-1.5 sm:py-2 md:py-3 rounded-md sm:rounded-xl text-sm sm:text-lg md:text-xl transition-all border border-slate-600/50 shadow-lg active:scale-95">-1</button>
                             <button onclick="updateScore(2, 1)" class="select-none flex-[2] bg-red-600 hover:bg-red-500 text-white font-black py-1.5 sm:py-2 md:py-3 rounded-md sm:rounded-xl text-xl sm:text-2xl md:text-3xl transition-all shadow-[0_0_15px_rgba(220,38,38,0.5)] border border-red-400/50 active:scale-95">+1</button>
+                        </div>
+                        <!-- Botões de pontuação Time 2 - modo basquete -->
+                        <div id="scoreButtonsBasket2" class="hidden w-full max-w-[220px] sm:max-w-[260px] relative z-20 shrink-0">
+                            <div class="grid grid-cols-3 gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
+                                <button onclick="updateScore(2, 3)" class="select-none bg-red-700 hover:bg-red-600 text-white font-black py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-all border border-red-500/50 shadow active:scale-95">+3</button>
+                                <button onclick="updateScore(2, 2)" class="select-none bg-red-600 hover:bg-red-500 text-white font-black py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-all border border-red-400/50 shadow-[0_0_10px_rgba(220,38,38,0.4)] active:scale-95">+2</button>
+                                <button onclick="updateScore(2, 1)" class="select-none bg-red-500 hover:bg-red-400 text-white font-black py-1.5 sm:py-2 rounded-md text-sm sm:text-base transition-all border border-red-300/50 active:scale-95">+1</button>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 sm:gap-1.5">
+                                <button onclick="updateScore(2, -3)" class="select-none bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold py-1 sm:py-1.5 rounded-md text-xs sm:text-sm transition-all border border-slate-600/50 active:scale-95">-3</button>
+                                <button onclick="updateScore(2, -2)" class="select-none bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold py-1 sm:py-1.5 rounded-md text-xs sm:text-sm transition-all border border-slate-600/50 active:scale-95">-2</button>
+                                <button onclick="updateScore(2, -1)" class="select-none bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold py-1 sm:py-1.5 rounded-md text-xs sm:text-sm transition-all border border-slate-600/50 active:scale-95">-1</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -214,9 +282,11 @@
                         </h2>
             
                         <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                            <select id="waitlistStrategyPlacar" onchange="const ws = document.getElementById('waitlistStrategy'); if(ws) ws.value = this.value;" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-[10px] sm:text-xs text-slate-300 outline-none font-bold">
+                            <select id="waitlistStrategyPlacar" onchange="const ws = document.getElementById('waitlistStrategy'); if(ws) ws.value = this.value; window.syncDraftSettings && window.syncDraftSettings();" class="flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-[10px] sm:text-xs text-slate-300 outline-none font-bold">
                                 <option value="BALANCEADO" selected>Sortear Time de Fora</option>
                                 <option value="FORCAR">Time Fora Sempre Entra</option>
+                                <option value="MANTER_FORTE">Manter Jogador Forte</option>
+                                <option value="ALEATORIO">Aleatório</option>
                             </select>
                             <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors">
                                 <i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> ATUALIZAR ESPERA
@@ -245,18 +315,278 @@
             </div>
         </section>
 
-        <!-- ABA LOGIN (Apenas para Admin) -->
-        <section id="view-login" class="hidden-view flex justify-center py-12 sm:py-20 px-2">
-            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
-                <div class="text-center mb-8">
-                    <i data-lucide="lock" class="w-10 h-10 sm:w-12 sm:h-12 text-green-500 mx-auto mb-4"></i>
-                    <h2 class="text-xl sm:text-2xl font-bold">Acesso Restrito</h2>
+        <!-- ABA LANDING PAGE -->
+        <section id="view-landing" class="hidden-view flex-col w-full animate-in fade-in duration-700">
+            <!-- Navbar Landing -->
+            <header class="flex justify-between items-center py-6 px-4 sm:px-8 bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-700 shadow-lg mb-12">
+                <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="goHome()">
+                    <div class="bg-green-500 p-2 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                        <i data-lucide="volleyball" class="w-6 h-6 text-slate-900"></i>
+                    </div>
+                    <span class="font-black text-2xl tracking-tighter uppercase italic text-white">TIME<span class="text-green-500">CERTO</span></span>
                 </div>
+                <div class="hidden md:flex items-center gap-8 font-bold text-slate-300">
+                    <a href="#hero" class="hover:text-green-400 transition-colors">Início</a>
+                    <a href="#features" class="hover:text-green-400 transition-colors">Funcionalidades</a>
+                    <a href="#about" class="hover:text-green-400 transition-colors">Vantagens</a>
+                </div>
+                <button onclick="switchView('auth'); window.scrollTo(0,0);" class="bg-green-500 hover:bg-green-400 text-slate-900 font-black px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all transform hover:scale-105 flex items-center gap-2">
+                    <i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR
+                </button>
+            </header>
+
+            <!-- Hero Section -->
+            <div id="hero" class="flex flex-col lg:flex-row items-center gap-12 mb-24 px-4">
+                <div class="flex-1 text-center lg:text-left">
+                    <div class="inline-block bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold px-4 py-1.5 rounded-full mb-6 text-sm">
+                        🚀 A plataforma definitiva para organizadores de rachas
+                    </div>
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-tight mb-6 tracking-tight font-['Oswald'] uppercase">
+                        O fim dos times <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 drop-shadow-md">desequilibrados</span> nas suas partidas
+                    </h1>
+                    <p class="text-lg sm:text-xl text-slate-400 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        Esqueça os sorteios no papel e as panelinhas. O <strong>TimeCerto</strong> avalia os jogadores com um sistema inteligente de Elo, nivela as equipes e facilita toda a gestão do seu esporte.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                        <button onclick="switchView('auth'); window.scrollTo(0,0);" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                            Começar Agora <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                        <a href="#features" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg px-8 py-4 rounded-2xl border border-slate-600 transition-all text-center">
+                            Conhecer Recursos
+                        </a>
+                    </div>
+                </div>
+                <div class="flex-1 w-full max-w-lg lg:max-w-none relative">
+                    <!-- Decorational background glow -->
+                    <div class="absolute inset-0 bg-gradient-to-tr from-green-500/20 to-blue-500/20 blur-[100px] rounded-full z-0"></div>
+                    <!-- Mockup UI representation -->
+                    <div class="relative z-10 bg-slate-800/80 backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-slate-600/50 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                            <h3 class="font-black text-white text-xl flex items-center gap-2"><i data-lucide="dices" class="text-green-400"></i> Sorteio Balanceado</h3>
+                            <div class="bg-slate-900 px-3 py-1 rounded-full text-xs font-bold text-slate-400">Fora Forte</div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-blue-900/30 border border-blue-500/30 p-4 rounded-2xl flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-blue-400 border border-slate-700"><i data-lucide="user"></i></div>
+                                    <div>
+                                        <p class="text-white font-bold text-sm">Time Azul</p>
+                                        <p class="text-[10px] text-blue-400 font-bold">Média: 540 ELO</p>
+                                    </div>
+                                </div>
+                                <span class="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-1 rounded-md">4 Jogadores</span>
+                            </div>
+                            <div class="flex justify-center text-slate-500 font-bold italic text-xs">VS</div>
+                            <div class="bg-red-900/30 border border-red-500/30 p-4 rounded-2xl flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-red-400 border border-slate-700"><i data-lucide="user"></i></div>
+                                    <div>
+                                        <p class="text-white font-bold text-sm">Time Vermelho</p>
+                                        <p class="text-[10px] text-red-400 font-bold">Média: 535 ELO</p>
+                                    </div>
+                                </div>
+                                <span class="bg-red-500/20 text-red-400 text-xs font-bold px-2 py-1 rounded-md">4 Jogadores</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Grid -->
+            <div id="features" class="mb-24 px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">Tudo o que o seu grupo precisa</h2>
+                    <p class="text-slate-400 max-w-2xl mx-auto">Automatize o chato, foque no esporte. Nossas ferramentas foram criadas para organizar qualquer grupo de atletas de forma justa e rápida.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                    <!-- Feature 1 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-green-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-green-500/30 transition-colors">
+                            <i data-lucide="bar-chart-2" class="w-7 h-7 text-green-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Nivelamento Inteligente</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Sistema de Ranking (Elo) dinâmico baseado em categorias. Cada vitória e derrota afeta o ranking individual, garantindo pareamentos justos.
+                        </p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-blue-500/30 transition-colors">
+                            <i data-lucide="dices" class="w-7 h-7 text-blue-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Sorteio Estratégico</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Sorteios configuráveis para times de múltiplos tamanhos. Escolha entre balanceado, aleatório ou estratégias como "Fora Forte" e "Dentro Forte".
+                        </p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-yellow-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-yellow-500/30 transition-colors">
+                            <i data-lucide="monitor-play" class="w-7 h-7 text-yellow-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Placar e Cronômetro</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Acompanhe os pontos em tempo real. O placar sincroniza com as nuvens e exibe previsões automáticas de pontos ganhos ou perdidos por partida.
+                        </p>
+                    </div>
+                    <!-- Feature 4 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-purple-500/30 transition-colors">
+                            <i data-lucide="wallet" class="w-7 h-7 text-purple-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Gestão de Pagamentos</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Controle mensalidades e cobranças de diárias usando a integração de pagamentos com split automático e geração de Pix na hora.
+                        </p>
+                    </div>
+                    <!-- Feature 5 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-orange-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-orange-500/30 transition-colors">
+                            <i data-lucide="users" class="w-7 h-7 text-orange-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Gestão de Elenco</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Controle total sobre quem vai jogar hoje. Adicione fotos aos perfis, gerencie listas de espera e mova jogadores entre equipes.
+                        </p>
+                    </div>
+                    <!-- Feature 6 -->
+                    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-cyan-500/50 transition-colors group">
+                        <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-cyan-500/30 transition-colors">
+                            <i data-lucide="shield-check" class="w-7 h-7 text-cyan-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Modo Admin & Moderadores</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Defina administradores e moderadores para o seu grupo de vôlei ou futebol. Delegue responsabilidades de forma segura e prática.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Final & Footer -->
+            <div id="about" class="px-4 mb-8">
+                <div class="bg-gradient-to-br from-green-600 to-blue-700 rounded-[2.5rem] p-10 sm:p-16 text-center relative overflow-hidden shadow-2xl">
+                    <div class="absolute top-0 left-0 w-full h-full bg-black/10"></div>
+                    <div class="relative z-10 flex flex-col items-center">
+                        <h2 class="text-3xl sm:text-5xl font-black text-white mb-6 uppercase tracking-tight">Pronto para transformar seu Racha?</h2>
+                        <p class="text-green-100 text-lg sm:text-xl mb-10 max-w-2xl">Crie sua conta agora mesmo. É simples, rápido e garantimos que a qualidade das suas partidas nunca mais será a mesma.</p>
+                        <button onclick="toggleAuthMode('register'); switchView('auth'); window.scrollTo(0,0);" class="bg-slate-900 hover:bg-slate-800 text-white font-black text-lg px-10 py-5 rounded-2xl shadow-xl transition-transform transform hover:-translate-y-1 flex items-center gap-3">
+                            Criar Conta Grátis <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple Footer -->
+            <footer class="border-t border-slate-800 py-8 px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 mt-auto">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="volleyball" class="w-5 h-5 text-slate-600"></i>
+                    <span class="font-bold text-slate-400">TIME CERTO &copy; 2026</span>
+                </div>
+                <div class="flex gap-6 font-bold">
+                    <a href="#" class="hover:text-white transition-colors">Termos</a>
+                    <a href="#" class="hover:text-white transition-colors">Privacidade</a>
+                    <a href="#" class="hover:text-white transition-colors">Suporte</a>
+                </div>
+            </footer>
+        </section>
+
+        <!-- ABA LOGIN -->
+        <section id="view-auth" class="hidden-view flex justify-center py-12 sm:py-20 px-2 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md relative overflow-hidden">
+                <div class="text-center mb-6">
+                    <div class="bg-slate-900 inline-block p-3 rounded-full mb-3 border border-slate-700">
+                        <i data-lucide="user-circle" class="w-10 h-10 sm:w-12 sm:h-12 text-green-500"></i>
+                    </div>
+                    <h2 id="authTitle" class="text-xl sm:text-2xl font-bold text-white">Bem-vindo</h2>
+                    <p id="authSubtitle" class="text-sm text-slate-400 mt-1">Faça login para acessar seus grupos.</p>
+                </div>
+
                 <div class="space-y-4">
-                    <input type="text" id="loginUser" placeholder="Usuário" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
-                    <input type="password" id="loginPass" placeholder="Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500">
-                    <button onclick="handleLogin()" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg">ENTRAR NO PAINEL</button>
+                    <div id="registerNameContainer" class="hidden">
+                        <input type="text" id="authName" placeholder="Seu Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <input type="email" id="authEmail" placeholder="Seu E-mail" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
+                    
+                    <div id="passwordContainer">
+                        <input type="password" id="authPass" placeholder="Sua Senha" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+
+                    <button onclick="handleAuthAction()" id="btnAuthMain" class="w-full bg-green-500 hover:bg-green-600 text-slate-900 font-bold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
+                        <i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR
+                    </button>
                 </div>
+
+                <div class="mt-6 flex flex-col gap-3 text-center text-sm font-medium">
+                    <button onclick="toggleAuthMode('register')" id="btnToggleAuth" class="text-slate-300 hover:text-green-400 transition-colors">Ainda não tem conta? <span class="font-bold underline">Cadastre-se</span></button>
+                    <button onclick="handlePasswordReset()" id="btnResetPass" class="text-slate-500 hover:text-white transition-colors text-xs">Esqueci minha senha</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-groups" class="hidden-view animate-in fade-in duration-500 py-6 sm:py-10">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-700 mb-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+                <label class="relative group/photo flex flex-col items-center shrink-0">
+                    <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-900 border-4 border-slate-700 flex items-center justify-center overflow-hidden group-hover/photo:border-blue-500 transition-colors">
+                        <img id="userProfilePhotoPreview" class="w-full h-full object-cover hidden" src="" alt="Sua Foto">
+                        <div id="userProfilePhotoPlaceholder" class="text-slate-500 flex flex-col items-center">
+                            <i data-lucide="camera" class="w-8 h-8 mb-1"></i>
+                            <span class="text-[10px] font-bold uppercase">Sua Foto</span>
+                        </div>
+                    </div>
+    
+                    <input type="file" id="userProfilePhotoInput" accept="image/*" class="hidden" onchange="handleUserProfilePhotoUpload(event)">
+                    <input type="hidden" id="userProfilePhotoData" value="">
+    
+                    <div class="absolute bottom-2 right-2 bg-blue-500 p-2 rounded-full border-2 border-slate-800 shadow-lg cursor-pointer hover:bg-blue-400 transition-colors" onclick="document.getElementById('userProfilePhotoInput').click()">
+                        <i data-lucide="edit-2" class="w-4 h-4 text-white"></i>
+                    </div>
+
+                    <div id="btnRemoveProfilePhoto" class="absolute top-0 right-0 bg-red-500 p-2 rounded-full border-2 border-slate-800 shadow-lg cursor-pointer hover:bg-red-400 transition-colors hidden" onclick="event.preventDefault(); removeUserProfilePhoto();">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+                    </div>
+                </label>
+                <div class="flex-1 w-full space-y-4 text-center sm:text-left">
+                    <div>
+                        <h2 class="text-2xl font-black text-white mb-1">Seu Perfil</h2>
+                        <p class="text-sm text-slate-400 mb-4">Seus dados oficiais no TimeCerto.</p>
+                        <label class="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider">Como você quer ser chamado?</label>
+                        <input type="text" id="userProfileNameInput" placeholder="Seu nome de jogador" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 transition-colors font-bold text-lg text-center sm:text-left">
+                    </div>
+                    <button onclick="saveUserProfile()" id="btnSaveProfile" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 mx-auto sm:mx-0">
+                        <i data-lucide="save" class="w-5 h-5"></i> SALVAR PERFIL
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+                        <i data-lucide="users" class="w-8 h-8 text-blue-500"></i> Meus Grupos
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Selecione um racha para acessar o painel ou crie o seu próprio.</p>
+                </div>
+                <div class="flex gap-3 w-full md:w-auto">
+                    <button onclick="handleLogout()" class="bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 text-sm flex-1 md:flex-none justify-center">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                    </button>
+                    <button onclick="document.getElementById('createGroupModal').classList.remove('hidden'); document.getElementById('createGroupModal').classList.add('flex');" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 text-sm shadow-lg shadow-blue-500/30 flex-1 md:flex-none justify-center">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Grupo
+                    </button>
+                </div>
+            </div>
+
+            <div id="userGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+            <div id="noGroupsMessage" class="hidden flex-col items-center justify-center py-16 bg-slate-800/30 rounded-3xl border border-slate-700 border-dashed text-center">
+                <div class="bg-slate-800 p-4 rounded-full mb-4">
+                    <i data-lucide="ghost" class="w-12 h-12 text-slate-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Você ainda não faz parte de nenhum grupo</h3>
+                <p class="text-slate-400 max-w-md mx-auto mb-6">Crie o seu próprio grupo para ser o administrador e gerenciar suas partidas, ou peça para um administrador te adicionar a um grupo existente pelo seu e-mail.</p>
+                <button onclick="document.getElementById('createGroupModal').classList.remove('hidden'); document.getElementById('createGroupModal').classList.add('flex');" class="bg-green-500 text-slate-900 px-6 py-3 rounded-xl font-black transition-all flex items-center gap-2">
+                    <i data-lucide="plus" class="w-5 h-5"></i> CRIAR MEU PRIMEIRO GRUPO
+                </button>
             </div>
         </section>
 
@@ -296,18 +626,38 @@
                         
                         <div id="formContent" class="space-y-4 mt-4 sm:mt-6 transition-all hidden border-t border-slate-700 pt-4">
                             <input type="hidden" id="editId" value="">
-                            <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-green-500">
                             
-                            <div class="mb-2 mt-4 flex flex-col items-center">
-                                <label class="relative cursor-pointer group/photo flex flex-col items-center">
-                                    <div class="w-20 h-20 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover/photo:border-green-500 transition-colors">
-                                        <div id="photoPlaceholder" class="text-slate-500 flex flex-col items-center"><i data-lucide="camera" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-bold uppercase">Foto</span></div>
-                                        <img id="photoPreview" class="w-full h-full object-cover hidden" src="" alt="Preview">
-                                    </div>
-                                    <input type="file" id="playerPhoto" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                                    <input type="hidden" id="photoData" value="">
-                                </label>
-                                <button type="button" id="btnRemovePhoto" onclick="removePhoto()" class="mt-2 text-xs text-red-400 hidden flex items-center gap-1"><i data-lucide="trash-2" class="w-3 h-3"></i> Remover Foto</button>
+                            <div class="flex gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700 mb-4">
+                                <button type="button" id="btnModeManual" onclick="setFormMode('manual')" class="flex-1 py-2 text-xs font-bold rounded-md bg-slate-800 text-white transition-all shadow">
+                                    Cadastro Manual
+                                </button>
+                                <button type="button" id="btnModeEmail" onclick="setFormMode('email')" class="flex-1 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+                                    Vincular E-mail
+                                </button>
+                            </div>
+                            <input type="hidden" id="formMode" value="manual">
+
+                            <div id="emailFields" class="hidden mt-2 relative">
+                                <i data-lucide="mail" class="absolute left-3 top-3.5 w-4 h-4 text-blue-500"></i>
+                                <input type="email" id="playerEmail" placeholder="E-mail da conta do jogador" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-3 pl-10 pr-3 text-sm text-white outline-none focus:ring-2 focus:ring-blue-500">
+                                <p class="text-[9px] text-slate-400 mt-2 ml-1">
+                                    <span class="font-bold text-blue-400">Nota:</span> O nome e a foto serão importados automaticamente do perfil do usuário associado a este e-mail.
+                                </p>
+                            </div>
+
+                            <div id="manualFields" class="space-y-4">
+                                <input type="text" id="playerName" placeholder="Nome Completo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-white outline-none focus:ring-2 focus:ring-green-500">
+                                <div class="mb-2 mt-4 flex flex-col items-center">
+                                    <label class="relative cursor-pointer group/photo flex flex-col items-center">
+                                        <div class="w-20 h-20 rounded-full bg-slate-900 border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden group-hover/photo:border-green-500 transition-colors">
+                                            <div id="photoPlaceholder" class="text-slate-500 flex flex-col items-center"><i data-lucide="camera" class="w-6 h-6 mb-1"></i><span class="text-[9px] font-bold uppercase">Foto</span></div>
+                                            <img id="photoPreview" class="w-full h-full object-cover hidden" src="" alt="Preview">
+                                        </div>
+                                        <input type="file" id="playerPhoto" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                                        <input type="hidden" id="photoData" value="">
+                                    </label>
+                                    <button type="button" id="btnRemovePhoto" onclick="removePhoto()" class="mt-2 text-xs text-red-400 hidden flex items-center gap-1"><i data-lucide="trash-2" class="w-3 h-3"></i> Remover Foto</button>
+                                </div>
                             </div>
 
                             <div class="mb-4">
@@ -328,11 +678,10 @@
                             </div>
                             
                             <div>
-                                <label class="block text-[10px] font-medium text-slate-400 mb-1 mt-2">Ícone Padrão</label>
-                                <select id="playerIcon" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs">
-                                    <option value="user">👤 Usuário</option>
-                                    <option value="zap">⚡ Raio</option>
-                                    <option value="flame">🔥 Fogo</option>
+                                <label class="block text-[10px] font-medium text-slate-400 mb-1 mt-2">Tipo de Usuário</label>
+                                <select id="playerRole" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs">
+                                    <option value="jogador">👤 Jogador</option>
+                                    <option value="moderador">🛡️ Moderador</option>
                                 </select>
                             </div>
 
@@ -347,8 +696,15 @@
                 <!-- TABELA ADMIN (SÓ COM EDITAR/EXCLUIR) -->
                 <div class="lg:col-span-2">
                     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
-                        <div class="p-4 sm:p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
+                        <div class="p-4 sm:p-6 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900/30 gap-3">
                             <h2 class="text-lg sm:text-xl font-bold">Base de Atletas Cadastrados</h2>
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <input type="text" id="searchAdmin" placeholder="Buscar atleta..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-slate-300 outline-none w-full sm:w-48 focus:border-green-500" oninput="clearTimeout(window.adminSearchTimeout); window.adminSearchTimeout = setTimeout(() => window.renderAdminTable(), 300)">
+                                <select id="sortAdmin" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-slate-300 outline-none focus:border-green-500" onchange="window.renderAdminTable()">
+                                    <option value="alpha">A-Z</option>
+                                    <option value="level">Por Nível</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="overflow-x-auto w-full max-h-[600px] overflow-y-auto">
                             <table class="w-full text-left min-w-[500px]">
@@ -368,17 +724,213 @@
             </div>
         </section>
 
-        <!-- Modais (Victory, Confirm, Move) mantidos originais -->
+        <!-- ABA (PAGAMENTOS) -->
+        <section id="view-pagamentos" class="animate-in fade-in duration-500 hidden-view">
+            <header class="mb-8 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 shadow-lg">
+                <div class="flex-1 flex flex-col items-center md:items-start">
+                    <h2 class="text-3xl sm:text-4xl font-black mb-1 tracking-tight text-white font-['Oswald'] drop-shadow-md uppercase">
+                        Gestão de <span class="text-green-500">Pagamentos</span>
+                    </h2>
+                    <p class="text-sm text-slate-400 font-bold bg-slate-900/50 px-4 py-2 rounded-full border border-slate-700/50">
+                        Pagar.me Integration
+                    </p>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- PAINEL DO JOGADOR (Visível para todos) -->
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <div class="bg-slate-800/80 rounded-3xl border border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-full">
+                        <div class="bg-slate-900/90 p-4 border-b border-slate-700 flex justify-between items-center">
+                            <h3 class="text-lg font-black text-white uppercase flex items-center gap-2">
+                                <i data-lucide="receipt" class="text-green-500"></i> Minhas Cobranças
+                            </h3>
+                        </div>
+                        <div class="p-4 sm:p-6 flex-1 flex flex-col gap-4 overflow-y-auto" id="userPendingChargesList">
+                            <!-- Populated by JS -->
+                            <div class="text-center text-slate-400 py-8 text-sm italic">Buscando cobranças...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DO ADMIN (Visível apenas para admins) -->
+                <div class="lg:col-span-2 flex flex-col gap-6 admin-only-section hidden">
+                    <div class="bg-slate-800/80 rounded-3xl border border-slate-700/50 shadow-xl overflow-hidden">
+                        <div class="bg-slate-900/90 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <h3 class="text-lg font-black text-white uppercase flex items-center gap-2">
+                                <i data-lucide="settings" class="text-blue-500"></i> Administração
+                            </h3>
+                            <div class="flex gap-2">
+                                <button onclick="setPaymentAdminTab('config')" id="tab-pay-config" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white">Configurações</button>
+                                <button onclick="setPaymentAdminTab('diaria')" id="tab-pay-diaria" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Lançar Diária</button>
+                                <button onclick="setPaymentAdminTab('status')" id="tab-pay-status" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Relatório</button>
+                            </div>
+                        </div>
+
+                        <!-- TAB: CONFIG -->
+                        <div id="pay-admin-config" class="p-4 sm:p-6 space-y-6">
+                            <!-- Modo de Pagamento -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <h4 class="text-sm font-bold text-white mb-4 uppercase">Modalidade do Grupo</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                                    <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
+                                        <input type="radio" name="paymentMode" value="free" class="text-blue-500">
+                                        <span class="text-sm font-bold text-white">Gratuito</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
+                                        <input type="radio" name="paymentMode" value="monthly" class="text-blue-500">
+                                        <span class="text-sm font-bold text-white">Mensalidade</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
+                                        <input type="radio" name="paymentMode" value="daily" class="text-blue-500">
+                                        <span class="text-sm font-bold text-white">Diária / Avulso</span>
+                                    </label>
+                                </div>
+                                <div id="monthlySettings" class="hidden flex flex-col gap-3 mt-4 border-t border-slate-700 pt-4">
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Valor da Mensalidade (R$)</label>
+                                        <input type="number" id="payMonthlyValue" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 50.00">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Dia do Vencimento</label>
+                                        <input type="number" id="payMonthlyDay" min="1" max="31" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 5">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dados Bancários (Split Pagar.me) -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <h4 class="text-sm font-bold text-white mb-2 uppercase">Conta de Recebimento (Admin)</h4>
+                                <p class="text-xs text-slate-400 mb-4">Insira os dados da conta onde o dinheiro deve cair após o pagamento pelo Pagar.me.</p>
+                                <div id="receiverStatus" class="mb-4 text-sm font-bold text-yellow-500 hidden bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/30"></div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">CPF/CNPJ do Titular</label>
+                                        <input type="text" id="recDoc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Somente números">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Nome Completo / Razão Social</label>
+                                        <input type="text" id="recName" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Banco (Código)</label>
+                                        <input type="text" id="recBank" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 341 (Itaú), 001 (BB)">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Agência (sem dígito)</label>
+                                        <input type="text" id="recAgency" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Conta (com dígito)</label>
+                                        <input type="text" id="recAccount" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 12345-6">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-400 font-bold block mb-1">Tipo de Conta</label>
+                                        <select id="recType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                            <option value="checking">Corrente</option>
+                                            <option value="savings">Poupança</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button onclick="savePaymentSettings()" class="mt-4 bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto shadow-md">Salvar Configurações</button>
+                            </div>
+                        </div>
+
+                        <!-- TAB: DIARIA -->
+                        <div id="pay-admin-diaria" class="p-4 sm:p-6 space-y-4 hidden">
+                            <h4 class="text-sm font-bold text-white uppercase">Lançar Cobrança Diária</h4>
+                            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                                <div class="flex-1">
+                                    <label class="text-xs text-slate-400 font-bold block mb-1">Descrição</label>
+                                    <input type="text" id="diariaDesc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: Racha 05/10">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="text-xs text-slate-400 font-bold block mb-1">Valor (R$)</label>
+                                    <input type="number" id="diariaValue" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="0.00">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="text-xs text-slate-400 font-bold block mb-1">Tipo de Rateio</label>
+                                    <select id="diariaType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                        <option value="fixed">Valor fixo por jogador</option>
+                                        <option value="split">Dividir valor total</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 max-h-60 overflow-y-auto" id="diariaPlayersList">
+                                <!-- Preenchido dinamicamente com os jogadores do grupo -->
+                            </div>
+                            
+                            <button onclick="generateDailyCharges()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg mt-2 flex justify-center items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i> ENVIAR COBRANÇAS
+                            </button>
+                        </div>
+
+                        <!-- TAB: STATUS -->
+                        <div id="pay-admin-status" class="p-0 hidden">
+                            <div class="overflow-x-auto w-full max-h-[500px] overflow-y-auto">
+                                <table class="w-full text-left min-w-[500px]">
+                                    <thead class="bg-slate-900/90 text-slate-400 text-xs sm:text-sm sticky top-0 z-10">
+                                        <tr>
+                                            <th class="px-4 py-3">Jogador</th>
+                                            <th class="px-4 py-3">Descrição</th>
+                                            <th class="px-4 py-3">Valor</th>
+                                            <th class="px-4 py-3">Status</th>
+                                            <th class="px-4 py-3 text-right">Criado em</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminPaymentsTable" class="divide-y divide-slate-700 text-xs sm:text-sm bg-slate-800">
+                                        <!-- Preenchido dinamicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modal Pix -->
+        <div id="pixModal" class="fixed inset-0 bg-slate-950/90 z-[300] hidden flex-col items-center justify-center backdrop-blur-md px-4 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-green-500 max-w-sm w-full text-center relative">
+                <button onclick="document.getElementById('pixModal').classList.add('hidden'); document.getElementById('pixModal').classList.remove('flex');" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <div class="w-16 h-16 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mx-auto mb-4 border border-green-500/30">
+                    <i data-lucide="qr-code" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white mb-2 uppercase">Pagamento via Pix</h3>
+                <p class="text-slate-400 mb-6 text-sm" id="pixValueDesc">Escaneie o QR Code ou copie o código abaixo para pagar R$ 0,00</p>
+                
+                <div class="bg-white p-2 rounded-xl mb-6 mx-auto inline-block border-4 border-slate-700" id="pixQrCodeContainer">
+                    <img id="pixQrCodeImage" src="" alt="QR Code Pix" class="w-48 h-48 object-contain">
+                </div>
+                
+                <div class="text-left mb-6">
+                    <label class="text-xs font-bold text-slate-400 mb-1 block">Pix Copia e Cola:</label>
+                    <div class="flex bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                        <input type="text" id="pixCopyString" readonly class="w-full bg-transparent p-3 text-slate-300 text-xs font-mono outline-none" value="...">
+                        <button onclick="copyPixString()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 flex items-center justify-center transition-colors">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-yellow-500 font-bold bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20 animate-pulse">
+                    O status será atualizado automaticamente após o pagamento.
+                </p>
+            </div>
+        </div>
+
+        <!-- Modais (Victory, Confirm, Move, Config Placar) -->
         <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">
             <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-yellow-500 flex flex-col items-center max-w-sm w-full text-center">
-                <i data-lucide="trophy" class="w-16 h-16 text-yellow-400 mb-4 animate-bounce"></i>
-                <h2 class="text-2xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
+                <i id="victoryIcon" data-lucide="trophy" class="w-16 h-16 text-yellow-400 mb-4 animate-bounce"></i>
+                <h2 id="victoryTitle" class="text-2xl font-black text-white mb-2 uppercase tracking-wider">Fim de Jogo!</h2>
                 <div id="victoryTeamName" class="text-xl font-black text-yellow-400 mb-3 px-4 py-3 bg-slate-900 rounded-2xl w-full truncate">EQUIPE</div>
                 <div id="victoryEloInfo" class="w-full text-sm mb-6 hidden bg-slate-900 p-3 rounded-xl border border-slate-700 shadow-inner"></div>
                 <p id="victoryTeamWarning" class="text-xs text-red-400 mb-4 hidden"></p>
                 <div class="flex flex-col sm:flex-row gap-3 w-full">
-                    <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 text-white font-bold py-3 rounded-xl text-xs">APENAS ZERAR</button>
-                    <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 text-slate-900 font-bold py-3 rounded-xl text-sm">SALVAR RANKING</button>
+                    <button onclick="closeVictoryModalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 transition-colors text-white font-bold py-3 rounded-xl text-xs">APENAS ZERAR</button>
+                    <button id="btnSaveResult" onclick="saveAndCloseVictoryModal()" class="flex-[2] bg-green-500 hover:bg-green-600 transition-colors text-slate-900 font-bold py-3 rounded-xl text-sm">SALVAR RANKING</button>
                 </div>
             </div>
         </div>
@@ -414,6 +966,103 @@
                     <button onclick="closePlayerHistoryModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 <div id="playerHistoryList" class="overflow-y-auto space-y-2 flex-1 no-scrollbar"></div>
+            </div>
+        </div>
+    
+        <div id="createGroupModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm px-4 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-blue-500 max-w-md w-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="plus-circle" class="text-blue-500"></i> Novo Grupo</h3>
+                    <button onclick="document.getElementById('createGroupModal').classList.add('hidden'); document.getElementById('createGroupModal').classList.remove('flex');" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 mb-1 block">Nome do Racha / Grupo</label>
+                        <input type="text" id="newGroupName" placeholder="Ex: Vôlei de Sábado" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button onclick="handleCreateGroup()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-4">
+                        <i data-lucide="save" class="w-5 h-5"></i> CRIAR GRUPO
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Configuração do Placar -->
+        <div id="placarConfigModal" class="fixed inset-0 bg-slate-950/80 z-[200] hidden flex-col items-center justify-center backdrop-blur-sm px-4 animate-in fade-in">
+            <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-600 max-w-md w-full">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings-2" class="text-slate-400"></i> Regras da Partida</h3>
+                    <button onclick="closePlacarConfigModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Seleção de Modalidade -->
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-slate-500"></i> Modalidade</p>
+                        <div class="flex gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-700">
+                            <button type="button" id="cfgSportVolei" onclick="(function(){document.getElementById('cfgSportMode').value='volei';['cfgSportVolei','cfgSportFutebol','cfgSportBasquete'].forEach(function(id){document.getElementById(id).className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1'});document.getElementById('cfgSportVolei').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-1';if(typeof window.onSportModeChange==='function')window.onSportModeChange('volei')})()" class="flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-1">
+                                🏐 Vôlei
+                            </button>
+                            <button type="button" id="cfgSportFutebol" onclick="(function(){document.getElementById('cfgSportMode').value='futebol';['cfgSportVolei','cfgSportFutebol','cfgSportBasquete'].forEach(function(id){document.getElementById(id).className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1'});document.getElementById('cfgSportFutebol').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-1';if(typeof window.onSportModeChange==='function')window.onSportModeChange('futebol')})()" class="flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1">
+                                ⚽ Futebol
+                            </button>
+                            <button type="button" id="cfgSportBasquete" onclick="(function(){document.getElementById('cfgSportMode').value='basquete';['cfgSportVolei','cfgSportFutebol','cfgSportBasquete'].forEach(function(id){document.getElementById(id).className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1'});document.getElementById('cfgSportBasquete').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-1';if(typeof window.onSportModeChange==='function')window.onSportModeChange('basquete')})()" class="flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1">
+                                🏀 Basquete
+                            </button>
+                        </div>
+                        <input type="hidden" id="cfgSportMode" value="volei">
+                        <p class="text-[9px] text-slate-500 mt-2 text-center">Vôlei: sem empate. Futebol e Basquete: empates calculam Elo (S=0.5).</p>
+                    </div>
+
+                    <!-- Configuração de Tempo -->
+                    <div id="cfgTimeSection" class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <label class="flex items-center gap-3 cursor-pointer mb-3 group">
+                            <input type="checkbox" id="cfgUseTime" class="w-5 h-5 accent-blue-500 cursor-pointer" onchange="document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !this.checked)">
+                            <span class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Terminar por Tempo</span>
+                        </label>
+                        <div id="cfgTimeDiv" class="flex items-center gap-3 pl-8 opacity-50 transition-opacity">
+                            <input type="number" id="cfgTimeMinutes" min="1" max="90" value="10" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
+                            <span class="text-xs text-slate-400 font-bold uppercase">Minutos</span>
+                        </div>
+                    </div>
+
+                    <!-- Configuração de Pontos -->
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                        <div class="mb-4 pb-4 border-b border-slate-700/50">
+                            <label class="flex items-center gap-3 cursor-pointer mb-3 group">
+                                <input type="checkbox" id="cfgUsePoints1" class="w-5 h-5 accent-green-500 cursor-pointer" onchange="document.getElementById('cfgPoints1Div').classList.toggle('opacity-50', !this.checked)">
+                                <span class="text-sm font-bold text-white group-hover:text-green-400 transition-colors">Vitória Normal</span>
+                            </label>
+                            <div id="cfgPoints1Div" class="flex flex-col gap-3 pl-8 transition-opacity">
+                                <div class="flex items-center gap-3">
+                                    <input type="number" id="cfgPoints1" min="1" max="100" value="21" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
+                                    <span class="text-xs text-slate-400 font-bold uppercase">Pontos/Gols</span>
+                                </div>
+                                <label id="cfgTwoPointsRow" class="flex items-center gap-2 cursor-pointer mt-1">
+                                    <input type="checkbox" id="cfgTwoPointsDiff" class="w-4 h-4 accent-green-500 cursor-pointer" checked>
+                                    <span class="text-xs text-slate-400">Exigir diferença de 2 pontos</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="cfgCapoteSection">
+                            <label class="flex items-center gap-3 cursor-pointer mb-3 group">
+                                <input type="checkbox" id="cfgUsePoints2" class="w-5 h-5 accent-red-500 cursor-pointer" onchange="document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !this.checked)">
+                                <span class="text-sm font-bold text-white group-hover:text-red-400 transition-colors">Vitória Secundária (Ex: Capote)</span>
+                            </label>
+                            <div id="cfgPoints2Div" class="flex items-center gap-3 pl-8 transition-opacity">
+                                <input type="number" id="cfgPoints2" min="1" max="100" value="8" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
+                                <span class="text-xs text-slate-400 font-bold uppercase">Pontos a zero</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="text-[10px] text-center text-slate-500">🏐 <b>Vôlei:</b> Diferença de 2 pontos é automática. Sem tempo. &nbsp; ⚽ <b>Futebol:</b> Vitória por gols ou tempo. Empates calculam Elo (S=0.5).</p>
+
+                    <button onclick="savePlacarConfig()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-4 transition-colors">
+                        <i data-lucide="check" class="w-5 h-5"></i> SALVAR E APLICAR
+                    </button>
+                </div>
             </div>
         </div>
 

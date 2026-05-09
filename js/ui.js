@@ -1,45 +1,47 @@
 import { state } from './state.js';
+import { calculateEloMatch } from './services/rankingService.js';
 import { settingsRef, updateDoc } from './firebase.js';
 
-export const getDailyPlayerStats = () => {
-    const today = new Date().toLocaleDateString('pt-BR');
-    const todaysMatches = (state.matchHistory || []).filter(m => 
-        m.dateString === today || new Date(m.timestamp).toLocaleDateString('pt-BR') === today
-    );
+// ============================================================================
+// HELPERS DE UI ADICIONAIS
+// ============================================================================
+export const toggleDraftMode = () => {
+    const draftMode = document.getElementById('draftMode')?.value;
+    const draftStrategy = document.getElementById('draftStrategy');
+    const btnDrawTeams = document.getElementById('btnDrawTeams');
+    const teamSizeContainer = document.getElementById('teamSizeContainer');
     
-    const stats = {};
-    
-    todaysMatches.forEach(m => {
-        const t1Won = m.winner === 1; 
-        const t2Won = m.winner === 2;
-        
-        if (m.team1 && m.team1.players) {
-            m.team1.players.forEach(name => { 
-                if (!stats[name]) stats[name] = { wins: 0, losses: 0 }; 
-                if (t1Won) stats[name].wins++; else stats[name].losses++; 
-            });
+    if (draftMode === 'manual') {
+        if (draftStrategy) draftStrategy.classList.add('hidden');
+        if (teamSizeContainer) teamSizeContainer.classList.add('hidden');
+        if (btnDrawTeams) {
+            btnDrawTeams.innerHTML = '<i data-lucide="users" class="w-4 h-4"></i> CRIAR TIME';
+            btnDrawTeams.className = "flex-[2] sm:flex-none bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full";
+        }
+    } else {
+        if (draftMode === 'balanceado') {
+            if (draftStrategy) draftStrategy.classList.remove('hidden');
+        } else {
+            if (draftStrategy) draftStrategy.classList.add('hidden');
         }
         
-        if (m.team2 && m.team2.players) {
-            m.team2.players.forEach(name => { 
-                if (!stats[name]) stats[name] = { wins: 0, losses: 0 }; 
-                if (t2Won) stats[name].wins++; else stats[name].losses++; 
-            });
+        if (teamSizeContainer) teamSizeContainer.classList.remove('hidden');
+        if (btnDrawTeams) {
+            btnDrawTeams.innerHTML = '<i data-lucide="shuffle" class="w-4 h-4"></i> SORTEAR TIMES';
+            btnDrawTeams.className = "flex-[2] sm:flex-none bg-green-500 hover:bg-green-600 text-slate-900 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors h-full";
         }
-    });
+    }
     
-    let maxWins = 0, maxLosses = 0;
-    Object.values(stats).forEach(s => { 
-        if (s.wins > maxWins) maxWins = s.wins; 
-        if (s.losses > maxLosses) maxLosses = s.losses; 
-    });
-    
-    const craques = new Set(), bagres = new Set();
-    if (maxWins >= 3) Object.keys(stats).forEach(name => { if (stats[name].wins === maxWins) craques.add(name); });
-    if (maxLosses >= 3) Object.keys(stats).forEach(name => { if (stats[name].losses === maxLosses) bagres.add(name); });
-    
-    return { stats, craques, bagres };
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 };
+
+window.toggleDraftMode = toggleDraftMode;
+
+// ============================================================================
+// HELPERS DE FORMATAÇÃO VISUAL
+// ============================================================================
 
 export const getLevelInfo = (elo) => {
     const e = elo ?? 150;
@@ -66,6 +68,92 @@ export const getTeamName = (team) => {
     return `TIME DE ${headPlayer.name.split(' ')[0].toUpperCase()}`;
 };
 
+export const getDailyPlayerStats = () => {
+    const today = new Date().toLocaleDateString('pt-BR');
+    const todaysMatches = (state.matchHistory || []).filter(m => m.dateString === today);
+    
+    const stats = {};
+    todaysMatches.forEach(m => {
+        const t1Won = m.winner === 1; 
+        const t2Won = m.winner === 2;
+        const isTie = m.winner === 0;
+        
+        if (m.team1?.players) m.team1.players.forEach(name => { 
+            if (!stats[name]) stats[name] = { wins: 0, losses: 0 }; 
+            if (t1Won) stats[name].wins++;
+            else if (!isTie) stats[name].losses++;
+        });
+        if (m.team2?.players) m.team2.players.forEach(name => { 
+            if (!stats[name]) stats[name] = { wins: 0, losses: 0 }; 
+            if (t2Won) stats[name].wins++;
+            else if (!isTie) stats[name].losses++;
+        });
+    });
+    
+    let maxWins = 0, maxLosses = 0;
+    Object.values(stats).forEach(s => { 
+        if (s.wins > maxWins) maxWins = s.wins; 
+        if (s.losses > maxLosses) maxLosses = s.losses; 
+    });
+    
+    const craques = new Set(), bagres = new Set();
+    if (maxWins >= 3) Object.keys(stats).forEach(name => { if (stats[name].wins === maxWins) craques.add(name); });
+    if (maxLosses >= 3) Object.keys(stats).forEach(name => { if (stats[name].losses === maxLosses) bagres.add(name); });
+    
+    return { stats, craques, bagres };
+};
+
+// ============================================================================
+// CONTROLE DE NAVEGAÇÃO E MODAIS
+// ============================================================================
+
+/**
+ * Abre o modal de transferência de jogador, definindo a origem
+ * e populando as opções de destino.
+ */
+export const openMoveModal = (teamId, playerId) => {
+    // 1. Bloqueia se houver jogo em andamento
+    const t1 = document.getElementById('team1Select')?.value;
+    const t2 = document.getElementById('team2Select')?.value;
+    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
+        showToast("Transferência bloqueada! Um jogo está em andamento no placar.", "error");
+        return;
+    }
+
+    // 2. Guarda os dados da origem no estado global
+    state.moveData = { sourceTeamId: teamId, playerId: playerId };
+
+    // 3. Procura o jogador para exibir o nome no modal
+    const team = state.drawnTeams.find(t => t.id === teamId);
+    const player = team?.players.find(p => p.id === playerId);
+    
+    if (!player) return;
+    document.getElementById('movePlayerName').innerText = player.name;
+    
+    // 4. Gera as opções de destino (excluindo o time atual)
+    let options = '';
+    const sortedTeams = [...state.drawnTeams].sort((a,b) => 
+        a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label))
+    );
+    
+    sortedTeams.forEach(t => {
+        if (t.id !== teamId) {
+            options += `<option value="${t.id}">${t.isWaitlist ? "Lista de Espera" : getTeamName(t)}</option>`;
+        }
+    });
+    
+    // Adiciona a opção de remover o jogador completamente
+    options += `<option value="REMOVE" class="text-red-400 font-bold">❌ Remover Jogador</option>`;
+    
+    // 5. Atualiza o HTML e exibe o modal
+    document.getElementById('moveDestination').innerHTML = options;
+    const modal = document.getElementById('movePlayerModal');
+    modal.classList.remove('hidden'); 
+    modal.classList.add('flex');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
 export const showToast = (msg, type = 'success') => {
     const toast = document.getElementById('toast');
     document.getElementById('toastMsg').innerText = msg;
@@ -77,77 +165,42 @@ export const showToast = (msg, type = 'success') => {
     setTimeout(() => toast.classList.add('translate-y-24'), 3500);
 };
 
-export const openConfirmModal = (title, message, callback) => {
-    document.getElementById('confirmTitle').innerText = title; 
-    document.getElementById('confirmMessage').innerText = message;
-    state.confirmActionCallback = callback;
-    document.getElementById('confirmModal').classList.remove('hidden'); 
-    document.getElementById('confirmModal').classList.add('flex'); 
-    lucide.createIcons();
-};
-
-export const closeConfirmModal = () => { 
-    document.getElementById('confirmModal').classList.add('hidden'); 
-    document.getElementById('confirmModal').classList.remove('flex'); 
-    state.confirmActionCallback = null; 
-};
-
-export const openMoveModal = (teamId, playerId) => {
-    const t1 = document.getElementById('team1Select')?.value;
-    const t2 = document.getElementById('team2Select')?.value;
-    if (t1 && t2 && (state.score1 > 0 || state.score2 > 0)) {
-        showToast("Transferência bloqueada! Um jogo está em andamento no placar.", "error");
+export const switchView = (view) => {
+    // Early return para o admin (Painel)
+    if (view === 'admin' && state.isAuthenticated && !(state.currentUserRole === 'admin' || state.isMaster)) {
+        showToast("Você não é administrador deste grupo.", "error");
         return;
     }
 
-    state.moveData = { sourceTeamId: teamId, playerId: playerId };
-    const player = state.drawnTeams.find(t => t.id === teamId).players.find(p => p.id === playerId);
-    document.getElementById('movePlayerName').innerText = player.name;
-    
-    let options = '';
-    const sortedTeams = [...state.drawnTeams].sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label)));
-    
-    sortedTeams.forEach(t => {
-        if (t.id !== teamId) {
-            options += `<option value="${t.id}">${t.isWaitlist ? "Lista de Espera" : getTeamName(t)}</option>`;
-        }
-    });
-    
-    document.getElementById('moveDestination').innerHTML = options;
-    document.getElementById('movePlayerModal').classList.remove('hidden'); 
-    document.getElementById('movePlayerModal').classList.add('flex');
-};
-
-export const closeMoveModal = () => { 
-    document.getElementById('movePlayerModal').classList.add('hidden'); 
-    document.getElementById('movePlayerModal').classList.remove('flex'); 
-    state.moveData = { sourceTeamId: null, playerId: null }; 
-};
-
-export const closeVictoryModalOnly = async () => { 
-    document.getElementById('victoryModal').classList.add('hidden'); 
-    document.getElementById('victoryModal').classList.remove('flex'); 
-    state.score1 = 0; 
-    state.score2 = 0;
-    try { await updateDoc(settingsRef, { score1: 0, score2: 0, team1: '', team2: '' }); } catch(e) {} 
-    document.getElementById('score1').innerText = 0; 
-    document.getElementById('score2').innerText = 0; 
-    document.getElementById('team1Select').value = ''; 
-    document.getElementById('team2Select').value = ''; 
-    if (typeof updateLiveEloPreview === 'function') updateLiveEloPreview();
-};
-
-export const switchView = (view) => {
-    ['public', 'sorteio', 'login', 'admin', 'placar'].forEach(v => { 
+    // 1. Esconde TODAS as views
+    ['public', 'sorteio', 'auth', 'admin', 'placar', 'groups', 'pagamentos', 'landing'].forEach(v => { 
         const e = document.getElementById(`view-${v}`); 
         if(e) e.classList.add('hidden-view'); 
     });
     
-    ['btn-public', 'btn-sorteio', 'btn-admin', 'btn-placar'].forEach(b => { 
+    // 2. Remove o status de "ativo" de todos os botões do menu topo
+    ['btn-public', 'btn-sorteio', 'btn-admin', 'btn-placar', 'btn-groups', 'btn-pagamentos'].forEach(b => { 
         const e = document.getElementById(b); 
         if(e) e.classList.remove('active'); 
     });
     
+    // 3. Controle da visibilidade do Menu de Navegação (Só aparece se estiver DENTRO de um grupo)
+    const navButtons = document.getElementById('mainNavButtons');
+    const mainNav = document.querySelector('nav');
+    
+    if (view === 'auth' || view === 'groups' || view === 'landing') {
+        if(navButtons) navButtons.classList.add('hidden-view');
+    } else {
+        if(navButtons) navButtons.classList.remove('hidden-view');
+    }
+
+    if (view === 'landing') {
+        if (mainNav) mainNav.classList.add('hidden');
+    } else {
+        if (mainNav) mainNav.classList.remove('hidden');
+    }
+
+    // 4. Mostra a view correta e ativa o botão correspondente
     if (view === 'public') { 
         document.getElementById('view-public').classList.remove('hidden-view'); 
         document.getElementById('btn-public').classList.add('active'); 
@@ -157,17 +210,448 @@ export const switchView = (view) => {
     } else if (view === 'placar') { 
         document.getElementById('view-placar').classList.remove('hidden-view'); 
         document.getElementById('btn-placar').classList.add('active'); 
-    } else { 
-        document.getElementById('btn-admin').classList.add('active'); 
+    } else if (view === 'groups') {
+        document.getElementById('view-groups').classList.remove('hidden-view'); 
+        if(document.getElementById('btn-groups')) document.getElementById('btn-groups').classList.add('active');
+    } else if (view === 'auth') {
+        document.getElementById('view-auth').classList.remove('hidden-view');
+    } else if (view === 'landing') {
+        document.getElementById('view-landing').classList.remove('hidden-view');
+    } else if (view === 'admin') { 
+        // Proteção resolvida no início da função
         if (state.isAuthenticated) {
             document.getElementById('view-admin').classList.remove('hidden-view');
+            document.getElementById('btn-admin').classList.add('active'); 
         } else {
-            document.getElementById('view-login').classList.remove('hidden-view');
+            document.getElementById('view-auth').classList.remove('hidden-view');
+        }
+    } else if (view === 'pagamentos') {
+        if (state.isAuthenticated) {
+            document.getElementById('view-pagamentos').classList.remove('hidden-view');
+            document.getElementById('btn-pagamentos').classList.add('active');
+            
+            // Check if user is admin, if so show admin panel
+            if (state.currentUserRole === 'admin' || state.isMaster) {
+                document.querySelector('.admin-only-section').classList.remove('hidden');
+                document.querySelector('.admin-only-section').classList.add('flex');
+            } else {
+                document.querySelector('.admin-only-section').classList.add('hidden');
+                document.querySelector('.admin-only-section').classList.remove('flex');
+            }
+            
+            // Call render payments function (will be defined in paymentController)
+            if (typeof window.renderPaymentsView === 'function') {
+                window.renderPaymentsView();
+            }
+        } else {
+            document.getElementById('view-auth').classList.remove('hidden-view');
         }
     }
     
-    renderAll();
+    // Atualiza os dados apenas se estiver numa tela de grupo
+    if(view !== 'auth' && view !== 'groups' && view !== 'landing') {
+        renderAll();
+    }
 };
+
+export const openConfirmModal = (title, message, callback) => {
+    document.getElementById('confirmTitle').innerText = title; 
+    document.getElementById('confirmMessage').innerText = message;
+    state.confirmActionCallback = callback;
+    document.getElementById('confirmModal').classList.remove('hidden'); 
+    document.getElementById('confirmModal').classList.add('flex'); 
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+export const closeConfirmModal = () => { 
+    document.getElementById('confirmModal').classList.add('hidden'); 
+    document.getElementById('confirmModal').classList.remove('flex'); 
+    state.confirmActionCallback = null; 
+};
+
+export const closeVictoryModalOnly = async () => { 
+    const modal = document.getElementById('victoryModal');
+    if(modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+
+    state.score1 = 0; state.score2 = 0;
+    state.currentTeam1 = ''; state.currentTeam2 = '';
+
+    // GARANTE QUE O CACHE DO GRUPO TAMBÉM SEJA ZERADO
+    if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+        state.groupMatchStates[state.currentGroupId].score1 = 0;
+        state.groupMatchStates[state.currentGroupId].score2 = 0;
+        state.groupMatchStates[state.currentGroupId].currentTeam1 = '';
+        state.groupMatchStates[state.currentGroupId].currentTeam2 = '';
+    }
+
+    const s1 = document.getElementById('score1'); if(s1) s1.innerText = '0'; 
+    const s2 = document.getElementById('score2'); if(s2) s2.innerText = '0'; 
+    const t1 = document.getElementById('team1Select'); if(t1) t1.value = ''; 
+    const t2 = document.getElementById('team2Select'); if(t2) t2.value = ''; 
+
+    // Liberta o placar na nuvem para que outros possam usar e zera tudo lá
+    try { 
+        if (settingsRef) {
+            await updateDoc(settingsRef, { 
+                matchInProgress: false, 
+                matchOwner: null,
+                score1: 0,
+                score2: 0,
+                currentTeam1: '',
+                currentTeam2: ''
+            }); 
+        }
+    } catch(e) { console.warn("Erro ao limpar placar na nuvem", e); }
+    
+    // Zera o cronômetro para a próxima partida do grupo
+    if (typeof window.resetTimer === 'function') {
+        window.resetTimer();
+    }
+    
+    if (typeof updateLiveEloPreview === 'function') updateLiveEloPreview();
+};
+
+export const closeMoveModal = () => { 
+    const modal = document.getElementById('movePlayerModal');
+    if(modal) {
+        modal.classList.add('hidden'); 
+        modal.classList.remove('flex'); 
+    }
+    state.moveData = { sourceTeamId: null, playerId: null }; 
+};
+
+export const closePlayerHistoryModal = () => {
+    const modal = document.getElementById('playerHistoryModal');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+};
+
+// ============================================================================
+// ATUALIZAÇÕES ESPECÍFICAS DE TELA
+// ============================================================================
+
+/**
+ * Atualiza o painel visual com a previsão de pontos da partida atual,
+ * utilizando o serviço de matemática.
+ */
+export const updateLiveEloPreview = () => {
+    const previewDiv = document.getElementById('liveEloPreview');
+    const select1 = document.getElementById('team1Select');
+    const select2 = document.getElementById('team2Select');
+    
+    if (!previewDiv || !select1 || !select2 || !select1.value || !select2.value || select1.value === select2.value) {
+        if(previewDiv) {
+            previewDiv.classList.add('hidden');
+            previewDiv.classList.remove('flex');
+        }
+        return null;
+    }
+
+    const team1 = state.drawnTeams.find(t => t.label === select1.value);
+    const team2 = state.drawnTeams.find(t => t.label === select2.value);
+    if (!team1 || !team2) return null;
+
+    const getTeamElo = (team) => {
+        if (team.players.length === 0) return 150;
+        const sum = team.players.reduce((acc, p) => {
+            const dbPlayer = state.players.find(x => x.id === p.id);
+            return acc + (dbPlayer?.eloRating ?? 150);
+        }, 0);
+        return sum / team.players.length;
+    };
+
+    const eloT1 = getTeamElo(team1);
+    const eloT2 = getTeamElo(team2);
+    
+    // Chama o serviço puramente matemático
+    const matchPreview = calculateEloMatch(eloT1, eloT2);
+    const isFutebol = (state.matchConfig.sportMode || 'volei') === 'futebol';
+    // Futebol: empate pode ocorrer inclusive no 0x0. Vôlei: empate nunca ocorre.
+    const isTie = isFutebol && state.score1 === state.score2;
+
+    if (isFutebol) {
+        // Futebol: sempre mostra vitória, derrota E empate de cada lado
+        const drawT1Sign = matchPreview.drawT1 >= 0 ? '+' : '';
+        const drawT2Sign = matchPreview.drawT2 >= 0 ? '+' : '';
+        const drawT1Color = matchPreview.drawT1 > 0 ? 'text-green-400' : (matchPreview.drawT1 < 0 ? 'text-red-400' : 'text-slate-400');
+        const drawT2Color = matchPreview.drawT2 > 0 ? 'text-green-400' : (matchPreview.drawT2 < 0 ? 'text-red-400' : 'text-slate-400');
+        previewDiv.innerHTML = `
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT1} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT1} ELO se perder</p>
+                <p class="${drawT1Color} font-bold text-[10px] sm:text-xs mt-1 opacity-80">${drawT1Sign}${matchPreview.drawT1} ELO se empatar</p>
+            </div>
+            <div class="shrink-0 bg-slate-800 p-2 sm:p-3 rounded-full border border-slate-700">
+                <i data-lucide="swords" class="w-4 h-4 sm:w-6 sm:h-6 text-slate-400"></i>
+            </div>
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT2} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT2} ELO se perder</p>
+                <p class="${drawT2Color} font-bold text-[10px] sm:text-xs mt-1 opacity-80">${drawT2Sign}${matchPreview.drawT2} ELO se empatar</p>
+            </div>
+        `;
+    } else {
+        // Vôlei (sem empate): mostra somente vitória e derrota
+        previewDiv.innerHTML = `
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT1} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT1} ELO se perder</p>
+            </div>
+            <div class="shrink-0 bg-slate-800 p-2 sm:p-3 rounded-full border border-slate-700">
+                <i data-lucide="swords" class="w-4 h-4 sm:w-6 sm:h-6 text-slate-400"></i>
+            </div>
+            <div class="flex-1 text-center">
+                <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase mb-1">Se Vencer</p>
+                <p class="text-green-400 font-black text-lg sm:text-xl">+${matchPreview.winT2} ELO</p>
+                <p class="text-red-400 font-bold text-xs sm:text-sm">${matchPreview.loseT2} ELO se perder</p>
+            </div>
+        `;
+    }
+    
+    previewDiv.classList.remove('hidden');
+    previewDiv.classList.add('flex');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Retorna os dados para que o matchController possa usá-los se o utilizador clicar em "Salvar"
+    return {
+        ...matchPreview,
+        team1,
+        team2,
+        changeT1: isTie ? matchPreview.drawT1 : (state.score1 > state.score2 ? matchPreview.winT1 : matchPreview.loseT1),
+        changeT2: isTie ? matchPreview.drawT2 : (state.score1 > state.score2 ? matchPreview.loseT2 : matchPreview.winT2),
+        isTeam1Winner: state.score1 > state.score2,
+        isTie: isTie
+    };
+};
+
+// ============================================================================
+// HELPERS DE INTERAÇÃO (Tabelas e Paginação)
+// ============================================================================
+
+export const updateSorteioCounters = () => {
+    const countElement = document.getElementById('playerCountSorteio');
+    if(countElement) countElement.innerText = `${state.selectedPlayerIds.size} / ${state.players.length} Selecionados`;
+    
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if(selectAllCheckbox) selectAllCheckbox.checked = state.players.length > 0 && state.selectedPlayerIds.size === state.players.length;
+};
+
+export const changeHistoryPage = (idx) => {
+    state.historyCurrentPage = idx;
+    renderMatchHistory();
+};
+
+export const openPlayerHistoryModal = (playerName) => {
+    const modal = document.getElementById('playerHistoryModal');
+    const list = document.getElementById('playerHistoryList');
+    document.getElementById('playerHistoryTitle').innerText = `Histórico de ${playerName}`;
+
+    const pMatches = state.matchHistory.filter(m =>
+        (m.team1.players && m.team1.players.includes(playerName)) ||
+        (m.team2.players && m.team2.players.includes(playerName))
+    ).sort((a,b) => b.timestamp - a.timestamp);
+
+    if(pMatches.length === 0) {
+        list.innerHTML = '<p class="text-center text-slate-500 py-4 text-sm">Nenhuma partida registrada.</p>';
+    } else {
+        list.innerHTML = pMatches.map((m, idx) => {
+            const inT1 = m.team1.players && m.team1.players.includes(playerName);
+            const myTeam = inT1 ? 1 : 2;
+            const isTieMatch = m.winner === 0;
+            const isWin = !isTieMatch && m.winner === myTeam;
+            
+            const t1Color = isTieMatch ? 'text-slate-300' : (m.winner === 1 ? 'text-blue-400' : 'text-slate-400');
+            const t2Color = isTieMatch ? 'text-slate-300' : (m.winner === 2 ? 'text-red-400' : 'text-slate-400');
+            
+            // Usa os campos individuais de Elo quando disponíveis (partidas novas)
+            const eloGain = m.eloGain || 0;
+            const eloLoss = Math.round(eloGain * 0.7);
+            const t1EloChange = m.eloChangeT1 ?? (m.winner === 1 ? eloGain : -eloLoss);
+            const t2EloChange = m.eloChangeT2 ?? (m.winner === 2 ? eloGain : -eloLoss);
+            const myEloChange = inT1 ? t1EloChange : t2EloChange;
+            const myEloDisplay = `${myEloChange >= 0 ? '+' : ''}${myEloChange}`;
+            
+            let statusLabel, eloColor;
+            if (isTieMatch) {
+                statusLabel = 'EMPATE';
+                eloColor = myEloChange > 0 ? 'text-green-400' : (myEloChange < 0 ? 'text-red-400' : 'text-slate-400');
+            } else if (isWin) {
+                statusLabel = 'VITÓRIA';
+                eloColor = 'text-green-400';
+            } else {
+                statusLabel = 'DERROTA';
+                eloColor = 'text-red-400';
+            }
+
+            // Elo detalhado por time na expansão
+            const t1EloDisplay = `${t1EloChange >= 0 ? '+' : ''}${t1EloChange}`;
+            const t2EloDisplay = `${t2EloChange >= 0 ? '+' : ''}${t2EloChange}`;
+            const t1DetailColor = isTieMatch ? (t1EloChange > 0 ? 'text-green-400' : (t1EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 1 ? 'text-green-400' : 'text-red-400');
+            const t2DetailColor = isTieMatch ? (t2EloChange > 0 ? 'text-green-400' : (t2EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 2 ? 'text-green-400' : 'text-red-400');
+
+            return `
+                <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-2">
+                    <div class="p-3 cursor-pointer hover:bg-slate-800 transition-colors" onclick="document.getElementById('p-match-det-${idx}').classList.toggle('hidden')">
+                        <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+                            <span class="text-slate-400 font-bold">${m.dateString}</span>
+                            <span class="font-black ${eloColor} bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-[10px]">${statusLabel} (${myEloDisplay} ELO)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1 text-right font-bold text-[11px] ${t1Color} truncate">${m.team1.name}</div>
+                            <div class="px-3 font-black text-sm">${m.team1.score} x ${m.team2.score}</div>
+                            <div class="flex-1 text-left font-bold text-[11px] ${t2Color} truncate">${m.team2.name}</div>
+                        </div>
+                    </div>
+                    <div id="p-match-det-${idx}" class="hidden p-3 bg-slate-950/80 border-t border-slate-800/50 text-[10px] text-slate-300">
+                        <div class="flex justify-between gap-4">
+                            <div class="flex-1 text-right">
+                                <p class="text-slate-500 font-bold uppercase mb-1">Time Azul</p>
+                                <p>${(m.team1.players || []).join('<br>')}</p>
+                                <p class="mt-2 font-bold ${t1DetailColor}">${t1EloDisplay} ELO</p>
+                            </div>
+                            <div class="flex-1 text-left">
+                                <p class="text-slate-500 font-bold uppercase mb-1">Time Vermelho</p>
+                                <p>${(m.team2.players || []).join('<br>')}</p>
+                                <p class="mt-2 font-bold ${t2DetailColor}">${t2EloDisplay} ELO</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+// ============================================================================
+// CONTROLE DO FORMULÁRIO DE ATLETAS (ADMIN)
+// ============================================================================
+
+export const setFormMode = (mode) => {
+    const modeInput = document.getElementById('formMode');
+    if (modeInput) modeInput.value = mode;
+
+    const btnManual = document.getElementById('btnModeManual');
+    const btnEmail = document.getElementById('btnModeEmail');
+    const manualFields = document.getElementById('manualFields');
+    const emailFields = document.getElementById('emailFields');
+
+    if (mode === 'manual') {
+        btnManual.className = "flex-1 py-2 text-xs font-bold rounded-md bg-slate-800 text-white transition-all shadow";
+        btnEmail.className = "flex-1 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all";
+        manualFields.classList.remove('hidden');
+        emailFields.classList.add('hidden');
+    } else {
+        btnEmail.className = "flex-1 py-2 text-xs font-bold rounded-md bg-slate-800 text-white transition-all shadow";
+        btnManual.className = "flex-1 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all";
+        emailFields.classList.remove('hidden');
+        manualFields.classList.add('hidden');
+    }
+};
+
+export const editPlayer = (id) => {
+    // 1. Busca o jogador no estado global
+    const p = state.players.find(x => x.id === id);
+    if (!p) return;
+
+    // 2. Preenche TODOS os campos do formulário
+    document.getElementById('editId').value = p.id;
+    document.getElementById('playerName').value = p.name;
+    document.getElementById('statCategoria').value = p.categoria || 1;
+    document.getElementById('statJogos').value = p.partidas || 0;
+    document.getElementById('statVit').value = p.vitorias || 0;
+    document.getElementById('statBonus').value = p.eloRating ?? 150;
+    const roleSelect = document.getElementById('playerRole');
+    if (roleSelect) roleSelect.value = p.role || 'jogador';
+    
+    // Puxa o e-mail para edição, se existir
+    const emailInput = document.getElementById('playerEmail');
+    if(emailInput) emailInput.value = p.email || '';
+
+    // Define o modo de formulário com base na existência de e-mail
+    if (p.email) {
+        setFormMode('email');
+    } else {
+        setFormMode('manual');
+    }
+
+    // 3. Trata a foto de perfil
+    if (p.photo) {
+        document.getElementById('photoPreview').src = p.photo;
+        document.getElementById('photoPreview').classList.remove('hidden');
+        document.getElementById('photoPlaceholder').classList.add('hidden');
+        document.getElementById('photoData').value = p.photo;
+        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+    } else {
+        if (window.removePhoto) window.removePhoto();
+    }
+
+    // 4. Muda o visual do formulário para "Modo Edição"
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="edit" class="w-5 h-5"></i> Editar Atleta';
+    document.getElementById('btnSave').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> ATUALIZAR';
+
+    // 5. GARANTE QUE O FORMULÁRIO ABRA AUTOMATICAMENTE
+    const formContent = document.getElementById('formContent');
+    const formIcon = document.getElementById('formToggleIcon');
+    if (formContent) formContent.classList.remove('hidden');
+    if (formIcon) formIcon.classList.add('rotate-180');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // 6. Rola a tela suavemente para o formulário
+    document.getElementById('view-admin').scrollIntoView({ behavior: 'smooth' });
+};
+
+export const resetForm = () => {
+    // 1. Limpa os campos de texto
+    document.getElementById('editId').value = '';
+    document.getElementById('playerName').value = '';
+    document.getElementById('statCategoria').value = '1';
+    document.getElementById('statJogos').value = '0';
+    document.getElementById('statVit').value = '0';
+    document.getElementById('statBonus').value = '150';
+    const roleSelect = document.getElementById('playerRole');
+    if (roleSelect) roleSelect.value = 'jogador';
+    
+    const emailInput = document.getElementById('playerEmail');
+    if(emailInput) emailInput.value = '';
+
+    // Reseta o modo do formulário para manual
+    setFormMode('manual');
+
+    // 2. Limpa a Foto APENAS VISUALMENTE (Sem deletar do Storage)
+    document.getElementById('photoPreview').src = '';
+    document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('photoPlaceholder').classList.remove('hidden');
+    document.getElementById('photoData').value = ''; 
+    document.getElementById('btnRemovePhoto').classList.add('hidden');
+    const fileInput = document.getElementById('playerPhoto');
+    if(fileInput) fileInput.value = '';
+
+    // 3. Restaura o visual do botão
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="user-plus" class="w-5 h-5"></i> Novo Atleta';
+    document.getElementById('btnSave').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> SALVAR';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // 4. Fecha o formulário
+    const formContent = document.getElementById('formContent');
+    const formIcon = document.getElementById('formToggleIcon');
+    if (formContent) formContent.classList.add('hidden');
+    if (formIcon) formIcon.classList.remove('rotate-180');
+};
+
+// ============================================================================
+// RENDERIZADORES DE TELA (HTML Injection)
+// (Cole aqui o seu código HTML original de formatação das listas)
+// ============================================================================
 
 export const renderPublic = () => {
     const grid = document.getElementById('publicGrid');
@@ -222,7 +706,7 @@ export const renderPublic = () => {
                         <span class="font-bold text-[8px] opacity-90 tracking-[0.15em]">ELO</span>
                     </div>
                     <div class="w-24 h-24 mt-3 mb-1 flex items-center justify-center bg-black/10 rounded-full border-2 ${isDestaque ? 'border-yellow-400/60 text-yellow-200' : 'border-black/10'} shrink-0 overflow-hidden">
-                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-12 h-12 opacity-80"></i>`}
+                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-12 h-12 opacity-80"></i>`}
                     </div>
                     <div class="player-name ${isDestaque ? 'text-yellow-100' : ''}">${p.name}</div>
                     <div class="w-full mt-2 flex justify-evenly items-center px-4">
@@ -319,14 +803,6 @@ export const renderRanking = () => {
     lucide.createIcons();
 };
 
-export const updateSorteioCounters = () => {
-    const countElement = document.getElementById('playerCountSorteio');
-    if(countElement) countElement.innerText = `${state.selectedPlayerIds.size} / ${state.players.length} Selecionados`;
-    
-    const selectAllCheckbox = document.getElementById('selectAll');
-    if(selectAllCheckbox) selectAllCheckbox.checked = state.players.length > 0 && state.selectedPlayerIds.size === state.players.length;
-};
-
 export const renderSorteioTable = () => {
     const tbody = document.getElementById('sorteioTableBody');
     if(!tbody) return;
@@ -348,11 +824,18 @@ export const renderSorteioTable = () => {
 
     const sorted = filtered.sort((a, b) => { 
         if (sortMode === 'alpha') {
-            return a.name.localeCompare(b.name);
+            return (a.name || '').localeCompare(b.name || '');
         } else {
-            const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
-            if(c !== 0) return c; 
-            return a.name.localeCompare(b.name); 
+            // 1º Critério: Categoria (Maior para menor)
+            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1); 
+            if(catDiff !== 0) return catDiff; 
+            
+            // 2º Critério: Elo (Maior para menor)
+            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            if (eloDiff !== 0) return eloDiff;
+            
+            // 3º Critério: Ordem Alfabética
+            return (a.name || '').localeCompare(b.name || ''); 
         }
     });
     
@@ -368,7 +851,7 @@ export const renderSorteioTable = () => {
                 </td>
                 <td class="px-3 py-3 font-bold text-slate-200 flex items-center gap-2 whitespace-nowrap">
                     <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-3 h-3 text-slate-400"></i>`}
+                        ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-3 h-3 text-slate-400"></i>`}
                     </div>
                     ${p.name}
                 </td>
@@ -391,10 +874,21 @@ export const renderAdminTable = () => {
     const tbody = document.getElementById('adminTableBody');
     if(!tbody) return;
     
-    const sorted = [...state.players].sort((a, b) => { 
-        const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
-        if(c !== 0) return c; 
-        return a.name.localeCompare(b.name); 
+    const searchTerm = document.getElementById('searchAdmin')?.value.toLowerCase() || '';
+    const sortMode = document.getElementById('sortAdmin')?.value || 'alpha';
+    
+    let filtered = state.players.filter(p => p.name.toLowerCase().includes(searchTerm));
+
+    const sorted = filtered.sort((a, b) => { 
+        if (sortMode === 'level') {
+            const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
+            if(c !== 0) return c; 
+            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            if(eloDiff !== 0) return eloDiff;
+            return (a.name || '').localeCompare(b.name || '');
+        } else {
+            return (a.name || '').localeCompare(b.name || '');
+        }
     });
     
     tbody.innerHTML = sorted.map(p => {
@@ -406,7 +900,7 @@ export const renderAdminTable = () => {
                 <td class="px-3 py-3 whitespace-nowrap">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 border-2 ${catInfo.border}">
-                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.icon || 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
+                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
                         </div>
                         <div class="flex flex-col">
                             <span class="font-bold text-slate-200">${p.name}</span>
@@ -559,17 +1053,12 @@ export const renderPlacarTeams = () => {
     select2.value = val2;
 };
 
-export const changeHistoryPage = (idx) => {
-    state.historyCurrentPage = idx;
-    renderMatchHistory();
-};
-
 export const renderMatchHistory = () => {
     const container = document.getElementById('historyList');
     const btnClear = document.getElementById('btnClearHistory');
     
     if (btnClear) {
-        if (state.isAuthenticated && state.matchHistory && state.matchHistory.length > 0) {
+        if (state.isAuthenticated && state.matchHistory && state.matchHistory.length > 0 && (state.currentUserRole === 'admin' || state.isMaster)) {
             btnClear.classList.remove('hidden'); btnClear.classList.add('flex');
         } else {
             btnClear.classList.add('hidden'); btnClear.classList.remove('flex');
@@ -605,32 +1094,46 @@ export const renderMatchHistory = () => {
     paginationHTML += '</div>';
 
     let matchesHTML = activeGroup.matches.map((m, mIdx) => {
-        const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
-        const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
+        const isTieMatch = m.winner === 0;
+        const t1Color = isTieMatch ? 'text-slate-300' : (m.winner === 1 ? 'text-blue-400' : 'text-slate-400');
+        const t2Color = isTieMatch ? 'text-slate-300' : (m.winner === 2 ? 'text-red-400' : 'text-slate-400');
+        
         const eloGain = m.eloGain || 0;
         const eloLoss = Math.round(eloGain * 0.7);
+        const t1EloChange = m.eloChangeT1 ?? (m.winner === 1 ? eloGain : -eloLoss);
+        const t2EloChange = m.eloChangeT2 ?? (m.winner === 2 ? eloGain : -eloLoss);
+        const t1EloDisplay = `${t1EloChange >= 0 ? '+' : ''}${t1EloChange}`;
+        const t2EloDisplay = `${t2EloChange >= 0 ? '+' : ''}${t2EloChange}`;
+        const t1DetailColor = isTieMatch ? (t1EloChange > 0 ? 'text-green-400' : (t1EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 1 ? 'text-green-400' : 'text-red-400');
+        const t2DetailColor = isTieMatch ? (t2EloChange > 0 ? 'text-green-400' : (t2EloChange < 0 ? 'text-red-400' : 'text-slate-400')) : (m.winner === 2 ? 'text-green-400' : 'text-red-400');
+        const resultLabel = isTieMatch ? '<span class="text-slate-400 text-[9px] font-bold">EMPATE</span>' : '';
 
         return `
             <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-3">
-                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors group" onclick="document.getElementById('match-details-${mIdx}').classList.toggle('hidden')">
-                    <div class="flex-1 text-right font-bold text-sm ${t1Color}">${m.team1.name}</div>
-                    <div class="px-3 font-black text-lg">${m.team1.score} x ${m.team2.score}</div>
-                    <div class="flex-1 text-left font-bold text-sm ${t2Color}">${m.team2.name}</div>
+                <div class="p-3 cursor-pointer hover:bg-slate-800 transition-colors group" onclick="document.getElementById('match-details-${mIdx}').classList.toggle('hidden')">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1 text-right font-bold text-sm ${t1Color}">${m.team1.name}</div>
+                        <div class="px-3 text-center">
+                            <div class="font-black text-lg">${m.team1.score} x ${m.team2.score}</div>
+                            ${resultLabel}
+                        </div>
+                        <div class="flex-1 text-left font-bold text-sm ${t2Color}">${m.team2.name}</div>
+                    </div>
                 </div>
                 <div id="match-details-${mIdx}" class="hidden p-3 bg-slate-950/80 border-t border-slate-800/50 text-xs text-slate-300">
                     <div class="flex justify-between gap-4">
                         <div class="flex-1 text-right border-r border-slate-800 pr-4">
                             <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Time Azul</p>
                             <p class="mb-3">${(m.team1.players || []).join('<br>')}</p>
-                            <p class="font-black text-sm ${m.winner === 1 ? 'text-green-400' : 'text-red-400'}">
-                                ${m.winner === 1 ? '+' + eloGain : '-' + eloLoss} ELO
+                            <p class="font-black text-sm ${t1DetailColor}">
+                                ${t1EloDisplay} ELO
                             </p>
                         </div>
                         <div class="flex-1 text-left pl-4">
                             <p class="text-[10px] text-red-400 font-bold uppercase mb-2">Time Vermelho</p>
                             <p class="mb-3">${(m.team2.players || []).join('<br>')}</p>
-                            <p class="font-black text-sm ${m.winner === 2 ? 'text-green-400' : 'text-red-400'}">
-                                ${m.winner === 2 ? '+' + eloGain : '-' + eloLoss} ELO
+                            <p class="font-black text-sm ${t2DetailColor}">
+                                ${t2EloDisplay} ELO
                             </p>
                         </div>
                     </div>
@@ -642,71 +1145,171 @@ export const renderMatchHistory = () => {
     if(typeof lucide !== 'undefined') lucide.createIcons();
 };
 
-export const openPlayerHistoryModal = (playerName) => {
-    const modal = document.getElementById('playerHistoryModal');
-    const list = document.getElementById('playerHistoryList');
-    document.getElementById('playerHistoryTitle').innerText = `Histórico de ${playerName}`;
+export const togglePlacarLock = (isLocked) => {
+    const overlay = document.getElementById('placar-lock-overlay');
+    if (overlay) {
+        overlay.classList.toggle('hidden', !isLocked);
+        // Garante que o ícone do Lucide seja renderizado se o elemento for mostrado
+        if (isLocked && typeof lucide !== 'undefined') lucide.createIcons();
+    }
 
-    const pMatches = state.matchHistory.filter(m =>
-        (m.team1.players && m.team1.players.includes(playerName)) ||
-        (m.team2.players && m.team2.players.includes(playerName))
-    ).sort((a,b) => b.timestamp - a.timestamp);
+    // Lista de controles que devem ser desativados visualmente
+    const controlsToDisable = [
+        'btnPlacarConfig',
+        'btnSaveResult', 
+        'btnClearHistory',
+        'teamSize', 
+        'draftStrategy',
+        'waitlistStrategy',
+        'waitlistStrategyPlacar'
+    ];
 
-    if(pMatches.length === 0) {
-        list.innerHTML = '<p class="text-center text-slate-500 py-4 text-sm">Nenhuma partida registrada.</p>';
+    controlsToDisable.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = isLocked;
+            el.style.opacity = isLocked ? "0.5" : "1";
+            el.style.cursor = isLocked ? "not-allowed" : "default";
+        }
+    });
+
+    // Oculta botões de ação nas cartinhas (remover/mover) para evitar cliques acidentais
+    const actionButtons = document.querySelectorAll('.remove-player-btn, .move-player-btn');
+    actionButtons.forEach(btn => {
+        btn.style.visibility = isLocked ? 'hidden' : 'visible';
+    });
+};
+
+export const forceUnlockPlacar = async () => {
+    openConfirmModal("Forçar Desbloqueio", "Isto interromperá a partida que está a ser marcada no outro aparelho. Tem a certeza?", async () => {
+        try { 
+            await updateDoc(settingsRef, { matchInProgress: false, matchOwner: null }); 
+            showToast("Placar desbloqueado à força.", "info");
+        } catch(e) {}
+    });
+};
+
+// ============================================================================
+// HELPERS DE UI PARA AUTENTICAÇÃO E GRUPOS
+// ============================================================================
+
+export const toggleAuthMode = (mode) => {
+    const isRegister = mode === 'register';
+    
+    // Altera os títulos
+    document.getElementById('authTitle').innerText = isRegister ? 'Criar Conta' : 'Bem-vindo';
+    document.getElementById('authSubtitle').innerText = isRegister ? 'Preencha seus dados para começar.' : 'Faça login para acessar seus grupos.';
+    
+    // Mostra/Esconde o campo de Nome
+    const nameContainer = document.getElementById('registerNameContainer');
+    if(isRegister) {
+        nameContainer.classList.remove('hidden');
     } else {
-        list.innerHTML = pMatches.map((m, idx) => {
-            const inT1 = m.team1.players && m.team1.players.includes(playerName);
-            const myTeam = inT1 ? 1 : 2;
-            const isWin = m.winner === myTeam;
-            const t1Color = m.winner === 1 ? 'text-blue-400' : 'text-slate-400';
-            const t2Color = m.winner === 2 ? 'text-red-400' : 'text-slate-400';
-            
-            const eloGain = m.eloGain || 0;
-            const eloLoss = Math.round(eloGain * 0.7);
-            const myEloChange = isWin ? `+${eloGain}` : `-${eloLoss}`;
-            const eloColor = isWin ? 'text-green-400' : 'text-red-400';
+        nameContainer.classList.add('hidden');
+    }
 
-            return `
-                <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden mb-2">
-                    <div class="p-3 cursor-pointer hover:bg-slate-800 transition-colors" onclick="document.getElementById('p-match-det-${idx}').classList.toggle('hidden')">
-                        <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
-                            <span class="text-slate-400 font-bold">${m.dateString}</span>
-                            <span class="font-black ${eloColor} bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-[10px]">${isWin ? 'VITÓRIA' : 'DERROTA'} (${myEloChange} ELO)</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <div class="flex-1 text-right font-bold text-[11px] ${t1Color} truncate">${m.team1.name}</div>
-                            <div class="px-3 font-black text-sm">${m.team1.score} x ${m.team2.score}</div>
-                            <div class="flex-1 text-left font-bold text-[11px] ${t2Color} truncate">${m.team2.name}</div>
-                        </div>
-                    </div>
-                    <div id="p-match-det-${idx}" class="hidden p-3 bg-slate-950/80 border-t border-slate-800/50 text-[10px] text-slate-300">
-                        <div class="flex justify-between gap-4">
-                            <div class="flex-1 text-right">
-                                <p class="text-slate-500 font-bold uppercase mb-1">Time Azul</p>
-                                <p>${(m.team1.players || []).join('<br>')}</p>
-                                <p class="mt-2 font-bold ${m.winner === 1 ? 'text-green-400' : 'text-red-400'}">${m.winner === 1 ? '+'+eloGain : '-'+eloLoss} ELO</p>
-                            </div>
-                            <div class="flex-1 text-left">
-                                <p class="text-slate-500 font-bold uppercase mb-1">Time Vermelho</p>
-                                <p>${(m.team2.players || []).join('<br>')}</p>
-                                <p class="mt-2 font-bold ${m.winner === 2 ? 'text-green-400' : 'text-red-400'}">${m.winner === 2 ? '+'+eloGain : '-'+eloLoss} ELO</p>
-                            </div>
-                        </div>
+    // Atualiza os botões principais
+    const btnMain = document.getElementById('btnAuthMain');
+    btnMain.innerHTML = isRegister ? '<i data-lucide="user-plus" class="w-5 h-5"></i> CADASTRAR' : '<i data-lucide="log-in" class="w-5 h-5"></i> ENTRAR';
+    
+    // Atualiza o texto do rodapé (alternar entre login e registro)
+    const btnToggle = document.getElementById('btnToggleAuth');
+    if (isRegister) {
+        btnToggle.innerHTML = 'Já tem conta? <span class="font-bold underline text-blue-400">Faça login</span>';
+        btnToggle.setAttribute('onclick', "toggleAuthMode('login')");
+    } else {
+        btnToggle.innerHTML = 'Ainda não tem conta? <span class="font-bold underline text-blue-400">Cadastre-se</span>';
+        btnToggle.setAttribute('onclick', "toggleAuthMode('register')");
+    }
+
+    // Se a função existir, recria os ícones Lucide recém-injetados
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // Salva na memória da página (num atributo do botão) em qual modo estamos para o main.js saber o que fazer
+    btnMain.setAttribute('data-mode', isRegister ? 'register' : 'login');
+};
+
+export const renderUserGroups = () => {
+    const grid = document.getElementById('userGroupsGrid');
+    const msg = document.getElementById('noGroupsMessage');
+    
+    if (!grid || !msg) return;
+
+    if (!state.userGroups || state.userGroups.length === 0) {
+        grid.innerHTML = '';
+        msg.classList.remove('hidden');
+        msg.classList.add('flex');
+        return;
+    }
+
+    msg.classList.add('hidden');
+    msg.classList.remove('flex');
+
+    grid.innerHTML = state.userGroups.map(group => {
+        const isCreatorOrAdmin = state.isMaster || (group.adminUids && group.adminUids.includes(state.user?.uid));
+        const isModerator = group.moderatorEmails && group.moderatorEmails.includes(state.user?.email);
+        
+        let roleTag = '';
+        let roleBg = '';
+        let menuDots = '';
+
+        if (isCreatorOrAdmin) {
+            roleTag = '<i data-lucide="shield-check" class="w-3 h-3"></i> Admin';
+            roleBg = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+            
+            // Adiciona os três pontinhos para admins
+            menuDots = `
+                <div class="relative z-20" onclick="event.stopPropagation();">
+                    <button onclick="document.getElementById('menu-${group.id}').classList.toggle('hidden')" class="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-700 transition-colors">
+                        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                    </button>
+                    <div id="menu-${group.id}" class="hidden absolute right-0 top-8 w-40 bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden">
+                        <button onclick="renameGroup('${group.id}', '${group.name}'); document.getElementById('menu-${group.id}').classList.add('hidden')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="edit-2" class="w-4 h-4"></i> Renomear</button>
+                        <button onclick="deleteGroup('${group.id}'); document.getElementById('menu-${group.id}').classList.add('hidden')" class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-slate-800 flex items-center gap-2 border-t border-slate-800"><i data-lucide="trash-2" class="w-4 h-4"></i> Excluir</button>
                     </div>
                 </div>
             `;
-        }).join('');
-    }
+        } else if (isModerator) {
+            roleTag = '<i data-lucide="shield" class="w-3 h-3"></i> Moderador';
+            roleBg = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+            
+            // Moderadores também recebem os três pontinhos (mesmas permissões que admin por agora)
+            menuDots = `
+                <div class="relative z-20" onclick="event.stopPropagation();">
+                    <button onclick="document.getElementById('menu-${group.id}').classList.toggle('hidden')" class="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-700 transition-colors">
+                        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                    </button>
+                    <div id="menu-${group.id}" class="hidden absolute right-0 top-8 w-40 bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden">
+                        <button onclick="renameGroup('${group.id}', '${group.name}'); document.getElementById('menu-${group.id}').classList.add('hidden')" class="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="edit-2" class="w-4 h-4"></i> Renomear</button>
+                        <button onclick="deleteGroup('${group.id}'); document.getElementById('menu-${group.id}').classList.add('hidden')" class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-slate-800 flex items-center gap-2 border-t border-slate-800"><i data-lucide="trash-2" class="w-4 h-4"></i> Excluir</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            roleTag = '<i data-lucide="user" class="w-3 h-3"></i> Jogador';
+            roleBg = 'bg-slate-700/50 text-slate-300 border-slate-600/50';
+        }
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    if(typeof lucide !== 'undefined') lucide.createIcons();
-};
+        const dateStr = group.createdAt ? new Date(group.createdAt).toLocaleDateString('pt-BR') : '--/--/----';
 
-export const closePlayerHistoryModal = () => {
-    document.getElementById('playerHistoryModal').classList.add('hidden');
-    document.getElementById('playerHistoryModal').classList.remove('flex');
+        return `
+            <div onclick="selectGroup('${group.id}', '${group.name}')" class="bg-slate-900/50 hover:bg-slate-800 border border-slate-700 rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 group-card flex flex-col justify-between h-full min-h-[140px] relative">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-bold text-white group-card-hover:text-blue-400 transition-colors pr-6">${group.name}</h3>
+                        ${menuDots}
+                    </div>
+                    <span class="inline-block px-2 py-1 rounded-md text-[10px] font-bold border flex items-center gap-1 w-max ${roleBg}">${roleTag}</span>
+                    <p class="text-xs text-slate-500 mt-3 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Criado em ${dateStr}</p>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <span class="text-sm font-bold text-blue-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">ENTRAR <i data-lucide="arrow-right" class="w-4 h-4"></i></span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
 export const renderAll = () => { 
@@ -717,4 +1320,216 @@ export const renderAll = () => {
     renderRanking(); 
     renderPlacarTeams(); 
     renderMatchHistory(); 
+};
+
+//updateSorteioCounters 
+// changeHistoryPage 
+// openPlayerHistoryModal 
+
+// ============================================================================
+// CONFIGURAÇÕES DE PLACAR E TEMPORIZADOR
+// ============================================================================
+
+/**
+ * Aplica a visibilidade das seções de configuração com base no modo esportivo.
+ * - Vôlei: esconde timer, esconde checkbox "diferença de 2 pontos" (aplicada automaticamente), mostra capote.
+ * - Futebol: mostra timer, mostra vitória normal, esconde capote e diferença de 2 pontos.
+ * - Basquete: mostra timer e pontos, sem capote, sem diferença de 2 pontos, botões +3/+2/+1.
+ */
+const applySportModeVisibility = (sportMode) => {
+    const timeSection = document.getElementById('cfgTimeSection');
+    const twoPointsRow = document.getElementById('cfgTwoPointsRow');
+    const capoteSection = document.getElementById('cfgCapoteSection');
+
+    // Botões de pontuação do placar
+    const scoreButtons1 = document.getElementById('scoreButtons1');
+    const scoreButtons2 = document.getElementById('scoreButtons2');
+    const scoreButtonsBasket1 = document.getElementById('scoreButtonsBasket1');
+    const scoreButtonsBasket2 = document.getElementById('scoreButtonsBasket2');
+
+    const isBasquete = sportMode === 'basquete';
+    const isFutebol = sportMode === 'futebol';
+    const isVolei = sportMode === 'volei' || (!isFutebol && !isBasquete);
+
+    // Alterna botões de pontuação
+    if (scoreButtons1) scoreButtons1.classList.toggle('hidden', isBasquete);
+    if (scoreButtons2) scoreButtons2.classList.toggle('hidden', isBasquete);
+    if (scoreButtonsBasket1) scoreButtonsBasket1.classList.toggle('hidden', !isBasquete);
+    if (scoreButtonsBasket2) scoreButtonsBasket2.classList.toggle('hidden', !isBasquete);
+
+    if (isFutebol) {
+        // Futebol: mostrar timer, esconder capote e diferença de 2 pontos
+        if (timeSection) timeSection.classList.remove('hidden');
+        if (twoPointsRow) twoPointsRow.classList.add('hidden');
+        if (capoteSection) capoteSection.classList.add('hidden');
+
+        // Desmarcar capote e diferença de 2 pontos
+        const cfgUsePoints2 = document.getElementById('cfgUsePoints2');
+        if (cfgUsePoints2) cfgUsePoints2.checked = false;
+        const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
+        if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = false;
+    } else if (isBasquete) {
+        // Basquete: mostrar timer e pontos, sem capote e sem diferença de 2 pontos
+        if (timeSection) timeSection.classList.remove('hidden');
+        if (twoPointsRow) twoPointsRow.classList.add('hidden');
+        if (capoteSection) capoteSection.classList.add('hidden');
+
+        const cfgUsePoints2 = document.getElementById('cfgUsePoints2');
+        if (cfgUsePoints2) cfgUsePoints2.checked = false;
+        const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
+        if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = false;
+    } else {
+        // Vôlei: esconder timer, esconder checkbox de 2 pontos (auto), mostrar capote
+        if (timeSection) timeSection.classList.add('hidden');
+        if (twoPointsRow) twoPointsRow.classList.add('hidden');
+        if (capoteSection) capoteSection.classList.remove('hidden');
+
+        // Forçar: timer desligado, diferença de 2 pontos ligada automaticamente
+        const cfgUseTime = document.getElementById('cfgUseTime');
+        if (cfgUseTime) cfgUseTime.checked = false;
+        const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
+        if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = true;
+    }
+
+    // Alterna visual do divisor do placar
+    const divider = document.getElementById('placar-divider');
+    if (divider) {
+        divider.className = 'absolute z-30 flex items-center justify-center pointer-events-none left-1/2 top-0 bottom-0 -translate-x-1/2 h-full transition-all ' + 
+            (isVolei ? 'divider-volei w-4 sm:w-6 md:w-8' : (isFutebol ? 'divider-futebol' : 'divider-basquete'));
+    }
+};
+
+window.onSportModeChange = applySportModeVisibility;
+window.applySportModeVisibility = applySportModeVisibility;
+
+export const openPlacarConfigModal = () => {
+    if (state.isPlacarLocked) return;
+    
+    const c = state.matchConfig;
+    document.getElementById('cfgUseTime').checked = c.useTime;
+    document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !c.useTime);
+    document.getElementById('cfgTimeMinutes').value = c.timeMinutes;
+
+    document.getElementById('cfgUsePoints1').checked = c.usePoints1;
+    document.getElementById('cfgPoints1Div').classList.toggle('opacity-50', !c.usePoints1);
+    document.getElementById('cfgPoints1').value = c.points1;
+    document.getElementById('cfgTwoPointsDiff').checked = c.twoPointsDiff;
+
+    document.getElementById('cfgUsePoints2').checked = c.usePoints2;
+    document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !c.usePoints2);
+    document.getElementById('cfgPoints2').value = c.points2;
+
+    // Modalidade esportiva
+    const sportMode = c.sportMode || 'volei';
+    document.getElementById('cfgSportMode').value = sportMode;
+    const activeClass = 'flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-1';
+    const inactiveClass = 'flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-1';
+    ['cfgSportVolei', 'cfgSportFutebol', 'cfgSportBasquete'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.className = inactiveClass;
+    });
+    const activeBtn = document.getElementById(
+        sportMode === 'futebol' ? 'cfgSportFutebol' : (sportMode === 'basquete' ? 'cfgSportBasquete' : 'cfgSportVolei')
+    );
+    if (activeBtn) activeBtn.className = activeClass;
+
+    // Aplica visibilidade baseada no modo esportivo
+    applySportModeVisibility(sportMode);
+
+    const modal = document.getElementById('placarConfigModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+export const closePlacarConfigModal = () => {
+    const modal = document.getElementById('placarConfigModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+};
+
+export const savePlacarConfig = async () => {
+    const sportMode = document.getElementById('cfgSportMode').value || 'volei';
+    const isVolei = sportMode === 'volei';
+    const isFutebol = sportMode === 'futebol';
+    const isBasquete = sportMode === 'basquete';
+
+    state.matchConfig = {
+        sportMode: sportMode,
+        // Vôlei: sem timer; Futebol/Basquete: respeita checkbox
+        useTime: isVolei ? false : document.getElementById('cfgUseTime').checked,
+        timeMinutes: parseInt(document.getElementById('cfgTimeMinutes').value) || 10,
+        usePoints1: document.getElementById('cfgUsePoints1').checked,
+        points1: parseInt(document.getElementById('cfgPoints1').value) || 21,
+        // Vôlei: sempre exige diferença de 2 pontos; Futebol/Basquete: nunca
+        twoPointsDiff: isVolei ? true : false,
+        // Vôlei: respeita checkbox; Futebol/Basquete: sem capote
+        usePoints2: (isFutebol || isBasquete) ? false : document.getElementById('cfgUsePoints2').checked,
+        points2: parseInt(document.getElementById('cfgPoints2').value) || 8
+    };
+
+    localStorage.setItem('tc_matchConfig', JSON.stringify(state.matchConfig));
+    
+    // ATUALIZA NO CACHE DO GRUPO PARA NÃO VAZAR
+    if (state.currentGroupId && state.groupMatchStates[state.currentGroupId]) {
+        state.groupMatchStates[state.currentGroupId].matchConfig = state.matchConfig;
+    }
+    
+    try {
+        const { setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        await setDoc(settingsRef, { matchConfig: state.matchConfig }, { merge: true });
+        showToast("Configurações salvas e aplicadas para o grupo!", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao salvar regras no servidor.", "error");
+    }
+    
+    // Aplica visibilidade de botões no placar após salvar
+    applySportModeVisibility(sportMode);
+    
+    closePlacarConfigModal();
+    
+    if (typeof window.resetTimer === 'function') {
+        window.resetTimer();
+    }
+};
+
+export const playBeepSound = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playOsc = (timeOffset, duration) => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime + timeOffset);
+            oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + timeOffset + duration);
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime + timeOffset);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + timeOffset + 0.05);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + timeOffset + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start(audioCtx.currentTime + timeOffset);
+            oscillator.stop(audioCtx.currentTime + timeOffset + duration);
+        };
+
+        playOsc(0, 0.4);
+        playOsc(0.6, 0.4);
+        playOsc(1.2, 0.8);
+    } catch(e) {
+        console.error("Audio API not supported", e);
+    }
+};
+
+export const goHome = () => {
+    if (state.isAuthenticated) {
+        switchView('groups');
+    } else {
+        switchView('landing');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };

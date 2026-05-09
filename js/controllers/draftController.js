@@ -230,12 +230,43 @@ export const confirmMovePlayer = async () => {
     const sourceTeam = state.drawnTeams.find(t => t.id === sourceTeamId);
     const destTeam = state.drawnTeams.find(t => t.id === destTeamId);
 
-    if (!sourceTeam || !destTeam) return;
+    if (!sourceTeam || (!destTeam && destTeamId !== 'REMOVE')) return;
 
     const playerIndex = sourceTeam.players.findIndex(p => p.id === playerId);
     if (playerIndex === -1) return;
 
     const playerToMove = sourceTeam.players.splice(playerIndex, 1)[0];
+
+    if (destTeamId === 'REMOVE') {
+        try {
+            closeMoveModal();
+            const updates = [];
+            
+            // Desmarca o jogador na lista principal
+            if (state.selectedPlayerIds && state.selectedPlayerIds.has(playerId)) {
+                state.selectedPlayerIds.delete(playerId);
+                if (typeof window.updateSorteioCounters === 'function') {
+                    window.updateSorteioCounters();
+                }
+                // Desmarca visualmente na tabela, se estiver lá
+                const chk = document.getElementById(`chk-${playerId}`);
+                if (chk) chk.checked = false;
+            }
+
+            if (sourceTeam.players.length === 0) {
+                updates.push(deleteDoc(doc(teamsRef, sourceTeamId)));
+            } else {
+                updates.push(updateDoc(doc(teamsRef, sourceTeamId), { players: sourceTeam.players }));
+            }
+
+            await Promise.all(updates);
+            showToast("Jogador removido do time!", "info");
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao remover jogador.", "error");
+        }
+        return;
+    }
 
     // Reseta rodadas de espera se estiver entrando ou saindo da lista de espera
     if (destTeam.isWaitlist || sourceTeam.isWaitlist) {
@@ -365,18 +396,16 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         const currentTeamPlayers = targetTeamDoc.players.map(p => ({...p, isFromTeam: true}));
         const waitlistPlayers = waitlistTeamDoc ? waitlistTeamDoc.players.map(p => ({...p, isFromWaitlist: true})) : [];
         
-        const allAssignedIds = new Set([
-            ...state.drawnTeams.filter(t => !t.isWaitlist).flatMap(t => t.players.map(p => p.id)),
-            ...waitlistPlayers.map(p => p.id)
-        ]);
-        
-        const activeSelected = state.players.filter(p => state.selectedPlayerIds.has(p.id));
-        const newUnassigned = activeSelected.filter(p => !allAssignedIds.has(p.id)).map(p => ({...p, isNew: true, waitlistRounds: 0})); 
-        
-        let pool = [...currentTeamPlayers, ...waitlistPlayers, ...newUnassigned];
-        
         const sizeInput = document.getElementById('teamSize');
         const N = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
+
+        // ── EXCEÇÃO: TIME DESFALCADO ─────────────────────────────────────────
+        // Quando o time tem menos jogadores do que o tamanho definido, todos os
+        // seus jogadores são mantidos obrigatoriamente e apenas as vagas faltantes
+        // são preenchidas pela lista de espera, obedecendo a estratégia selecionada.
+        const isShorthanded = currentTeamPlayers.length < N;
+
+        let pool = [...currentTeamPlayers, ...waitlistPlayers];
 
         if (pool.length < N) {
             showToast("Não há jogadores suficientes para formar um time completo.", "warning");
@@ -388,23 +417,33 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         }
 
         const wlStrategy = document.getElementById('waitlistStrategy') ? document.getElementById('waitlistStrategy').value : 'BALANCEADO';
-        
-        let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' ? true : p.waitlistRounds >= 1));
-        
-        mandatory.sort((a, b) => {
-            if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
-            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
-            if (catDiff !== 0) return catDiff;
-            return a.name.localeCompare(b.name);
-        });
-        
-        if (mandatory.length > N) {
-            mandatory = mandatory.slice(0, N);
-        }
 
-        const baseTeam = mandatory;
-        const remainingPool = pool.filter(p => !baseTeam.some(m => m.id === p.id));
-        const slotsLeft = N - baseTeam.length;
+        let baseTeam, remainingPool, slotsLeft;
+
+        if (isShorthanded) {
+            // Todos os jogadores do time são obrigatórios; preenche só as vagas faltantes
+            baseTeam = [...currentTeamPlayers];
+            remainingPool = [...waitlistPlayers];
+            slotsLeft = N - baseTeam.length;
+        } else {
+            // Lógica normal de prioridade da lista de espera
+            let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' || wlStrategy === 'MANTER_FORTE' || wlStrategy === 'ALEATORIO' ? true : p.waitlistRounds >= 1));
+            
+            mandatory.sort((a, b) => {
+                if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
+                const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                if (catDiff !== 0) return catDiff;
+                return a.name.localeCompare(b.name);
+            });
+            
+            if (mandatory.length > N) {
+                mandatory = mandatory.slice(0, N);
+            }
+
+            baseTeam = mandatory;
+            remainingPool = pool.filter(p => !baseTeam.some(m => m.id === p.id));
+            slotsLeft = N - baseTeam.length;
+        }
 
         let limitedPool = remainingPool;
         for (let i = limitedPool.length - 1; i > 0; i--) {
@@ -412,38 +451,46 @@ export const redrawTeamWithWaitlist = async (teamId) => {
             [limitedPool[i], limitedPool[j]] = [limitedPool[j], limitedPool[i]];
         }
 
-        if (limitedPool.length > 12) {
-            limitedPool.sort((a, b) => {
-                const aVal = a.isFromWaitlist ? 1 : (a.isNew ? 0 : -1);
-                const bVal = b.isFromWaitlist ? 1 : (b.isNew ? 0 : -1);
-                if (bVal !== aVal) return bVal - aVal;
-                return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
-            });
-            limitedPool = limitedPool.slice(0, 12);
-        }
-
-        function getCombinations(arr, k) {
-            if (k === 0) return [[]];
-            if (arr.length === 0) return [];
-            const results = [];
-            function helper(start, combo) {
-                if (combo.length === k) { results.push([...combo]); return; }
-                for (let i = start; i < arr.length; i++) {
-                    combo.push(arr[i]); helper(i + 1, combo); combo.pop();
-                }
-            }
-            helper(0, []);
-            return results;
-        }
-
-        const combos = getCombinations(limitedPool, slotsLeft);
         let bestCombos = [];
-        let minDiff = Infinity;
-        let bestSwapCount = -1;
 
         if (slotsLeft === 0) {
             bestCombos = [baseTeam];
+        } else if (wlStrategy === 'MANTER_FORTE') {
+            // Preenche com os mais fortes da lista de espera
+            limitedPool.sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+            bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
+        } else if (wlStrategy === 'ALEATORIO') {
+            // Preenche aleatoriamente (pool já foi embaralhado)
+            bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
         } else {
+            if (limitedPool.length > 12) {
+                limitedPool.sort((a, b) => {
+                    const aVal = a.isFromWaitlist ? 1 : (a.isNew ? 0 : -1);
+                    const bVal = b.isFromWaitlist ? 1 : (b.isNew ? 0 : -1);
+                    if (bVal !== aVal) return bVal - aVal;
+                    return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                });
+                limitedPool = limitedPool.slice(0, 12);
+            }
+
+            function getCombinations(arr, k) {
+                if (k === 0) return [[]];
+                if (arr.length === 0) return [];
+                const results = [];
+                function helper(start, combo) {
+                    if (combo.length === k) { results.push([...combo]); return; }
+                    for (let i = start; i < arr.length; i++) {
+                        combo.push(arr[i]); helper(i + 1, combo); combo.pop();
+                    }
+                }
+                helper(0, []);
+                return results;
+            }
+
+            const combos = getCombinations(limitedPool, slotsLeft);
+            let minDiff = Infinity;
+            let bestSwapCount = -1;
+
             for (const combo of combos) {
                 const candidateTeam = [...baseTeam, ...combo];
                 const sum = candidateTeam.reduce((acc, p) => acc + (parseInt(p.categoria) || 1), 0);
