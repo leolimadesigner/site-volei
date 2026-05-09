@@ -53,13 +53,50 @@ export const getLevelInfo = (elo) => {
     return { type: 'nivel6', label: 'MESTRE', bg: 'bg-red-600/20', text: 'text-red-500', dot: 'bg-red-600' };
 };
 
+const getStarArrangement = (stars) => {
+    let starsHtml = '';
+    const starClass = "absolute leading-none drop-shadow-sm";
+
+    if (stars === 1) {
+        starsHtml = `<span class="${starClass} text-[14px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%]">★</span>`;
+    } else if (stars === 2) {
+        starsHtml = `
+            <span class="${starClass} text-[10px] top-[22%] left-[10%]">★</span>
+            <span class="${starClass} text-[10px] bottom-[22%] right-[10%]">★</span>
+        `;
+    } else if (stars === 3) {
+        starsHtml = `
+            <span class="${starClass} text-[9px] top-[10%] left-1/2 -translate-x-1/2">★</span>
+            <span class="${starClass} text-[9px] bottom-[15%] left-[10%]">★</span>
+            <span class="${starClass} text-[9px] bottom-[15%] right-[10%]">★</span>
+        `;
+    } else if (stars === 4) {
+        starsHtml = `
+            <span class="${starClass} text-[8px] top-[15%] left-[15%]">★</span>
+            <span class="${starClass} text-[8px] top-[15%] right-[15%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[15%] left-[15%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[15%] right-[15%]">★</span>
+        `;
+    } else if (stars === 5) {
+        starsHtml = `
+            <span class="${starClass} text-[8px] top-[5%] left-1/2 -translate-x-1/2">★</span>
+            <span class="${starClass} text-[8px] top-[38%] left-[5%]">★</span>
+            <span class="${starClass} text-[8px] top-[38%] right-[5%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[10%] left-[20%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[10%] right-[20%]">★</span>
+        `;
+    }
+
+    return `<div class="relative w-5 h-5 mx-auto">${starsHtml}</div>`;
+};
+
 export const getCategoryInfo = (cat) => {
     const c = parseInt(cat) || 1;
-    if (c === 5) return { label: 'CABEÇA DE CHAVE', bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500' };
-    if (c === 4) return { label: 'AVANÇADO', bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500' };
-    if (c === 3) return { label: 'MÉDIO', bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500/30', dot: 'bg-lime-500' };
-    if (c === 2) return { label: 'BÁSICO', bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500' };
-    return { label: 'INICIANTE', bg: 'bg-stone-500/20', text: 'text-stone-400', border: 'border-stone-500/30', dot: 'bg-stone-500' };
+    if (c === 5) return { label: getStarArrangement(5), bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500' };
+    if (c === 4) return { label: getStarArrangement(4), bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500' };
+    if (c === 3) return { label: getStarArrangement(3), bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500/30', dot: 'bg-lime-500' };
+    if (c === 2) return { label: getStarArrangement(2), bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500' };
+    return { label: getStarArrangement(1), bg: 'bg-stone-500/20', text: 'text-stone-400', border: 'border-stone-500/30', dot: 'bg-stone-500' };
 };
 
 export const getTeamName = (team) => {
