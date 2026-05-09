@@ -1390,6 +1390,13 @@ const applySportModeVisibility = (sportMode) => {
         const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
         if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = true;
     }
+
+    // Alterna visual do divisor do placar
+    const divider = document.getElementById('placar-divider');
+    if (divider) {
+        divider.className = 'absolute z-30 flex items-center justify-center pointer-events-none left-1/2 top-0 bottom-0 -translate-x-1/2 h-full transition-all ' + 
+            (isVolei ? 'divider-volei w-4 sm:w-6 md:w-8' : (isFutebol ? 'divider-futebol' : 'divider-basquete'));
+    }
 };
 
 window.onSportModeChange = applySportModeVisibility;
