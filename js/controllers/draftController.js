@@ -381,7 +381,7 @@ export const redrawTeamWithWaitlist = async (teamId) => {
 
         const wlStrategy = document.getElementById('waitlistStrategy') ? document.getElementById('waitlistStrategy').value : 'BALANCEADO';
         
-        let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' || wlStrategy === 'MANTER_FORTE' ? true : p.waitlistRounds >= 1));
+        let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' || wlStrategy === 'MANTER_FORTE' || wlStrategy === 'ALEATORIO' ? true : p.waitlistRounds >= 1));
         
         mandatory.sort((a, b) => {
             if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
@@ -410,6 +410,8 @@ export const redrawTeamWithWaitlist = async (teamId) => {
             bestCombos = [baseTeam];
         } else if (wlStrategy === 'MANTER_FORTE') {
             limitedPool.sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+            bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
+        } else if (wlStrategy === 'ALEATORIO') {
             bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
         } else {
             if (limitedPool.length > 12) {
