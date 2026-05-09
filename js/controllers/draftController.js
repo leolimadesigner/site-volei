@@ -230,12 +230,43 @@ export const confirmMovePlayer = async () => {
     const sourceTeam = state.drawnTeams.find(t => t.id === sourceTeamId);
     const destTeam = state.drawnTeams.find(t => t.id === destTeamId);
 
-    if (!sourceTeam || !destTeam) return;
+    if (!sourceTeam || (!destTeam && destTeamId !== 'REMOVE')) return;
 
     const playerIndex = sourceTeam.players.findIndex(p => p.id === playerId);
     if (playerIndex === -1) return;
 
     const playerToMove = sourceTeam.players.splice(playerIndex, 1)[0];
+
+    if (destTeamId === 'REMOVE') {
+        try {
+            closeMoveModal();
+            const updates = [];
+            
+            // Desmarca o jogador na lista principal
+            if (state.selectedPlayerIds && state.selectedPlayerIds.has(playerId)) {
+                state.selectedPlayerIds.delete(playerId);
+                if (typeof window.updateSorteioCounters === 'function') {
+                    window.updateSorteioCounters();
+                }
+                // Desmarca visualmente na tabela, se estiver lá
+                const chk = document.getElementById(`chk-${playerId}`);
+                if (chk) chk.checked = false;
+            }
+
+            if (sourceTeam.players.length === 0) {
+                updates.push(deleteDoc(doc(teamsRef, sourceTeamId)));
+            } else {
+                updates.push(updateDoc(doc(teamsRef, sourceTeamId), { players: sourceTeam.players }));
+            }
+
+            await Promise.all(updates);
+            showToast("Jogador removido do time!", "info");
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao remover jogador.", "error");
+        }
+        return;
+    }
 
     // Reseta rodadas de espera se estiver entrando ou saindo da lista de espera
     if (destTeam.isWaitlist || sourceTeam.isWaitlist) {

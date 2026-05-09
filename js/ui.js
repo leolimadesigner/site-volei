@@ -142,6 +142,9 @@ export const openMoveModal = (teamId, playerId) => {
         }
     });
     
+    // Adiciona a opção de remover o jogador completamente
+    options += `<option value="REMOVE" class="text-red-400 font-bold">❌ Remover Jogador</option>`;
+    
     // 5. Atualiza o HTML e exibe o modal
     document.getElementById('moveDestination').innerHTML = options;
     const modal = document.getElementById('movePlayerModal');
