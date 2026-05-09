@@ -973,10 +973,10 @@
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-slate-500"></i> Modalidade</p>
                         <div class="flex gap-2 bg-slate-950 p-1 rounded-lg border border-slate-700">
-                            <button type="button" id="cfgSportVolei" onclick="document.getElementById('cfgSportMode').value='volei'; document.getElementById('cfgSportVolei').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2'; document.getElementById('cfgSportFutebol').className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2';" class="flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2">
+                            <button type="button" id="cfgSportVolei" onclick="document.getElementById('cfgSportMode').value='volei'; document.getElementById('cfgSportVolei').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2'; document.getElementById('cfgSportFutebol').className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2'; if(typeof window.onSportModeChange==='function') window.onSportModeChange('volei');" class="flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2">
                                 🏐 Vôlei
                             </button>
-                            <button type="button" id="cfgSportFutebol" onclick="document.getElementById('cfgSportMode').value='futebol'; document.getElementById('cfgSportFutebol').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2'; document.getElementById('cfgSportVolei').className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2';" class="flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2">
+                            <button type="button" id="cfgSportFutebol" onclick="document.getElementById('cfgSportMode').value='futebol'; document.getElementById('cfgSportFutebol').className='flex-1 py-2.5 text-xs font-bold rounded-md bg-green-600 text-white transition-all shadow flex items-center justify-center gap-2'; document.getElementById('cfgSportVolei').className='flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2'; if(typeof window.onSportModeChange==='function') window.onSportModeChange('futebol');" class="flex-1 py-2.5 text-xs font-bold rounded-md text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all flex items-center justify-center gap-2">
                                 ⚽ Futebol
                             </button>
                         </div>
@@ -985,7 +985,7 @@
                     </div>
 
                     <!-- Configuração de Tempo -->
-                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                    <div id="cfgTimeSection" class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                         <label class="flex items-center gap-3 cursor-pointer mb-3 group">
                             <input type="checkbox" id="cfgUseTime" class="w-5 h-5 accent-blue-500 cursor-pointer" onchange="document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !this.checked)">
                             <span class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Terminar por Tempo</span>
@@ -1008,14 +1008,14 @@
                                     <input type="number" id="cfgPoints1" min="1" max="100" value="21" class="w-16 bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-bold text-center outline-none">
                                     <span class="text-xs text-slate-400 font-bold uppercase">Pontos/Gols</span>
                                 </div>
-                                <label class="flex items-center gap-2 cursor-pointer mt-1">
+                                <label id="cfgTwoPointsRow" class="flex items-center gap-2 cursor-pointer mt-1">
                                     <input type="checkbox" id="cfgTwoPointsDiff" class="w-4 h-4 accent-green-500 cursor-pointer" checked>
                                     <span class="text-xs text-slate-400">Exigir diferença de 2 pontos</span>
                                 </label>
                             </div>
                         </div>
 
-                        <div>
+                        <div id="cfgCapoteSection">
                             <label class="flex items-center gap-3 cursor-pointer mb-3 group">
                                 <input type="checkbox" id="cfgUsePoints2" class="w-5 h-5 accent-red-500 cursor-pointer" onchange="document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !this.checked)">
                                 <span class="text-sm font-bold text-white group-hover:text-red-400 transition-colors">Vitória Secundária (Ex: Capote)</span>
@@ -1027,7 +1027,7 @@
                         </div>
                     </div>
                     
-                    <p class="text-[10px] text-center text-slate-500">Se mais de uma condição estiver ativada, a partida terminará quando a primeira ocorrer. No Futebol, empates aplicam cálculo de Elo padrão (S=0.5). No Vôlei, empates são impossíveis.</p>
+                    <p class="text-[10px] text-center text-slate-500">🏐 <b>Vôlei:</b> Diferença de 2 pontos é automática. Sem tempo. &nbsp; ⚽ <b>Futebol:</b> Vitória por gols ou tempo. Empates calculam Elo (S=0.5).</p>
 
                     <button onclick="savePlacarConfig()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-4 transition-colors">
                         <i data-lucide="check" class="w-5 h-5"></i> SALVAR E APLICAR

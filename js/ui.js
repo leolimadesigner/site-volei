@@ -1330,6 +1330,43 @@ export const renderAll = () => {
 // CONFIGURAÇÕES DE PLACAR E TEMPORIZADOR
 // ============================================================================
 
+/**
+ * Aplica a visibilidade das seções de configuração com base no modo esportivo.
+ * - Vôlei: esconde timer, esconde checkbox "diferença de 2 pontos" (aplicada automaticamente), mostra capote.
+ * - Futebol: mostra timer, mostra vitória normal, esconde capote e diferença de 2 pontos.
+ */
+const applySportModeVisibility = (sportMode) => {
+    const timeSection = document.getElementById('cfgTimeSection');
+    const twoPointsRow = document.getElementById('cfgTwoPointsRow');
+    const capoteSection = document.getElementById('cfgCapoteSection');
+
+    if (sportMode === 'futebol') {
+        // Futebol: mostrar timer, esconder capote e diferença de 2 pontos
+        if (timeSection) timeSection.classList.remove('hidden');
+        if (twoPointsRow) twoPointsRow.classList.add('hidden');
+        if (capoteSection) capoteSection.classList.add('hidden');
+
+        // Desmarcar capote e diferença de 2 pontos
+        const cfgUsePoints2 = document.getElementById('cfgUsePoints2');
+        if (cfgUsePoints2) cfgUsePoints2.checked = false;
+        const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
+        if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = false;
+    } else {
+        // Vôlei: esconder timer, esconder checkbox de 2 pontos (auto), mostrar capote
+        if (timeSection) timeSection.classList.add('hidden');
+        if (twoPointsRow) twoPointsRow.classList.add('hidden');
+        if (capoteSection) capoteSection.classList.remove('hidden');
+
+        // Forçar: timer desligado, diferença de 2 pontos ligada automaticamente
+        const cfgUseTime = document.getElementById('cfgUseTime');
+        if (cfgUseTime) cfgUseTime.checked = false;
+        const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
+        if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = true;
+    }
+};
+
+window.onSportModeChange = applySportModeVisibility;
+
 export const openPlacarConfigModal = () => {
     if (state.isPlacarLocked) return;
     
@@ -1362,6 +1399,9 @@ export const openPlacarConfigModal = () => {
         btnFutebol.className = inactiveClass;
     }
 
+    // Aplica visibilidade baseada no modo esportivo
+    applySportModeVisibility(sportMode);
+
     const modal = document.getElementById('placarConfigModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -1375,14 +1415,21 @@ export const closePlacarConfigModal = () => {
 };
 
 export const savePlacarConfig = async () => {
+    const sportMode = document.getElementById('cfgSportMode').value || 'volei';
+    const isVolei = sportMode === 'volei';
+    const isFutebol = sportMode === 'futebol';
+
     state.matchConfig = {
-        sportMode: document.getElementById('cfgSportMode').value || 'volei',
-        useTime: document.getElementById('cfgUseTime').checked,
+        sportMode: sportMode,
+        // Vôlei: sem timer; Futebol: respeita checkbox
+        useTime: isVolei ? false : document.getElementById('cfgUseTime').checked,
         timeMinutes: parseInt(document.getElementById('cfgTimeMinutes').value) || 10,
         usePoints1: document.getElementById('cfgUsePoints1').checked,
         points1: parseInt(document.getElementById('cfgPoints1').value) || 21,
-        twoPointsDiff: document.getElementById('cfgTwoPointsDiff').checked,
-        usePoints2: document.getElementById('cfgUsePoints2').checked,
+        // Vôlei: sempre exige diferença de 2 pontos; Futebol: nunca
+        twoPointsDiff: isVolei ? true : false,
+        // Vôlei: respeita checkbox; Futebol: sem capote
+        usePoints2: isFutebol ? false : document.getElementById('cfgUsePoints2').checked,
         points2: parseInt(document.getElementById('cfgPoints2').value) || 8
     };
 
