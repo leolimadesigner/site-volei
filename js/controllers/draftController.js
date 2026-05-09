@@ -396,10 +396,16 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         const currentTeamPlayers = targetTeamDoc.players.map(p => ({...p, isFromTeam: true}));
         const waitlistPlayers = waitlistTeamDoc ? waitlistTeamDoc.players.map(p => ({...p, isFromWaitlist: true})) : [];
         
-        let pool = [...currentTeamPlayers, ...waitlistPlayers];
-        
         const sizeInput = document.getElementById('teamSize');
         const N = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
+
+        // ── EXCEÇÃO: TIME DESFALCADO ─────────────────────────────────────────
+        // Quando o time tem menos jogadores do que o tamanho definido, todos os
+        // seus jogadores são mantidos obrigatoriamente e apenas as vagas faltantes
+        // são preenchidas pela lista de espera, obedecendo a estratégia selecionada.
+        const isShorthanded = currentTeamPlayers.length < N;
+
+        let pool = [...currentTeamPlayers, ...waitlistPlayers];
 
         if (pool.length < N) {
             showToast("Não há jogadores suficientes para formar um time completo.", "warning");
@@ -411,23 +417,33 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         }
 
         const wlStrategy = document.getElementById('waitlistStrategy') ? document.getElementById('waitlistStrategy').value : 'BALANCEADO';
-        
-        let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' || wlStrategy === 'MANTER_FORTE' || wlStrategy === 'ALEATORIO' ? true : p.waitlistRounds >= 1));
-        
-        mandatory.sort((a, b) => {
-            if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
-            const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
-            if (catDiff !== 0) return catDiff;
-            return a.name.localeCompare(b.name);
-        });
-        
-        if (mandatory.length > N) {
-            mandatory = mandatory.slice(0, N);
-        }
 
-        const baseTeam = mandatory;
-        const remainingPool = pool.filter(p => !baseTeam.some(m => m.id === p.id));
-        const slotsLeft = N - baseTeam.length;
+        let baseTeam, remainingPool, slotsLeft;
+
+        if (isShorthanded) {
+            // Todos os jogadores do time são obrigatórios; preenche só as vagas faltantes
+            baseTeam = [...currentTeamPlayers];
+            remainingPool = [...waitlistPlayers];
+            slotsLeft = N - baseTeam.length;
+        } else {
+            // Lógica normal de prioridade da lista de espera
+            let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' || wlStrategy === 'MANTER_FORTE' || wlStrategy === 'ALEATORIO' ? true : p.waitlistRounds >= 1));
+            
+            mandatory.sort((a, b) => {
+                if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
+                const catDiff = (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                if (catDiff !== 0) return catDiff;
+                return a.name.localeCompare(b.name);
+            });
+            
+            if (mandatory.length > N) {
+                mandatory = mandatory.slice(0, N);
+            }
+
+            baseTeam = mandatory;
+            remainingPool = pool.filter(p => !baseTeam.some(m => m.id === p.id));
+            slotsLeft = N - baseTeam.length;
+        }
 
         let limitedPool = remainingPool;
         for (let i = limitedPool.length - 1; i > 0; i--) {
@@ -440,9 +456,11 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         if (slotsLeft === 0) {
             bestCombos = [baseTeam];
         } else if (wlStrategy === 'MANTER_FORTE') {
+            // Preenche com os mais fortes da lista de espera
             limitedPool.sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
             bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
         } else if (wlStrategy === 'ALEATORIO') {
+            // Preenche aleatoriamente (pool já foi embaralhado)
             bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
         } else {
             if (limitedPool.length > 12) {
