@@ -27,10 +27,107 @@ import {
 
 // Importação das novas variáveis e métodos do Firebase
 import { 
-    toggleEloSystem, handleLogin, handleLogout, togglePlayerSelection, 
-    toggleAllPlayers, savePlayer, deletePlayer, editPlayer, resetForm, 
-    selectOnlyPlayersInTeams 
-} from './admin.js';
+    playersRef, teamsRef, matchHistoryRef, settingsRef, 
+    globalGroupsRef, setGroupContext, deleteDoc, updateDoc,
+    onSnapshot, addDoc, query, where, getDoc, doc, db,
+    storage, ref, uploadBytes, getDownloadURL, deleteObject 
+} from './firebase.js';
+
+export const adjustBonus = (val) => {
+    const el = document.getElementById('statBonus');
+    el.value = Math.max(0, (parseInt(el.value) || 0) + val);
+};
+
+// ============================================================================
+// LÓGICA DE GRUPOS (SAAS) E AUTENTICAÇÃO
+// ============================================================================
+
+export const handleAuthAction = async () => {
+    const btn = document.getElementById('btnAuthMain');
+    const mode = btn.getAttribute('data-mode') || 'login';
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPass').value.trim();
+    
+    if (!email || !pass) return showToast("Preencha o e-mail e a senha.", "error");
+
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = "AGUARDE...";
+    btn.disabled = true;
+
+    if (mode === 'register') {
+        const name = document.getElementById('authName').value.trim();
+        if (!name) { 
+            btn.innerHTML = originalHtml; 
+            btn.disabled = false; 
+            return showToast("Preencha o seu nome.", "error"); 
+        }
+        
+        const res = await registerUser(email, pass, name);
+        if (res.success) {
+            showToast("Conta criada! Bem-vindo.", "success");
+        } else {
+            showToast(res.message, "error");
+        }
+    } else {
+        const res = await loginUser(email, pass);
+        if (res.success) {
+            showToast("Sessão iniciada!", "success");
+            // Limpa os campos de input
+            document.getElementById('authEmail').value = '';
+            document.getElementById('authPass').value = '';
+            // Força a ida para a tela de grupos
+            switchView('groups');
+        } else {
+            showToast(res.message, "error");
+        }
+    }
+    
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+};
+
+export const handlePasswordReset = async () => {
+    const email = document.getElementById('authEmail').value.trim();
+    if (!email) return showToast("Digite seu e-mail para recuperar a senha.", "error");
+    
+    const res = await resetPassword(email);
+    if (res.success) showToast("E-mail de recuperação enviado!", "info");
+    else showToast(res.message, "error");
+};
+
+// Função para parar todas as escutas do Firebase (EVITA O ERRO NO CONSOLE)
+export const clearAllListeners = () => {
+    // 1. Para as escutas do grupo atual (jogadores, times, etc)
+    if (state.unsubscribeGroup && state.unsubscribeGroup.length > 0) {
+        state.unsubscribeGroup.forEach(unsub => {
+            if (typeof unsub === 'function') unsub();
+        });
+        state.unsubscribeGroup = [];
+    }
+    // 2. Para a escuta da lista de grupos
+    if (state.unsubscribeGroupsList) {
+        state.unsubscribeGroupsList();
+        state.unsubscribeGroupsList = null;
+    }
+};
+
+export const handleLogout = async () => {
+    // PRIMEIRO: Para tudo!
+    clearAllListeners();
+    
+    // DEPOIS: Sai da conta
+    await logoutUser();
+    
+    showToast("Sessão encerrada com segurança.", "info");
+    switchView('auth');
+};
+
+// Carrega a lista de Rachas do Utilizador
+export const loadUserGroups = () => {
+    if (!state.user || !state.user.email) return;
+    
+    // Se já houver uma escuta ativa, desliga ela antes de começar outra
+    if (state.unsubscribeGroupsList) state.unsubscribeGroupsList();
 
     try {
         let q;
@@ -414,34 +511,66 @@ export const removeUserProfilePhoto = async () => {
 
 window.handleUserProfilePhotoUpload = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('photoPreview').src = e.target.result;
-            document.getElementById('photoPreview').classList.remove('hidden');
-            document.getElementById('photoPlaceholder').classList.add('hidden');
-            document.getElementById('photoData').value = e.target.result;
-            document.getElementById('btnRemovePhoto').classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
+    if (!file) return;
+
+    const btnSave = document.getElementById('btnSaveProfile');
+    btnSave.disabled = true;
+    btnSave.innerText = "CARREGANDO FOTO...";
+    showToast("A fazer upload da sua foto...", "info");
+
+    try {
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `users/${state.user.uid}_${Date.now()}.${fileExtension}`;
+        const storageRef = ref(storage, fileName);
+        
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        document.getElementById('userProfilePhotoPreview').src = downloadURL;
+        document.getElementById('userProfilePhotoPreview').classList.remove('hidden');
+        document.getElementById('userProfilePhotoPlaceholder').classList.add('hidden');
+        document.getElementById('userProfilePhotoData').value = downloadURL;
+        document.getElementById('btnRemoveProfilePhoto').classList.remove('hidden'); 
+        
+        showToast("Foto carregada com sucesso!");
+    } catch (error) {
+        console.error("Erro no upload:", error);
+        showToast("Erro ao processar imagem", "error");
+    } finally {
+        btnSave.disabled = false;
+        btnSave.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> SALVAR PERFIL';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 };
 
-export const removePhoto = () => {
-    document.getElementById('photoPreview').src = '';
-    document.getElementById('photoPreview').classList.add('hidden');
-    document.getElementById('photoPlaceholder').classList.remove('hidden');
-    document.getElementById('photoData').value = '';
-    document.getElementById('playerPhoto').value = '';
-    document.getElementById('btnRemovePhoto').classList.add('hidden');
+// --- NOVAS FUNÇÕES: GERENCIAR GRUPOS ---
+window.renameGroup = async (groupId, currentName) => {
+    const newName = prompt("Digite o novo nome para este grupo:", currentName);
+    if (newName && newName.trim() !== "" && newName !== currentName) {
+        try {
+            await updateDoc(doc(db, 'groups', groupId), { name: newName.trim() });
+            showToast("Grupo renomeado com sucesso!", "success");
+        } catch (e) {
+            showToast("Erro ao renomear o grupo.", "error");
+        }
+    }
 };
 
-export const adjustBonus = (val) => {
-    const el = document.getElementById('statBonus');
-    el.value = (parseInt(el.value) || 0) + val;
+window.deleteGroup = (groupId) => {
+    openConfirmModal("Excluir Grupo", "Deseja apagar este grupo permanentemente? Todos os jogadores e dados serão perdidos. Esta ação NÃO pode ser desfeita.", async () => {
+        try {
+            await deleteDoc(doc(db, 'groups', groupId));
+            showToast("Grupo excluído com sucesso.", "info");
+        } catch (e) {
+            showToast("Erro ao excluir o grupo.", "error");
+        }
+    });
 };
 
-// Vinculando todas as funções globalmente para que o index.html consiga chamá-las através dos onlicks
+// ============================================================================
+// BINDINGS GLOBAIS (Disponibilizando para o HTML)
+// ============================================================================
+
 Object.assign(window, {
     switchView, toggleEloSystem, drawTeams, clearTeams, deleteTeam, redrawTeamWithWaitlist, 
     promoteWaitlistToTeam, createWaitlist, updateScore, resetScore, syncTeamsToCloud, 
@@ -459,6 +588,10 @@ Object.assign(window, {
     openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, toggleTimer, resetTimer, playBeepSound, checkWinCondition,
     syncDraftSettings
 });
+
+// ============================================================================
+// BOOTSTRAP DA APLICAÇÃO
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -525,18 +658,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const btnConfirm = document.getElementById('btnConfirmAction');
-    
     if (btnConfirm) {
-        btnConfirm.addEventListener('click', () => { 
-            if (state.confirmActionCallback) state.confirmActionCallback(); 
-            closeConfirmModal(); 
+        btnConfirm.addEventListener('click', () => {
+            if (state.confirmActionCallback) state.confirmActionCallback();
+            closeConfirmModal();
         });
     }
-    
-    // Inicia na view correta
-    switchView('public');
-    
-    // Inicia os ícones Lucide
+
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
