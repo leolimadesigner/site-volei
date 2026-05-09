@@ -61,8 +61,8 @@ const getStarArrangement = (stars) => {
         starsHtml = `<span class="${starClass} text-[14px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%]">★</span>`;
     } else if (stars === 2) {
         starsHtml = `
-            <span class="${starClass} text-[10px] top-[22%] left-[10%]">★</span>
-            <span class="${starClass} text-[10px] bottom-[22%] right-[10%]">★</span>
+            <span class="${starClass} text-[10px] top-[15%] left-[5%]">★</span>
+            <span class="${starClass} text-[10px] bottom-[15%] right-[5%]">★</span>
         `;
     } else if (stars === 3) {
         starsHtml = `
@@ -79,24 +79,25 @@ const getStarArrangement = (stars) => {
         `;
     } else if (stars === 5) {
         starsHtml = `
-            <span class="${starClass} text-[8px] top-[5%] left-1/2 -translate-x-1/2">★</span>
-            <span class="${starClass} text-[8px] top-[38%] left-[5%]">★</span>
-            <span class="${starClass} text-[8px] top-[38%] right-[5%]">★</span>
-            <span class="${starClass} text-[8px] bottom-[10%] left-[20%]">★</span>
-            <span class="${starClass} text-[8px] bottom-[10%] right-[20%]">★</span>
+            <span class="${starClass} text-[8px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%]">★</span>
+            <span class="${starClass} text-[8px] top-[10%] left-[10%]">★</span>
+            <span class="${starClass} text-[8px] top-[10%] right-[10%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[10%] left-[10%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[10%] right-[10%]">★</span>
         `;
     }
 
-    return `<div class="relative w-5 h-5 mx-auto">${starsHtml}</div>`;
+    return `<div class="relative w-5 h-5 mx-auto inline-block align-middle">${starsHtml}</div>`;
 };
 
 export const getCategoryInfo = (cat) => {
     const c = parseInt(cat) || 1;
-    if (c === 5) return { label: getStarArrangement(5), bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500' };
-    if (c === 4) return { label: getStarArrangement(4), bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500' };
-    if (c === 3) return { label: getStarArrangement(3), bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500/30', dot: 'bg-lime-500' };
-    if (c === 2) return { label: getStarArrangement(2), bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500' };
-    return { label: getStarArrangement(1), bg: 'bg-stone-500/20', text: 'text-stone-400', border: 'border-stone-500/30', dot: 'bg-stone-500' };
+    const noBg = '!bg-transparent !p-0 !m-0 !border-0';
+    if (c === 5) return { label: getStarArrangement(5), bg: noBg, text: 'text-indigo-400', border: noBg, dot: 'bg-indigo-500' };
+    if (c === 4) return { label: getStarArrangement(4), bg: noBg, text: 'text-teal-400', border: noBg, dot: 'bg-teal-500' };
+    if (c === 3) return { label: getStarArrangement(3), bg: noBg, text: 'text-lime-400', border: noBg, dot: 'bg-lime-500' };
+    if (c === 2) return { label: getStarArrangement(2), bg: noBg, text: 'text-pink-400', border: noBg, dot: 'bg-pink-500' };
+    return { label: getStarArrangement(1), bg: noBg, text: 'text-stone-400', border: noBg, dot: 'bg-stone-500' };
 };
 
 export const getTeamName = (team) => {
@@ -886,8 +887,8 @@ export const renderSorteioTable = () => {
                 <td class="px-2 py-3 text-center" onclick="event.stopPropagation()">
                     <input type="checkbox" id="chk-${p.id}" ${isSelected ? 'checked' : ''} onclick="togglePlayerSelection('${p.id}', this.checked); updateSorteioCounters();" class="w-4 h-4 accent-green-500 cursor-pointer">
                 </td>
-                <td class="px-3 py-3 font-bold text-slate-200 flex items-center gap-2 whitespace-nowrap">
-                    <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                <td class="px-3 py-3 font-bold ${catInfo.text} flex items-center gap-2 whitespace-nowrap">
+                    <div class="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
                         ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-3 h-3 text-slate-400"></i>`}
                     </div>
                     ${p.name}
@@ -940,7 +941,7 @@ export const renderAdminTable = () => {
                             ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
                         </div>
                         <div class="flex flex-col">
-                            <span class="font-bold text-slate-200">${p.name}</span>
+                            <span class="font-bold ${catInfo.text}">${p.name}</span>
                             <span class="text-[9px] font-black ${catInfo.text} tracking-wider uppercase mt-0.5">${catInfo.label}</span>
                         </div>
                     </div>
