@@ -365,15 +365,7 @@ export const redrawTeamWithWaitlist = async (teamId) => {
         const currentTeamPlayers = targetTeamDoc.players.map(p => ({...p, isFromTeam: true}));
         const waitlistPlayers = waitlistTeamDoc ? waitlistTeamDoc.players.map(p => ({...p, isFromWaitlist: true})) : [];
         
-        const allAssignedIds = new Set([
-            ...state.drawnTeams.filter(t => !t.isWaitlist).flatMap(t => t.players.map(p => p.id)),
-            ...waitlistPlayers.map(p => p.id)
-        ]);
-        
-        const activeSelected = state.players.filter(p => state.selectedPlayerIds.has(p.id));
-        const newUnassigned = activeSelected.filter(p => !allAssignedIds.has(p.id)).map(p => ({...p, isNew: true, waitlistRounds: 0})); 
-        
-        let pool = [...currentTeamPlayers, ...waitlistPlayers, ...newUnassigned];
+        let pool = [...currentTeamPlayers, ...waitlistPlayers];
         
         const sizeInput = document.getElementById('teamSize');
         const N = sizeInput ? parseInt(sizeInput.value) || 4 : 4;
@@ -389,7 +381,7 @@ export const redrawTeamWithWaitlist = async (teamId) => {
 
         const wlStrategy = document.getElementById('waitlistStrategy') ? document.getElementById('waitlistStrategy').value : 'BALANCEADO';
         
-        let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' ? true : p.waitlistRounds >= 1));
+        let mandatory = pool.filter(p => p.isFromWaitlist && (wlStrategy === 'FORCAR' || wlStrategy === 'MANTER_FORTE' ? true : p.waitlistRounds >= 1));
         
         mandatory.sort((a, b) => {
             if (b.waitlistRounds !== a.waitlistRounds) return b.waitlistRounds - a.waitlistRounds;
@@ -412,38 +404,42 @@ export const redrawTeamWithWaitlist = async (teamId) => {
             [limitedPool[i], limitedPool[j]] = [limitedPool[j], limitedPool[i]];
         }
 
-        if (limitedPool.length > 12) {
-            limitedPool.sort((a, b) => {
-                const aVal = a.isFromWaitlist ? 1 : (a.isNew ? 0 : -1);
-                const bVal = b.isFromWaitlist ? 1 : (b.isNew ? 0 : -1);
-                if (bVal !== aVal) return bVal - aVal;
-                return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
-            });
-            limitedPool = limitedPool.slice(0, 12);
-        }
-
-        function getCombinations(arr, k) {
-            if (k === 0) return [[]];
-            if (arr.length === 0) return [];
-            const results = [];
-            function helper(start, combo) {
-                if (combo.length === k) { results.push([...combo]); return; }
-                for (let i = start; i < arr.length; i++) {
-                    combo.push(arr[i]); helper(i + 1, combo); combo.pop();
-                }
-            }
-            helper(0, []);
-            return results;
-        }
-
-        const combos = getCombinations(limitedPool, slotsLeft);
         let bestCombos = [];
-        let minDiff = Infinity;
-        let bestSwapCount = -1;
 
         if (slotsLeft === 0) {
             bestCombos = [baseTeam];
+        } else if (wlStrategy === 'MANTER_FORTE') {
+            limitedPool.sort((a, b) => (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1));
+            bestCombos = [ [...baseTeam, ...limitedPool.slice(0, slotsLeft)] ];
         } else {
+            if (limitedPool.length > 12) {
+                limitedPool.sort((a, b) => {
+                    const aVal = a.isFromWaitlist ? 1 : (a.isNew ? 0 : -1);
+                    const bVal = b.isFromWaitlist ? 1 : (b.isNew ? 0 : -1);
+                    if (bVal !== aVal) return bVal - aVal;
+                    return (parseInt(b.categoria) || 1) - (parseInt(a.categoria) || 1);
+                });
+                limitedPool = limitedPool.slice(0, 12);
+            }
+
+            function getCombinations(arr, k) {
+                if (k === 0) return [[]];
+                if (arr.length === 0) return [];
+                const results = [];
+                function helper(start, combo) {
+                    if (combo.length === k) { results.push([...combo]); return; }
+                    for (let i = start; i < arr.length; i++) {
+                        combo.push(arr[i]); helper(i + 1, combo); combo.pop();
+                    }
+                }
+                helper(0, []);
+                return results;
+            }
+
+            const combos = getCombinations(limitedPool, slotsLeft);
+            let minDiff = Infinity;
+            let bestSwapCount = -1;
+
             for (const combo of combos) {
                 const candidateTeam = [...baseTeam, ...combo];
                 const sum = candidateTeam.reduce((acc, p) => acc + (parseInt(p.categoria) || 1), 0);
