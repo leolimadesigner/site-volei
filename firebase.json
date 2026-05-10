@@ -19,5 +19,14 @@
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
-  ]
+  ],
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "TimeCerto",
+        "supportEmail": "renato96.ram@gmail.com"
+      }
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { initAuthObserver, loginUser, registerUser, resetPassword, logoutUser } from './authService.js';
+import { initAuthObserver, loginUser, registerUser, resetPassword, logoutUser, loginWithGoogle } from './authService.js';
 import {
     switchView, showToast, openConfirmModal, closeConfirmModal,
     closeVictoryModalOnly, renderSorteioTable, renderAll, updateLiveEloPreview,
@@ -93,6 +93,24 @@ export const handlePasswordReset = async () => {
     const res = await resetPassword(email);
     if (res.success) showToast("E-mail de recuperação enviado!", "info");
     else showToast(res.message, "error");
+};
+
+export const handleGoogleLogin = async () => {
+    const btn = document.getElementById('btnGoogleLogin');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = 'AGUARDE...';
+    btn.disabled = true;
+
+    const res = await loginWithGoogle();
+    if (res.success) {
+        showToast('Login com Google realizado!', 'success');
+        switchView('groups');
+    } else if (res.message !== 'Login cancelado.') {
+        showToast(res.message, 'error');
+    }
+
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
 };
 
 // Função para parar todas as escutas do Firebase (EVITA O ERRO NO CONSOLE)
@@ -580,7 +598,7 @@ Object.assign(window, {
     selectOnlyPlayersInTeams, closeMoveModal, closePlayerHistoryModal, editPlayer, resetForm, 
     openMoveModal, updateSorteioCounters, changeHistoryPage, openPlayerHistoryModal, forceUnlockPlacar, setFormMode, goHome,
     // NOVOS BINDINGS DE SAAS:
-    handleAuthAction, toggleAuthMode, handlePasswordReset, handleLogout, 
+    handleAuthAction, toggleAuthMode, handlePasswordReset, handleLogout, handleGoogleLogin, 
     handleCreateGroup, selectGroup, saveUserProfile, removeUserProfilePhoto, renderAdminTable,
     // NOVOS BINDINGS DE PAGAMENTOS:
     setPaymentAdminTab, renderPaymentsView, savePaymentSettings, generateDailyCharges, generatePixForCharge, copyPixString,
