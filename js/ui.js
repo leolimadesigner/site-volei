@@ -44,22 +44,60 @@ window.toggleDraftMode = toggleDraftMode;
 // ============================================================================
 
 export const getLevelInfo = (elo) => {
-    const e = elo ?? 150;
-    if (e < 250) return { type: 'nivel1', label: 'BRONZE', bg: 'bg-orange-900/40', text: 'text-orange-400', dot: 'bg-orange-500' };
-    if (e < 350) return { type: 'nivel2', label: 'PRATA', bg: 'bg-slate-500/20', text: 'text-slate-400', dot: 'bg-slate-400' };
-    if (e < 450) return { type: 'nivel3', label: 'OURO', bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500' };
-    if (e < 550) return { type: 'nivel4', label: 'PLATINA', bg: 'bg-cyan-500/20', text: 'text-cyan-400', dot: 'bg-cyan-500' };
-    if (e < 700) return { type: 'nivel5', label: 'DIAMANTE', bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', dot: 'bg-fuchsia-500' };
+    const e = elo ?? 0;
+    if (e < 100) return { type: 'nivel1', label: 'BRONZE', bg: 'bg-orange-900/40', text: 'text-orange-400', dot: 'bg-orange-500' };
+    if (e < 200) return { type: 'nivel2', label: 'PRATA', bg: 'bg-slate-500/20', text: 'text-slate-400', dot: 'bg-slate-400' };
+    if (e < 300) return { type: 'nivel3', label: 'OURO', bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500' };
+    if (e < 400) return { type: 'nivel4', label: 'PLATINA', bg: 'bg-cyan-500/20', text: 'text-cyan-400', dot: 'bg-cyan-500' };
+    if (e < 500) return { type: 'nivel5', label: 'DIAMANTE', bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', dot: 'bg-fuchsia-500' };
     return { type: 'nivel6', label: 'MESTRE', bg: 'bg-red-600/20', text: 'text-red-500', dot: 'bg-red-600' };
+};
+
+const getStarArrangement = (stars) => {
+    let starsHtml = '';
+    const starClass = "absolute leading-none drop-shadow-sm";
+
+    if (stars === 1) {
+        starsHtml = `<span class="${starClass} text-[14px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%]">★</span>`;
+    } else if (stars === 2) {
+        starsHtml = `
+            <span class="${starClass} text-[10px] top-[15%] left-[5%]">★</span>
+            <span class="${starClass} text-[10px] bottom-[15%] right-[5%]">★</span>
+        `;
+    } else if (stars === 3) {
+        starsHtml = `
+            <span class="${starClass} text-[9px] top-[10%] left-1/2 -translate-x-1/2">★</span>
+            <span class="${starClass} text-[9px] bottom-[15%] left-[10%]">★</span>
+            <span class="${starClass} text-[9px] bottom-[15%] right-[10%]">★</span>
+        `;
+    } else if (stars === 4) {
+        starsHtml = `
+            <span class="${starClass} text-[8px] top-[15%] left-[15%]">★</span>
+            <span class="${starClass} text-[8px] top-[15%] right-[15%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[15%] left-[15%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[15%] right-[15%]">★</span>
+        `;
+    } else if (stars === 5) {
+        starsHtml = `
+            <span class="${starClass} text-[8px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-[52%]">★</span>
+            <span class="${starClass} text-[8px] top-[10%] left-[10%]">★</span>
+            <span class="${starClass} text-[8px] top-[10%] right-[10%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[10%] left-[10%]">★</span>
+            <span class="${starClass} text-[8px] bottom-[10%] right-[10%]">★</span>
+        `;
+    }
+
+    return `<div class="relative w-5 h-5 mx-auto inline-block align-middle">${starsHtml}</div>`;
 };
 
 export const getCategoryInfo = (cat) => {
     const c = parseInt(cat) || 1;
-    if (c === 5) return { label: 'CABEÇA DE CHAVE', bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500' };
-    if (c === 4) return { label: 'AVANÇADO', bg: 'bg-teal-500/20', text: 'text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500' };
-    if (c === 3) return { label: 'MÉDIO', bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500/30', dot: 'bg-lime-500' };
-    if (c === 2) return { label: 'BÁSICO', bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500' };
-    return { label: 'INICIANTE', bg: 'bg-stone-500/20', text: 'text-stone-400', border: 'border-stone-500/30', dot: 'bg-stone-500' };
+    const noBg = '!bg-transparent !p-0 !m-0 !border-0';
+    if (c === 5) return { label: getStarArrangement(5), bg: noBg, text: 'text-indigo-400', border: noBg, dot: 'bg-indigo-500' };
+    if (c === 4) return { label: getStarArrangement(4), bg: noBg, text: 'text-teal-400', border: noBg, dot: 'bg-teal-500' };
+    if (c === 3) return { label: getStarArrangement(3), bg: noBg, text: 'text-lime-400', border: noBg, dot: 'bg-lime-500' };
+    if (c === 2) return { label: getStarArrangement(2), bg: noBg, text: 'text-pink-400', border: noBg, dot: 'bg-pink-500' };
+    return { label: getStarArrangement(1), bg: noBg, text: 'text-stone-400', border: noBg, dot: 'bg-stone-500' };
 };
 
 export const getTeamName = (team) => {
@@ -357,7 +395,7 @@ export const updateLiveEloPreview = () => {
         if (team.players.length === 0) return 150;
         const sum = team.players.reduce((acc, p) => {
             const dbPlayer = state.players.find(x => x.id === p.id);
-            return acc + (dbPlayer?.eloRating ?? 150);
+            return acc + (dbPlayer?.eloRating ?? 0);
         }, 0);
         return sum / team.players.length;
     };
@@ -568,7 +606,7 @@ export const editPlayer = (id) => {
     document.getElementById('statCategoria').value = p.categoria || 1;
     document.getElementById('statJogos').value = p.partidas || 0;
     document.getElementById('statVit').value = p.vitorias || 0;
-    document.getElementById('statBonus').value = p.eloRating ?? 150;
+    document.getElementById('statBonus').value = p.eloRating ?? 0;
     const roleSelect = document.getElementById('playerRole');
     if (roleSelect) roleSelect.value = p.role || 'jogador';
     
@@ -617,7 +655,7 @@ export const resetForm = () => {
     document.getElementById('statCategoria').value = '1';
     document.getElementById('statJogos').value = '0';
     document.getElementById('statVit').value = '0';
-    document.getElementById('statBonus').value = '150';
+    document.getElementById('statBonus').value = '0';
     const roleSelect = document.getElementById('playerRole');
     if (roleSelect) roleSelect.value = 'jogador';
     
@@ -661,11 +699,11 @@ export const renderPublic = () => {
     }
     
     const { stats, craques, bagres } = getDailyPlayerStats();
-    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
-    const globalEloRank = [...state.players].sort((a, b) => (b.eloRating ?? 150) - (a.eloRating ?? 150) || a.name.localeCompare(b.name));
+    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 0)) : 0;
+    const globalEloRank = [...state.players].sort((a, b) => (b.eloRating ?? 0) - (a.eloRating ?? 0) || a.name.localeCompare(b.name));
     
     const sortFn = (a, b) => { 
-        const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+        const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0); 
         if (eloDiff !== 0) return eloDiff; 
         return (a.name || '').localeCompare(b.name || ''); 
     };
@@ -674,9 +712,9 @@ export const renderPublic = () => {
         if (list.length === 0) return '';
         
         const cardsHTML = list.map(p => {
-            const lvlInfo = getLevelInfo(p.eloRating ?? 150);
-            const ptsValue = p.eloRating ?? 150;
-            const isDestaque = ptsValue === maxElo && maxElo > 150;
+            const lvlInfo = getLevelInfo(p.eloRating ?? 0);
+            const ptsValue = p.eloRating ?? 0;
+            const isDestaque = ptsValue === maxElo && maxElo > 0;
             const vitorias = p.vitorias || 0;
             const derrotas = (p.partidas || 0) - vitorias;
             
@@ -741,12 +779,12 @@ export const renderPublic = () => {
     };
 
     grid.innerHTML = 
-        renderGroup('Mestre', 'flame', 'text-red-500', state.players.filter(p => (p.eloRating ?? 150) >= 700).sort(sortFn)) + 
-        renderGroup('Diamante', 'gem', 'text-fuchsia-500', state.players.filter(p => (p.eloRating ?? 150) >= 550 && (p.eloRating ?? 150) < 700).sort(sortFn)) + 
-        renderGroup('Platina', 'shield', 'text-cyan-500', state.players.filter(p => (p.eloRating ?? 150) >= 450 && (p.eloRating ?? 150) < 550).sort(sortFn)) + 
-        renderGroup('Ouro', 'award', 'text-yellow-500', state.players.filter(p => (p.eloRating ?? 150) >= 350 && (p.eloRating ?? 150) < 450).sort(sortFn)) + 
-        renderGroup('Prata', 'medal', 'text-slate-400', state.players.filter(p => (p.eloRating ?? 150) >= 250 && (p.eloRating ?? 150) < 350).sort(sortFn)) + 
-        renderGroup('Bronze', 'medal', 'text-orange-500', state.players.filter(p => (p.eloRating ?? 150) < 250).sort(sortFn));
+        renderGroup('Mestre', 'flame', 'text-red-500', state.players.filter(p => (p.eloRating ?? 0) >= 500).sort(sortFn)) + 
+        renderGroup('Diamante', 'gem', 'text-fuchsia-500', state.players.filter(p => (p.eloRating ?? 0) >= 400 && (p.eloRating ?? 0) < 500).sort(sortFn)) + 
+        renderGroup('Platina', 'shield', 'text-cyan-500', state.players.filter(p => (p.eloRating ?? 0) >= 300 && (p.eloRating ?? 0) < 400).sort(sortFn)) + 
+        renderGroup('Ouro', 'award', 'text-yellow-500', state.players.filter(p => (p.eloRating ?? 0) >= 200 && (p.eloRating ?? 0) < 300).sort(sortFn)) + 
+        renderGroup('Prata', 'medal', 'text-slate-400', state.players.filter(p => (p.eloRating ?? 0) >= 100 && (p.eloRating ?? 0) < 200).sort(sortFn)) + 
+        renderGroup('Bronze', 'medal', 'text-orange-500', state.players.filter(p => (p.eloRating ?? 0) < 100).sort(sortFn));
         
     lucide.createIcons();
 };
@@ -755,7 +793,7 @@ export const renderRanking = () => {
     const list = document.getElementById('rankingList');
     
     const sortedPlayers = [...state.players].sort((a,b) => { 
-        const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150); 
+        const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0); 
         if (eloDiff !== 0) return eloDiff; 
         return (a.name || '').localeCompare(b.name || ''); 
     });
@@ -790,7 +828,7 @@ export const renderRanking = () => {
                     </div>
                     <div class="w-full ${heightClass} ${bgClass} border-t-4 rounded-t-lg flex flex-col items-center pt-2 shadow-[inset_0_10px_20px_rgba(0,0,0,0.3)] relative overflow-hidden">
                         <div class="flex flex-col items-center">
-                            <span class="text-xl font-black ${textColor}">${p.eloRating ?? 150}</span>
+                            <span class="text-xl font-black ${textColor}">${p.eloRating ?? 0}</span>
                             <span class="text-[8px] font-bold text-slate-400 uppercase mt-[-4px]">ELO</span>
                         </div>
                     </div>
@@ -831,7 +869,7 @@ export const renderSorteioTable = () => {
             if(catDiff !== 0) return catDiff; 
             
             // 2º Critério: Elo (Maior para menor)
-            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0);
             if (eloDiff !== 0) return eloDiff;
             
             // 3º Critério: Ordem Alfabética
@@ -840,7 +878,7 @@ export const renderSorteioTable = () => {
     });
     
     tbody.innerHTML = sorted.map(p => {
-        const lvlInfo = getLevelInfo(p.eloRating ?? 150);
+        const lvlInfo = getLevelInfo(p.eloRating ?? 0);
         const catInfo = getCategoryInfo(p.categoria);
         const isSelected = state.selectedPlayerIds.has(p.id);
         
@@ -849,8 +887,8 @@ export const renderSorteioTable = () => {
                 <td class="px-2 py-3 text-center" onclick="event.stopPropagation()">
                     <input type="checkbox" id="chk-${p.id}" ${isSelected ? 'checked' : ''} onclick="togglePlayerSelection('${p.id}', this.checked); updateSorteioCounters();" class="w-4 h-4 accent-green-500 cursor-pointer">
                 </td>
-                <td class="px-3 py-3 font-bold text-slate-200 flex items-center gap-2 whitespace-nowrap">
-                    <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                <td class="px-3 py-3 font-bold ${catInfo.text} flex items-center gap-2 whitespace-nowrap">
+                    <div class="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
                         ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-3 h-3 text-slate-400"></i>`}
                     </div>
                     ${p.name}
@@ -860,7 +898,7 @@ export const renderSorteioTable = () => {
                 </td>
                 <td class="px-3 py-3 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center justify-center">
-                        <span class="font-bold text-white text-sm">${p.eloRating ?? 150}</span>
+                        <span class="font-bold text-white text-sm">${p.eloRating ?? 0}</span>
                         <span class="px-2 py-0.5 mt-0.5 rounded-md text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
                     </div>
                 </td>
@@ -883,7 +921,7 @@ export const renderAdminTable = () => {
         if (sortMode === 'level') {
             const c = (parseInt(b.categoria)||1) - (parseInt(a.categoria)||1); 
             if(c !== 0) return c; 
-            const eloDiff = (b.eloRating ?? 150) - (a.eloRating ?? 150);
+            const eloDiff = (b.eloRating ?? 0) - (a.eloRating ?? 0);
             if(eloDiff !== 0) return eloDiff;
             return (a.name || '').localeCompare(b.name || '');
         } else {
@@ -892,7 +930,7 @@ export const renderAdminTable = () => {
     });
     
     tbody.innerHTML = sorted.map(p => {
-        const lvlInfo = getLevelInfo(p.eloRating ?? 150);
+        const lvlInfo = getLevelInfo(p.eloRating ?? 0);
         const catInfo = getCategoryInfo(p.categoria);
         
         return `
@@ -903,7 +941,7 @@ export const renderAdminTable = () => {
                             ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
                         </div>
                         <div class="flex flex-col">
-                            <span class="font-bold text-slate-200">${p.name}</span>
+                            <span class="font-bold ${catInfo.text}">${p.name}</span>
                             <span class="text-[9px] font-black ${catInfo.text} tracking-wider uppercase mt-0.5">${catInfo.label}</span>
                         </div>
                     </div>
@@ -913,7 +951,7 @@ export const renderAdminTable = () => {
                 </td>
                 <td class="px-3 py-3 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center justify-center">
-                        <span class="font-bold text-white text-sm">${p.eloRating ?? 150}</span>
+                        <span class="font-bold text-white text-sm">${p.eloRating ?? 0}</span>
                         <span class="px-2 py-0.5 mt-0.5 rounded-md text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
                     </div>
                 </td>
@@ -948,7 +986,7 @@ export const renderTeams = () => {
     const sortedTeams = state.drawnTeams.sort((a,b) => a.isWaitlist ? 1 : (b.isWaitlist ? -1 : parseInt(a.label) - parseInt(b.label)));
     
     const { stats, craques, bagres } = getDailyPlayerStats();
-    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 150)) : 0;
+    const maxElo = state.players.length > 0 ? Math.max(...state.players.map(p => p.eloRating ?? 0)) : 0;
     
     const content = sortedTeams.map(t => {
         const teamName = t.isWaitlist ? '<i data-lucide="clock" class="inline w-4 h-4 mr-1"></i> Lista de Espera' : getTeamName(t);
@@ -979,12 +1017,12 @@ export const renderTeams = () => {
         const playersHTML = pSorted.map(p => {
             const dbPlayer = state.players.find(x => x.id === p.id) || p;
             const catInfo = getCategoryInfo(dbPlayer.categoria);
-            const ptsValue = dbPlayer.eloRating ?? 150;
+            const ptsValue = dbPlayer.eloRating ?? 0;
             
             const pStats = stats[dbPlayer.name] || { wins: 0, losses: 0 };
             const isCraque = craques.has(dbPlayer.name);
             const isBagre = bagres.has(dbPlayer.name);
-            const isDestaque = ptsValue === maxElo && maxElo > 150;
+            const isDestaque = ptsValue === maxElo && maxElo > 0;
             const waitlistBadge = (t.isWaitlist && p.waitlistRounds > 0) ? `<span class="bg-blue-500/20 text-blue-400 text-[8px] font-black px-1.5 py-0.5 rounded ml-1" title="Rodadas na Espera">${p.waitlistRounds}R</span>` : '';
 
             return `
@@ -1336,7 +1374,7 @@ export const renderAll = () => {
  * - Futebol: mostra timer, mostra vitória normal, esconde capote e diferença de 2 pontos.
  * - Basquete: mostra timer e pontos, sem capote, sem diferença de 2 pontos, botões +3/+2/+1.
  */
-const applySportModeVisibility = (sportMode) => {
+const applySportModeVisibility = (sportMode, resetDefaults = false) => {
     const timeSection = document.getElementById('cfgTimeSection');
     const twoPointsRow = document.getElementById('cfgTwoPointsRow');
     const capoteSection = document.getElementById('cfgCapoteSection');
@@ -1356,6 +1394,31 @@ const applySportModeVisibility = (sportMode) => {
     if (scoreButtons2) scoreButtons2.classList.toggle('hidden', isBasquete);
     if (scoreButtonsBasket1) scoreButtonsBasket1.classList.toggle('hidden', !isBasquete);
     if (scoreButtonsBasket2) scoreButtonsBasket2.classList.toggle('hidden', !isBasquete);
+
+    if (resetDefaults) {
+        if (isVolei) {
+            if (document.getElementById('cfgUseTime')) document.getElementById('cfgUseTime').checked = false;
+            if (document.getElementById('cfgUsePoints1')) document.getElementById('cfgUsePoints1').checked = true;
+            if (document.getElementById('cfgPoints1')) document.getElementById('cfgPoints1').value = 25;
+            if (document.getElementById('cfgTwoPointsDiff')) document.getElementById('cfgTwoPointsDiff').checked = true;
+            if (document.getElementById('cfgUsePoints2')) document.getElementById('cfgUsePoints2').checked = false;
+            if (document.getElementById('cfgPoints2')) document.getElementById('cfgPoints2').value = 8;
+        } else if (isFutebol) {
+            if (document.getElementById('cfgUseTime')) document.getElementById('cfgUseTime').checked = true;
+            if (document.getElementById('cfgTimeMinutes')) document.getElementById('cfgTimeMinutes').value = 10;
+            if (document.getElementById('cfgUsePoints1')) document.getElementById('cfgUsePoints1').checked = false;
+            if (document.getElementById('cfgPoints1')) document.getElementById('cfgPoints1').value = 2;
+            if (document.getElementById('cfgTwoPointsDiff')) document.getElementById('cfgTwoPointsDiff').checked = false;
+            if (document.getElementById('cfgUsePoints2')) document.getElementById('cfgUsePoints2').checked = false;
+        } else if (isBasquete) {
+            if (document.getElementById('cfgUseTime')) document.getElementById('cfgUseTime').checked = true;
+            if (document.getElementById('cfgTimeMinutes')) document.getElementById('cfgTimeMinutes').value = 10;
+            if (document.getElementById('cfgUsePoints1')) document.getElementById('cfgUsePoints1').checked = false;
+            if (document.getElementById('cfgPoints1')) document.getElementById('cfgPoints1').value = 21;
+            if (document.getElementById('cfgTwoPointsDiff')) document.getElementById('cfgTwoPointsDiff').checked = false;
+            if (document.getElementById('cfgUsePoints2')) document.getElementById('cfgUsePoints2').checked = false;
+        }
+    }
 
     if (isFutebol) {
         // Futebol: mostrar timer, esconder capote e diferença de 2 pontos
@@ -1390,6 +1453,14 @@ const applySportModeVisibility = (sportMode) => {
         const cfgTwoPointsDiff = document.getElementById('cfgTwoPointsDiff');
         if (cfgTwoPointsDiff) cfgTwoPointsDiff.checked = true;
     }
+
+    // Toggle opacity for divs based on checkboxes (so it updates visually if resetDefaults fired)
+    const timeChk = document.getElementById('cfgUseTime');
+    const pts1Chk = document.getElementById('cfgUsePoints1');
+    const pts2Chk = document.getElementById('cfgUsePoints2');
+    if (timeChk && document.getElementById('cfgTimeDiv')) document.getElementById('cfgTimeDiv').classList.toggle('opacity-50', !timeChk.checked);
+    if (pts1Chk && document.getElementById('cfgPoints1Div')) document.getElementById('cfgPoints1Div').classList.toggle('opacity-50', !pts1Chk.checked);
+    if (pts2Chk && document.getElementById('cfgPoints2Div')) document.getElementById('cfgPoints2Div').classList.toggle('opacity-50', !pts2Chk.checked);
 
     // Alterna visual do divisor do placar
     const divider = document.getElementById('placar-divider');
