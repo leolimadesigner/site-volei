@@ -287,9 +287,6 @@
                                 <option value="MANTER_FORTE">Manter Jogador Forte</option>
                                 <option value="ALEATORIO">Aleatório</option>
                             </select>
-                            <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors">
-                                <i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> ATUALIZAR ESPERA
-                            </button>
                         </div>
                     </div>
                     <div id="placarTeamsGrid" class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -714,7 +711,7 @@
                 <div class="lg:col-span-2">
                     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
                         <div class="p-4 sm:p-6 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900/30 gap-3">
-                            <h2 class="text-lg sm:text-xl font-bold">Base de Atletas Cadastrados</h2>
+                            <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2">Base de Atletas Cadastrados <span id="adminPlayerCount" class="text-xs font-bold bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">0</span></h2>
                             <div class="flex items-center gap-2 w-full sm:w-auto">
                                 <input type="text" id="searchAdmin" placeholder="Buscar atleta..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-slate-300 outline-none w-full sm:w-48 focus:border-green-500" oninput="clearTimeout(window.adminSearchTimeout); window.adminSearchTimeout = setTimeout(() => window.renderAdminTable(), 300)">
                                 <select id="sortAdmin" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-slate-300 outline-none focus:border-green-500" onchange="window.renderAdminTable()">

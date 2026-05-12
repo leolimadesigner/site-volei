@@ -912,6 +912,9 @@ export const renderAdminTable = () => {
     const tbody = document.getElementById('adminTableBody');
     if(!tbody) return;
     
+    const countElement = document.getElementById('adminPlayerCount');
+    if (countElement) countElement.innerText = state.players.length;
+    
     const searchTerm = document.getElementById('searchAdmin')?.value.toLowerCase() || '';
     const sortMode = document.getElementById('sortAdmin')?.value || 'alpha';
     
