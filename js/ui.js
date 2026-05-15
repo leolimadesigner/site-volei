@@ -884,22 +884,22 @@ export const renderSorteioTable = () => {
         
         return `
             <tr class="hover:bg-slate-700/30 transition-colors cursor-pointer" onclick="const c = document.getElementById('chk-${p.id}'); c.checked = !c.checked; togglePlayerSelection('${p.id}', c.checked); updateSorteioCounters();">
-                <td class="px-2 py-3 text-center" onclick="event.stopPropagation()">
-                    <input type="checkbox" id="chk-${p.id}" ${isSelected ? 'checked' : ''} onclick="togglePlayerSelection('${p.id}', this.checked); updateSorteioCounters();" class="w-4 h-4 accent-green-500 cursor-pointer">
+                <td class="px-1 sm:px-2 py-3 text-center" onclick="event.stopPropagation()">
+                    <input type="checkbox" id="chk-${p.id}" ${isSelected ? 'checked' : ''} onclick="togglePlayerSelection('${p.id}', this.checked); updateSorteioCounters();" class="w-3 h-3 sm:w-4 sm:h-4 accent-green-500 cursor-pointer">
                 </td>
-                <td class="px-3 py-3 font-bold ${catInfo.text} flex items-center gap-2 whitespace-nowrap">
-                    <div class="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                <td class="px-1 sm:px-3 py-3 font-bold ${catInfo.text} flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                    <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
                         ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-3 h-3 text-slate-400"></i>`}
                     </div>
-                    ${p.name}
+                    <span class="truncate max-w-[80px] sm:max-w-none">${p.name}</span>
                 </td>
-                <td class="px-3 py-3 text-center whitespace-nowrap">
-                    <span class="px-2 py-1 rounded-md text-[9px] font-bold ${catInfo.bg} ${catInfo.text} opacity-90">${catInfo.label}</span>
+                <td class="px-1 sm:px-3 py-3 text-center">
+                    <span class="px-1 sm:px-2 py-1 rounded-md text-[8px] sm:text-[9px] font-bold ${catInfo.bg} ${catInfo.text} opacity-90">${catInfo.label}</span>
                 </td>
-                <td class="px-3 py-3 text-center whitespace-nowrap">
+                <td class="px-1 sm:px-3 py-3 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center justify-center">
-                        <span class="font-bold text-white text-sm">${p.eloRating ?? 0}</span>
-                        <span class="px-2 py-0.5 mt-0.5 rounded-md text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
+                        <span class="font-bold text-white text-xs sm:text-sm">${p.eloRating ?? 0}</span>
+                        <span class="px-1 sm:px-2 py-0.5 mt-0.5 rounded-md text-[7px] sm:text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
                     </div>
                 </td>
             </tr>`;
@@ -938,32 +938,32 @@ export const renderAdminTable = () => {
         
         return `
             <tr class="hover:bg-slate-700/30 transition-colors">
-                <td class="px-3 py-3 whitespace-nowrap">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 border-2 ${catInfo.border}">
-                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-4 h-4 ${catInfo.text}"></i>`}
+                <td class="px-1 sm:px-3 py-3 whitespace-nowrap">
+                    <div class="flex items-center gap-1 sm:gap-3">
+                        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden shrink-0 border-2 ${catInfo.border}">
+                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i data-lucide="${p.role === 'moderador' ? 'shield-check' : 'user'}" class="w-3 h-3 sm:w-4 sm:h-4 ${catInfo.text}"></i>`}
                         </div>
                         <div class="flex flex-col">
-                            <span class="font-bold ${catInfo.text}">${p.name}</span>
-                            <span class="text-[9px] font-black ${catInfo.text} tracking-wider uppercase mt-0.5">${catInfo.label}</span>
+                            <span class="font-bold ${catInfo.text} truncate max-w-[70px] sm:max-w-[150px]">${p.name}</span>
+                            <span class="text-[8px] sm:text-[9px] font-black ${catInfo.text} tracking-wider uppercase mt-0.5 truncate max-w-[70px] sm:max-w-none">${catInfo.label}</span>
                         </div>
                     </div>
                 </td>
-                <td class="px-3 py-3 text-center font-bold text-yellow-500 whitespace-nowrap">
-                    ${p.vitorias || 0} <span class="text-slate-500 text-xs">/ ${p.partidas || 0}</span>
+                <td class="px-1 sm:px-3 py-3 text-center font-bold text-yellow-500 whitespace-nowrap">
+                    ${p.vitorias || 0} <span class="text-slate-500 text-[10px] sm:text-xs">/ ${p.partidas || 0}</span>
                 </td>
-                <td class="px-3 py-3 text-center whitespace-nowrap">
+                <td class="px-1 sm:px-3 py-3 text-center whitespace-nowrap">
                     <div class="flex flex-col items-center justify-center">
-                        <span class="font-bold text-white text-sm">${p.eloRating ?? 0}</span>
-                        <span class="px-2 py-0.5 mt-0.5 rounded-md text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
+                        <span class="font-bold text-white text-xs sm:text-sm">${p.eloRating ?? 0}</span>
+                        <span class="px-1 sm:px-2 py-0.5 mt-0.5 rounded-md text-[7px] sm:text-[8px] font-bold ${lvlInfo.bg} ${lvlInfo.text} opacity-70">${lvlInfo.label}</span>
                     </div>
                 </td>
-                <td class="px-3 py-3 text-right whitespace-nowrap">
+                <td class="px-1 sm:px-3 py-3 text-right">
                     <div class="flex justify-end gap-1">
-                        <button onclick="editPlayer('${p.id}')" class="p-1.5 hover:bg-blue-500/20 text-blue-400 rounded-lg">
+                        <button onclick="editPlayer('${p.id}')" class="p-1 sm:p-1.5 hover:bg-blue-500/20 text-blue-400 rounded-lg">
                             <i data-lucide="edit-2" class="w-3 h-3"></i>
                         </button>
-                        <button onclick="deletePlayer('${p.id}')" class="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg">
+                        <button onclick="deletePlayer('${p.id}')" class="p-1 sm:p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg">
                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                         </button>
                     </div>
