@@ -51,6 +51,14 @@ service cloud.firestore {
         allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
       }
 
+      match /caixa/{caixaId} {
+        allow read: if isMaster() 
+                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails))
+                    || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails);
+        
+        allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
+      }
+
       // ====================================================================
       // 2. DADOS CRÍTICOS: ELO E HISTÓRICO (Protegidos)
       // ====================================================================
