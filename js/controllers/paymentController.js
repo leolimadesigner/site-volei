@@ -1,6 +1,6 @@
 import { state } from '../state.js';
-import { db, collection, addDoc, doc, setDoc, query, where, onSnapshot, getDoc, updateDoc } from '../firebase.js';
-import { showToast } from '../ui.js';
+import { db, collection, addDoc, doc, setDoc, query, where, onSnapshot, getDoc, updateDoc, getDocs, deleteDoc } from '../firebase.js';
+import { showToast, openConfirmModal } from '../ui.js';
 
 let unsubscribeCharges = null;
 let currentPixKey = '';
@@ -199,38 +199,40 @@ const getNextDueDate = (paidUntilMillis, monthlyDay) => {
 window.addMonthlyPayment = async (playerId) => {
     if (!state.currentGroupId) return;
     
-    // Obter monthlyDay da config
-    const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
-    let monthlyDay = 10;
-    if (settingsDoc.exists()) {
-        monthlyDay = settingsDoc.data().monthlyDay || 10;
-    }
-
-    const playerRef = doc(db, 'groups', state.currentGroupId, 'players', playerId);
-    const playerDoc = await getDoc(playerRef);
-    if (!playerDoc.exists()) return;
-    
-    const pData = playerDoc.data();
-    let nextDue = getNextDueDate(pData.paidUntil, monthlyDay);
-    
-    // Adiciona 1 mês
-    nextDue.setMonth(nextDue.getMonth() + 1);
-    
-    try {
-        await updateDoc(playerRef, {
-            paidUntil: nextDue.getTime()
-        });
-        showToast("Pagamento de 1 mês registrado com sucesso!", "success");
-        // Atualiza UI local
-        const pIndex = state.players.findIndex(p => p.id === playerId);
-        if (pIndex !== -1) {
-            state.players[pIndex].paidUntil = nextDue.getTime();
+    openConfirmModal("Confirmar Pagamento", "Registrar pagamento de 1 mês para este jogador?", async () => {
+        // Obter monthlyDay da config
+        const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
+        let monthlyDay = 10;
+        if (settingsDoc.exists()) {
+            monthlyDay = settingsDoc.data().monthlyDay || 10;
         }
-        renderPaymentsView();
-    } catch (e) {
-        console.error(e);
-        showToast("Erro ao atualizar pagamento.", "error");
-    }
+
+        const playerRef = doc(db, 'groups', state.currentGroupId, 'players', playerId);
+        const playerDoc = await getDoc(playerRef);
+        if (!playerDoc.exists()) return;
+        
+        const pData = playerDoc.data();
+        let nextDue = getNextDueDate(pData.paidUntil, monthlyDay);
+        
+        // Adiciona 1 mês
+        nextDue.setMonth(nextDue.getMonth() + 1);
+        
+        try {
+            await updateDoc(playerRef, {
+                paidUntil: nextDue.getTime()
+            });
+            showToast("Pagamento de 1 mês registrado com sucesso!", "success");
+            // Atualiza UI local
+            const pIndex = state.players.findIndex(p => p.id === playerId);
+            if (pIndex !== -1) {
+                state.players[pIndex].paidUntil = nextDue.getTime();
+            }
+            renderPaymentsView();
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao atualizar pagamento.", "error");
+        }
+    });
 };
 
 
@@ -306,6 +308,8 @@ const renderDailyView = (isAdmin, adminTable, userList) => {
         } else if (hasPendingForUser && userList) {
             renderPixKeyInfo(userList, "Faça o pagamento da sua cobrança copiando a chave Pix abaixo e envie o comprovante.");
         }
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     });
 };
 
@@ -333,30 +337,37 @@ window.copyAdminPixString = () => {
 };
 
 window.markChargeAsPaid = async (chargeId) => {
-    try {
-        const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
-        await updateDoc(chargeRef, {
-            status: 'paid',
-            paidAt: Date.now()
-        });
-        showToast("Cobrança marcada como paga!", "success");
-    } catch (e) {
-        console.error(e);
-        showToast("Erro ao atualizar cobrança.", "error");
-    }
+    openConfirmModal("Confirmar Pagamento", "Marcar esta cobrança como paga?", async () => {
+        try {
+            const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
+            await updateDoc(chargeRef, {
+                status: 'paid',
+                paidAt: Date.now()
+            });
+            showToast("Cobrança marcada como paga!", "success");
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao atualizar cobrança.", "error");
+        }
+    });
 };
 
 window.deleteCharge = async (chargeId) => {
-    if (!confirm("Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.")) return;
-    try {
-        const { deleteDoc } = await import('../firebase.js');
-        const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
-        await deleteDoc(chargeRef);
-        showToast("Cobrança excluída com sucesso!", "success");
-    } catch (e) {
-        console.error(e);
-        showToast("Erro ao excluir cobrança.", "error");
-    }
+    openConfirmModal("Excluir Cobrança", "Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.", async () => {
+        try {
+            const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
+            await deleteDoc(chargeRef);
+            showToast("Cobrança excluída com sucesso!", "success");
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao excluir cobrança.", "error");
+        }
+    });
+};
+
+window.showPaymentSaveBtn = () => {
+    const btn = document.getElementById('btnSaveConfig');
+    if (btn) btn.classList.remove('hidden');
 };
 
 export const savePaymentSettings = async () => {
@@ -372,6 +383,10 @@ export const savePaymentSettings = async () => {
     try {
         await setDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'), payload, { merge: true });
         showToast("Configurações de pagamento salvas!", "success");
+        
+        const btn = document.getElementById('btnSaveConfig');
+        if (btn) btn.classList.add('hidden');
+
         currentPaymentMode = mode;
         currentPixKey = pixKey;
         renderPaymentsView();
@@ -408,7 +423,17 @@ export const generateDailyCharges = async () => {
     const chargesRef = collection(db, 'groups', state.currentGroupId, 'charges');
     
     try {
-        const promises = players.map(p => {
+        const promises = players.map(async p => {
+            const q = query(chargesRef, where('playerId', '==', p.id));
+            const snapshot = await getDocs(q);
+            const deletePromises = [];
+            snapshot.docs.forEach(d => {
+                if (d.data().status === 'paid') {
+                    deletePromises.push(deleteDoc(d.ref));
+                }
+            });
+            await Promise.all(deletePromises);
+
             return addDoc(chargesRef, {
                 playerId: p.id,
                 playerName: p.name,

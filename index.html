@@ -781,31 +781,41 @@
 
                         <!-- TAB: CONFIG -->
                         <div id="pay-admin-config" class="p-4 sm:p-6 space-y-6">
+                            <!-- Chave PIX (Admin) e Salvar -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <div class="w-full mb-4">
+                                    <h4 class="text-sm font-bold text-white mb-2 uppercase">Conta de Recebimento (PIX)</h4>
+                                    <p class="text-xs text-slate-400 mb-2">Insira sua chave PIX para que os jogadores possam copiar e realizar o pagamento.</p>
+                                    <input type="text" id="adminPixKey" oninput="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 11999999999 ou email@email.com">
+                                </div>
+                                <button id="btnSaveConfig" onclick="savePaymentSettings()" class="hidden bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto shadow-md transition-all">Salvar Configurações</button>
+                            </div>
+
                             <!-- Modo de Pagamento -->
                             <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                                 <h4 class="text-sm font-bold text-white mb-4 uppercase">Modalidade do Grupo</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                                     <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
-                                        <input type="radio" name="paymentMode" value="free" class="text-blue-500">
+                                        <input type="radio" name="paymentMode" value="free" class="text-blue-500" onchange="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()">
                                         <span class="text-sm font-bold text-white">Gratuito</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
-                                        <input type="radio" name="paymentMode" value="monthly" class="text-blue-500">
+                                        <input type="radio" name="paymentMode" value="monthly" class="text-blue-500" onchange="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()">
                                         <span class="text-sm font-bold text-white">Mensalidade</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
-                                        <input type="radio" name="paymentMode" value="daily" class="text-blue-500">
+                                        <input type="radio" name="paymentMode" value="daily" class="text-blue-500" onchange="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()">
                                         <span class="text-sm font-bold text-white">Diária / Avulso</span>
                                     </label>
                                 </div>
                                 <div id="monthlySettings" class="hidden flex flex-col gap-3 mt-4 border-t border-slate-700 pt-4">
                                     <div>
                                         <label class="text-xs text-slate-400 font-bold block mb-1">Valor da Mensalidade (R$)</label>
-                                        <input type="number" id="payMonthlyValue" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 50.00">
+                                        <input type="number" id="payMonthlyValue" oninput="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 50.00">
                                     </div>
                                     <div>
                                         <label class="text-xs text-slate-400 font-bold block mb-1">Dia do Vencimento</label>
-                                        <input type="number" id="payMonthlyDay" min="1" max="31" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 5">
+                                        <input type="number" id="payMonthlyDay" oninput="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()" min="1" max="31" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 5">
                                     </div>
                                 </div>
                                 <div id="dailySettings" class="hidden flex-col gap-4 mt-4 border-t border-slate-700 pt-4">
@@ -836,17 +846,6 @@
                                         <i data-lucide="send" class="w-4 h-4"></i> ENVIAR COBRANÇAS
                                     </button>
                                 </div>
-                            </div>
-
-                            <!-- Chave PIX (Admin) -->
-                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                                <h4 class="text-sm font-bold text-white mb-2 uppercase">Conta de Recebimento (PIX)</h4>
-                                <p class="text-xs text-slate-400 mb-4">Insira sua chave PIX para que os jogadores possam copiar e realizar o pagamento.</p>
-                                <div class="w-full">
-                                    <label class="text-xs text-slate-400 font-bold block mb-1">Chave PIX (Telefone, CPF, E-mail ou Aleatória)</label>
-                                    <input type="text" id="adminPixKey" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 11999999999 ou email@email.com">
-                                </div>
-                                <button onclick="savePaymentSettings()" class="mt-4 bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto shadow-md">Salvar Configurações</button>
                             </div>
                         </div>
 
