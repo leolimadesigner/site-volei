@@ -35,7 +35,9 @@ service cloud.firestore {
       // 1.5 PAGAMENTOS (paymentSettings e charges)
       // ====================================================================
       match /paymentSettings/{document=**} {
-        allow read: if isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails);
+        allow read: if isMaster() 
+                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails))
+                    || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails);
         allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
       }
 

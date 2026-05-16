@@ -37,15 +37,16 @@ export const renderPaymentsView = async () => {
     const isAdmin = state.currentUserRole === 'admin' || state.isMaster;
 
     // Load global settings to know the mode and pix key
-    const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
     let monthlyDay = 10;
-    if (settingsDoc.exists()) {
-        const data = settingsDoc.data();
-        currentPaymentMode = data.mode || 'free';
-        currentPixKey = data.pixKey || '';
-        monthlyDay = data.monthlyDay || 10;
-        
-        if (isAdmin) {
+    try {
+        const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
+        if (settingsDoc.exists()) {
+            const data = settingsDoc.data();
+            currentPaymentMode = data.mode || 'free';
+            currentPixKey = data.pixKey || '';
+            monthlyDay = data.monthlyDay || 10;
+            
+            if (isAdmin) {
             const modeRadio = document.querySelector(`input[name="paymentMode"][value="${currentPaymentMode}"]`);
             if (modeRadio) modeRadio.checked = true;
             
@@ -98,6 +99,9 @@ export const renderPaymentsView = async () => {
                 });
             }
         }
+        }
+    } catch (err) {
+        console.error("Erro ao carregar paymentSettings:", err);
     }
 
     const adminTable = document.getElementById('adminPaymentsTable');
