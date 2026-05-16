@@ -147,7 +147,8 @@ const renderMonthlyView = (isAdmin, monthlyDay, adminTable, userList) => {
                     <td class="px-4 py-3 text-center text-slate-300">${nextDue.toLocaleDateString()}</td>
                     <td class="px-4 py-3 text-center font-bold ${statusColor}">${statusText}</td>
                     <td class="px-4 py-3 text-right">
-                        <button onclick="addMonthlyPayment('${p.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">+1 Mês</button>
+                        <button onclick="addMonthlyPayment('${p.id}', '${p.name.replace(/'/g, "\\'")}', -1)" class="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded text-xs font-bold transition-colors mr-1">-1 Mês</button>
+                        <button onclick="addMonthlyPayment('${p.id}', '${p.name.replace(/'/g, "\\'")}', 1)" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold transition-colors">+1 Mês</button>
                     </td>
                 </tr>
             `;
@@ -196,10 +197,13 @@ const getNextDueDate = (paidUntilMillis, monthlyDay) => {
     }
 };
 
-window.addMonthlyPayment = async (playerId) => {
+window.addMonthlyPayment = async (playerId, playerName = '', direction = 1) => {
     if (!state.currentGroupId) return;
     
-    openConfirmModal("Confirmar Pagamento", "Registrar pagamento de 1 mês para este jogador?", async () => {
+    const actionText = direction > 0 ? "Adicionar" : "Remover";
+    const dirText = direction > 0 ? "+1 Mês" : "-1 Mês";
+    
+    openConfirmModal(`Confirmar ${dirText}`, `${actionText} 1 mês de pagamento para o jogador ${playerName}?`, async () => {
         // Obter monthlyDay da config
         const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
         let monthlyDay = 10;
@@ -214,8 +218,8 @@ window.addMonthlyPayment = async (playerId) => {
         const pData = playerDoc.data();
         let nextDue = getNextDueDate(pData.paidUntil, monthlyDay);
         
-        // Adiciona 1 mês
-        nextDue.setMonth(nextDue.getMonth() + 1);
+        // Adiciona ou remove 1 mês
+        nextDue.setMonth(nextDue.getMonth() + direction);
         
         try {
             await updateDoc(playerRef, {
@@ -278,8 +282,8 @@ const renderDailyView = (isAdmin, adminTable, userList) => {
                         <td class="px-4 py-3 text-center font-bold ${statusColor}">${statusText}</td>
                         <td class="px-4 py-3 text-right">
                             <div class="flex justify-end gap-2">
-                                ${charge.status !== 'paid' ? `<button onclick="markChargeAsPaid('${charge.id}')" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded text-xs font-bold transition-colors">Pago</button>` : `<span class="text-slate-500 text-xs">-</span>`}
-                                <button onclick="deleteCharge('${charge.id}')" class="bg-red-600 hover:bg-red-500 text-white p-1 rounded transition-colors" title="Excluir Cobrança">
+                                ${charge.status !== 'paid' ? `<button onclick="markChargeAsPaid('${charge.id}', '${(charge.playerName || 'Jogador').replace(/'/g, "\\'")}')" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded text-xs font-bold transition-colors">Pago</button>` : `<span class="text-slate-500 text-xs">-</span>`}
+                                <button onclick="deleteCharge('${charge.id}', '${(charge.playerName || 'Jogador').replace(/'/g, "\\'")}')" class="bg-red-600 hover:bg-red-500 text-white p-1 rounded transition-colors" title="Excluir Cobrança">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -336,8 +340,8 @@ window.copyAdminPixString = () => {
     showToast("Chave PIX copiada!", "success");
 };
 
-window.markChargeAsPaid = async (chargeId) => {
-    openConfirmModal("Confirmar Pagamento", "Marcar esta cobrança como paga?", async () => {
+window.markChargeAsPaid = async (chargeId, playerName = '') => {
+    openConfirmModal("Confirmar Pagamento", `Marcar a cobrança de ${playerName} como paga?`, async () => {
         try {
             const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
             await updateDoc(chargeRef, {
@@ -352,8 +356,8 @@ window.markChargeAsPaid = async (chargeId) => {
     });
 };
 
-window.deleteCharge = async (chargeId) => {
-    openConfirmModal("Excluir Cobrança", "Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.", async () => {
+window.deleteCharge = async (chargeId, playerName = '') => {
+    openConfirmModal("Excluir Cobrança", `Tem certeza que deseja excluir a cobrança de ${playerName}? Esta ação não pode ser desfeita.`, async () => {
         try {
             const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
             await deleteDoc(chargeRef);
@@ -397,6 +401,8 @@ export const savePaymentSettings = async () => {
 };
 
 export const generateDailyCharges = async () => {
+    await savePaymentSettings();
+
     const desc = document.getElementById('diariaDesc').value.trim();
     const val = parseFloat(document.getElementById('diariaValue').value);
     const type = document.getElementById('diariaType').value;
