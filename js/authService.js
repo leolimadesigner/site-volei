@@ -5,8 +5,11 @@ import {
     sendPasswordResetEmail, 
     signOut, 
     onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
     doc,
-    setDoc
+    setDoc,
+    getDoc
 } from './firebase.js';
 import { state } from './state.js';
 
@@ -60,6 +63,41 @@ export const registerUser = async (email, password, name) => {
             message = "Formato de e-mail inválido.";
         }
         
+        return { success: false, message };
+    }
+};
+
+/**
+ * Realiza o login com a conta Google via popup.
+ * Se for o primeiro acesso, cria o perfil do utilizador na Firestore.
+ */
+export const loginWithGoogle = async () => {
+    try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Verifica se o perfil já existe na Firestore; se não, cria um
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+            await setDoc(userDocRef, {
+                name: user.displayName || user.email,
+                email: user.email,
+                photoURL: user.photoURL || null,
+                createdAt: Date.now()
+            });
+        }
+
+        return { success: true, user };
+    } catch (error) {
+        console.error('Erro no login com Google:', error.code);
+        let message = 'Erro ao entrar com Google.';
+        if (error.code === 'auth/popup-closed-by-user') {
+            message = 'Login cancelado.';
+        } else if (error.code === 'auth/popup-blocked') {
+            message = 'Popup bloqueado pelo navegador. Permita popups para este site.';
+        }
         return { success: false, message };
     }
 };

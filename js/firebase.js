@@ -3,10 +3,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { 
     getAuth, 
     signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, // NOVO: Para criar conta
-    sendPasswordResetEmail,         // NOVO: Para recuperar password
+    createUserWithEmailAndPassword, // Para criar conta
+    sendPasswordResetEmail,         // Para recuperar password
     signOut, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    GoogleAuthProvider,             // Para login com Google
+    signInWithPopup                 // Para login com popup
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { 
     getFirestore, 
@@ -16,6 +18,7 @@ import {
     collection, 
     onSnapshot, 
     deleteDoc, 
+    getDocs,                        // NOVO: Para buscar múltiplos documentos
     addDoc, 
     updateDoc,
     query,
@@ -72,9 +75,12 @@ export {
     sendPasswordResetEmail,
     signOut, 
     onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
     doc, 
     setDoc, 
     getDoc,
+    getDocs,
     collection, 
     onSnapshot, 
     deleteDoc, 

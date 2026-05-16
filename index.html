@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TIME CERTO</title>
+    <title>Rachador</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/styles.css">
@@ -13,12 +13,10 @@
     <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-2 sm:px-4 flex justify-between items-center h-16">
             <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0 mr-2" onclick="goHome()">
-                <div class="bg-green-500 p-1.5 rounded-lg">
-                    <i data-lucide="volleyball" class="w-5 h-5 sm:w-6 sm:h-6 text-slate-900"></i>
-                </div>
-                <span class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic hidden sm:block">TIME<span class="text-green-500">CERTO</span></span>
+                <img src="Icone.png" alt="Rachador Logo" class="h-8 sm:h-10 w-auto object-contain">
+                <span class="font-bold text-lg sm:text-xl tracking-tighter uppercase italic hidden sm:block">RACHA<span class="text-green-500">DOR</span></span>
             </div>
-            <div id="mainNavButtons" class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-end hidden-view">
+            <div id="mainNavButtons" class="flex gap-1 overflow-x-auto no-scrollbar pb-1 pt-1 flex-1 sm:flex-none justify-start sm:justify-end hidden-view">
                 <button onclick="switchView('groups')" id="btn-groups" class="nav-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-base font-medium transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap text-blue-400">
                     <i data-lucide="user-circle" class="w-3 h-3 sm:w-4 sm:h-4"></i> Perfil
                 </button>
@@ -133,17 +131,17 @@
                         <span id="playerCountSorteio" class="text-xs sm:text-sm text-slate-400 bg-slate-900 px-2 sm:px-3 py-1.5 rounded-full border border-slate-700 whitespace-nowrap">0 / 0 Selecionados</span>
                     </div>
                 </div>
-                <div class="overflow-x-auto w-full max-h-[400px] overflow-y-auto">
-                    <table class="w-full text-left min-w-[500px] relative">
-                        <thead class="bg-slate-900/90 text-slate-400 text-xs sm:text-sm sticky top-0 z-10 backdrop-blur-md">
+                <div class="w-full max-h-[400px] overflow-y-auto overflow-x-hidden">
+                    <table class="w-full text-left relative">
+                        <thead class="bg-slate-900/90 text-slate-400 text-[10px] sm:text-sm sticky top-0 z-10 backdrop-blur-md">
                             <tr>
-                                <th class="px-2 sm:px-4 py-3 sm:py-4 w-8 sm:w-10 text-center"><input type="checkbox" id="selectAll" onclick="toggleAllPlayers(this.checked)" class="w-3 h-3 sm:w-4 sm:h-4 accent-green-500 cursor-pointer"></th>
-                                <th class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
-                                <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Categoria</th>
-                                <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Nível (Elo)</th>
+                                <th class="px-1 sm:px-4 py-3 sm:py-4 w-6 sm:w-10 text-center"><input type="checkbox" id="selectAll" onclick="toggleAllPlayers(this.checked)" class="w-3 h-3 sm:w-4 sm:h-4 accent-green-500 cursor-pointer"></th>
+                                <th class="px-1 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
+                                <th class="px-1 sm:px-6 py-3 sm:py-4 text-center">Categoria</th>
+                                <th class="px-1 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Nível (Elo)</th>
                             </tr>
                         </thead>
-                        <tbody id="sorteioTableBody" class="divide-y divide-slate-700 text-xs sm:text-sm"></tbody>
+                        <tbody id="sorteioTableBody" class="divide-y divide-slate-700 text-[10px] sm:text-sm"></tbody>
                     </table>
                 </div>
             </div>
@@ -287,9 +285,6 @@
                                 <option value="MANTER_FORTE">Manter Jogador Forte</option>
                                 <option value="ALEATORIO">Aleatório</option>
                             </select>
-                            <button onclick="createWaitlist()" class="flex-1 sm:flex-none bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold border border-blue-500/30 flex items-center justify-center gap-2 transition-colors">
-                                <i data-lucide="clock" class="w-3 h-3 sm:w-4 sm:h-4"></i> ATUALIZAR ESPERA
-                            </button>
                         </div>
                     </div>
                     <div id="placarTeamsGrid" class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -319,10 +314,8 @@
             <!-- Navbar Landing -->
             <header class="flex justify-between items-center py-6 px-4 sm:px-8 bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-700 shadow-lg mb-12">
                 <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="goHome()">
-                    <div class="bg-green-500 p-2 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                        <i data-lucide="volleyball" class="w-6 h-6 text-slate-900"></i>
-                    </div>
-                    <span class="font-black text-2xl tracking-tighter uppercase italic text-white">TIME<span class="text-green-500">CERTO</span></span>
+                    <img src="Icone.png" alt="Rachador Logo" class="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                    <span class="font-black text-2xl tracking-tighter uppercase italic text-white">RACHA<span class="text-green-500">DOR</span></span>
                 </div>
                 <div class="hidden md:flex items-center gap-8 font-bold text-slate-300">
                     <a href="#hero" class="hover:text-green-400 transition-colors">Início</a>
@@ -344,7 +337,7 @@
                         O fim dos times <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 drop-shadow-md">desequilibrados</span> nas suas partidas
                     </h1>
                     <p class="text-lg sm:text-xl text-slate-400 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                        Esqueça os sorteios no papel e as panelinhas. O <strong>TimeCerto</strong> avalia os jogadores com um sistema inteligente de Elo, nivela as equipes e facilita toda a gestão do seu esporte.
+                        Esqueça os sorteios no papel e as panelinhas. O <strong>Rachador</strong> avalia os jogadores com um sistema inteligente de Elo, nivela as equipes e facilita toda a gestão do seu esporte.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                         <button onclick="switchView('auth'); window.scrollTo(0,0);" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
@@ -428,14 +421,13 @@
                             Acompanhe os pontos em tempo real. O placar sincroniza com as nuvens e exibe previsões automáticas de pontos ganhos ou perdidos por partida.
                         </p>
                     </div>
-                    <!-- Feature 4 -->
                     <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-colors group">
                         <div class="bg-slate-900 w-14 h-14 flex items-center justify-center rounded-2xl mb-6 shadow-inner border border-slate-700 group-hover:border-purple-500/30 transition-colors">
                             <i data-lucide="wallet" class="w-7 h-7 text-purple-500"></i>
                         </div>
                         <h3 class="text-xl font-bold text-white mb-3">Gestão de Pagamentos</h3>
                         <p class="text-slate-400 text-sm leading-relaxed">
-                            Controle mensalidades e cobranças de diárias usando a integração de pagamentos com split automático e geração de Pix na hora.
+                            Controle mensalidades e cobranças de diárias através de um painel simples e intuitivo para o organizador.
                         </p>
                     </div>
                     <!-- Feature 5 -->
@@ -478,8 +470,8 @@
             <!-- Simple Footer -->
             <footer class="border-t border-slate-800 py-8 px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 mt-auto">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="volleyball" class="w-5 h-5 text-slate-600"></i>
-                    <span class="font-bold text-slate-400">TIME CERTO &copy; 2026</span>
+                    <img src="Icone.png" alt="Rachador Logo" class="h-5 w-auto object-contain opacity-70">
+                    <span class="font-bold text-slate-400">Rachador &copy; 2026</span>
                 </div>
                 <div class="flex gap-6 font-bold">
                     <a href="#" class="hover:text-white transition-colors">Termos</a>
@@ -516,7 +508,25 @@
                     </button>
                 </div>
 
-                <div class="mt-6 flex flex-col gap-3 text-center text-sm font-medium">
+                <!-- Divisor -->
+                <div id="googleSignInDivider" class="relative my-5 flex items-center">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="mx-3 text-xs text-slate-500 font-bold uppercase tracking-wider">ou</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
+                </div>
+
+                <!-- Botão Google -->
+                <button onclick="handleGoogleLogin()" id="btnGoogleLogin" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-slate-800 font-bold py-3 px-4 rounded-lg transition-all shadow-md border border-slate-200 hover:shadow-lg active:scale-95">
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    Continuar com Google
+                </button>
+
+                <div class="mt-5 flex flex-col gap-3 text-center text-sm font-medium">
                     <button onclick="toggleAuthMode('register')" id="btnToggleAuth" class="text-slate-300 hover:text-green-400 transition-colors">Ainda não tem conta? <span class="font-bold underline">Cadastre-se</span></button>
                     <button onclick="handlePasswordReset()" id="btnResetPass" class="text-slate-500 hover:text-white transition-colors text-xs">Esqueci minha senha</button>
                 </div>
@@ -548,7 +558,7 @@
                 <div class="flex-1 w-full space-y-4 text-center sm:text-left">
                     <div>
                         <h2 class="text-2xl font-black text-white mb-1">Seu Perfil</h2>
-                        <p class="text-sm text-slate-400 mb-4">Seus dados oficiais no TimeCerto.</p>
+                        <p class="text-sm text-slate-400 mb-4">Seus dados oficiais no Rachador.</p>
                         <label class="text-xs font-bold text-slate-400 mb-1 block uppercase tracking-wider">Como você quer ser chamado?</label>
                         <input type="text" id="userProfileNameInput" placeholder="Seu nome de jogador" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 transition-colors font-bold text-lg text-center sm:text-left">
                     </div>
@@ -696,7 +706,7 @@
                 <div class="lg:col-span-2">
                     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden w-full">
                         <div class="p-4 sm:p-6 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900/30 gap-3">
-                            <h2 class="text-lg sm:text-xl font-bold">Base de Atletas Cadastrados</h2>
+                            <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2">Base de Atletas Cadastrados <span id="adminPlayerCount" class="text-xs font-bold bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">0</span></h2>
                             <div class="flex items-center gap-2 w-full sm:w-auto">
                                 <input type="text" id="searchAdmin" placeholder="Buscar atleta..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm text-slate-300 outline-none w-full sm:w-48 focus:border-green-500" oninput="clearTimeout(window.adminSearchTimeout); window.adminSearchTimeout = setTimeout(() => window.renderAdminTable(), 300)">
                                 <select id="sortAdmin" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-slate-300 outline-none focus:border-green-500" onchange="window.renderAdminTable()">
@@ -705,17 +715,17 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="overflow-x-auto w-full max-h-[600px] overflow-y-auto">
-                            <table class="w-full text-left min-w-[500px]">
-                                <thead class="bg-slate-900/90 text-slate-400 text-xs sm:text-sm sticky top-0 z-10">
+                        <div class="w-full max-h-[600px] overflow-y-auto overflow-x-hidden">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900/90 text-slate-400 text-[10px] sm:text-sm sticky top-0 z-10">
                                     <tr>
-                                        <th class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
-                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Vit / Jogos</th>
-                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Nível (Elo)</th>
-                                        <th class="px-3 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Ações</th>
+                                        <th class="px-1 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Jogador</th>
+                                        <th class="px-1 sm:px-6 py-3 sm:py-4 text-center">Vit / Jogos</th>
+                                        <th class="px-1 sm:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Nível (Elo)</th>
+                                        <th class="px-1 sm:px-6 py-3 sm:py-4 text-right">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="adminTableBody" class="divide-y divide-slate-700 text-xs sm:text-sm"></tbody>
+                                <tbody id="adminTableBody" class="divide-y divide-slate-700 text-[10px] sm:text-sm"></tbody>
                             </table>
                         </div>
                     </div>
@@ -731,7 +741,7 @@
                         Gestão de <span class="text-green-500">Pagamentos</span>
                     </h2>
                     <p class="text-sm text-slate-400 font-bold bg-slate-900/50 px-4 py-2 rounded-full border border-slate-700/50">
-                        Pagar.me Integration
+                        Controle Manual
                     </p>
                 </div>
             </header>
@@ -744,15 +754,40 @@
                             <h3 class="text-lg font-black text-white uppercase flex items-center gap-2">
                                 <i data-lucide="receipt" class="text-green-500"></i> Minhas Cobranças
                             </h3>
+                            <div id="playerCaixaView" class="hidden text-right">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block">Caixa do Time</span>
+                                <span id="playerCaixaBalance" class="text-sm font-black text-green-400">R$ 0,00</span>
+                            </div>
                         </div>
                         <div class="p-4 sm:p-6 flex-1 flex flex-col gap-4 overflow-y-auto" id="userPendingChargesList">
                             <!-- Populated by JS -->
                             <div class="text-center text-slate-400 py-8 text-sm italic">Buscando cobranças...</div>
                         </div>
                     </div>
+                    
+                    <!-- EXTRATO DO CAIXA (Visível para jogadores se habilitado) -->
+                    <div id="playerCaixaExtratoPanel" class="hidden bg-slate-800/80 rounded-3xl border border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-[400px]">
+                        <div class="bg-slate-900/90 p-4 border-b border-slate-700 flex justify-between items-center">
+                            <h3 class="text-sm font-black text-white uppercase flex items-center gap-2">
+                                <i data-lucide="piggy-bank" class="text-green-500 w-5 h-5"></i> Extrato do Caixa
+                            </h3>
+                        </div>
+                        <div class="p-0 overflow-y-auto flex-1">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900/90 text-slate-400 text-[10px] sm:text-xs sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-3 py-2">Data</th>
+                                        <th class="px-3 py-2">Histórico</th>
+                                        <th class="px-3 py-2 text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="playerCaixaTableBody" class="divide-y divide-slate-700 text-xs bg-slate-800">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- PAINEL DO ADMIN (Visível apenas para admins) -->
                 <div class="lg:col-span-2 flex flex-col gap-6 admin-only-section hidden">
                     <div class="bg-slate-800/80 rounded-3xl border border-slate-700/50 shadow-xl overflow-hidden">
                         <div class="bg-slate-900/90 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -761,108 +796,79 @@
                             </h3>
                             <div class="flex gap-2">
                                 <button onclick="setPaymentAdminTab('config')" id="tab-pay-config" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white">Configurações</button>
-                                <button onclick="setPaymentAdminTab('diaria')" id="tab-pay-diaria" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Lançar Diária</button>
                                 <button onclick="setPaymentAdminTab('status')" id="tab-pay-status" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Relatório</button>
+                                <button onclick="setPaymentAdminTab('caixa')" id="tab-pay-caixa" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Caixa</button>
                             </div>
                         </div>
 
                         <!-- TAB: CONFIG -->
                         <div id="pay-admin-config" class="p-4 sm:p-6 space-y-6">
+                            <!-- Chave PIX (Admin) e Salvar -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <div class="w-full mb-4">
+                                    <h4 class="text-sm font-bold text-white mb-2 uppercase">Conta de Recebimento (PIX)</h4>
+                                    <p class="text-xs text-slate-400 mb-2">Insira sua chave PIX para que os jogadores possam copiar e realizar o pagamento.</p>
+                                    <input type="text" id="adminPixKey" oninput="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 11999999999 ou email@email.com">
+                                </div>
+                                <button id="btnSaveConfig" onclick="savePaymentSettings()" class="hidden bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto shadow-md transition-all">Salvar Configurações</button>
+                            </div>
+
                             <!-- Modo de Pagamento -->
                             <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                                 <h4 class="text-sm font-bold text-white mb-4 uppercase">Modalidade do Grupo</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                                     <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
-                                        <input type="radio" name="paymentMode" value="free" class="text-blue-500">
+                                        <input type="radio" name="paymentMode" value="free" class="text-blue-500" onchange="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()">
                                         <span class="text-sm font-bold text-white">Gratuito</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
-                                        <input type="radio" name="paymentMode" value="monthly" class="text-blue-500">
+                                        <input type="radio" name="paymentMode" value="monthly" class="text-blue-500" onchange="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()">
                                         <span class="text-sm font-bold text-white">Mensalidade</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-3 bg-slate-800 rounded-lg border border-slate-600 cursor-pointer hover:bg-slate-700">
-                                        <input type="radio" name="paymentMode" value="daily" class="text-blue-500">
+                                        <input type="radio" name="paymentMode" value="daily" class="text-blue-500" onchange="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()">
                                         <span class="text-sm font-bold text-white">Diária / Avulso</span>
                                     </label>
                                 </div>
                                 <div id="monthlySettings" class="hidden flex flex-col gap-3 mt-4 border-t border-slate-700 pt-4">
                                     <div>
                                         <label class="text-xs text-slate-400 font-bold block mb-1">Valor da Mensalidade (R$)</label>
-                                        <input type="number" id="payMonthlyValue" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 50.00">
+                                        <input type="number" id="payMonthlyValue" oninput="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 50.00">
                                     </div>
                                     <div>
                                         <label class="text-xs text-slate-400 font-bold block mb-1">Dia do Vencimento</label>
-                                        <input type="number" id="payMonthlyDay" min="1" max="31" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 5">
+                                        <input type="number" id="payMonthlyDay" oninput="if(typeof showPaymentSaveBtn === 'function') showPaymentSaveBtn()" min="1" max="31" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="Ex: 5">
                                     </div>
+                                </div>
+                                <div id="dailySettings" class="hidden flex-col gap-4 mt-4 border-t border-slate-700 pt-4">
+                                    <h4 class="text-sm font-bold text-white uppercase">Lançar Cobrança Diária</h4>
+                                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                                        <div class="flex-1">
+                                            <label class="text-xs text-slate-400 font-bold block mb-1">Descrição</label>
+                                            <input type="text" id="diariaDesc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: Racha 05/10">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="text-xs text-slate-400 font-bold block mb-1">Valor (R$)</label>
+                                            <input type="number" id="diariaValue" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="0.00">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="text-xs text-slate-400 font-bold block mb-1">Tipo de Rateio</label>
+                                            <select id="diariaType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                                <option value="fixed">Valor fixo por jogador</option>
+                                                <option value="split">Dividir valor total</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 max-h-60 overflow-y-auto" id="diariaPlayersList">
+                                        <!-- Preenchido dinamicamente com os jogadores do grupo -->
+                                    </div>
+                                    
+                                    <button onclick="generateDailyCharges()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg mt-2 flex justify-center items-center gap-2">
+                                        <i data-lucide="send" class="w-4 h-4"></i> ENVIAR COBRANÇAS
+                                    </button>
                                 </div>
                             </div>
-
-                            <!-- Dados Bancários (Split Pagar.me) -->
-                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                                <h4 class="text-sm font-bold text-white mb-2 uppercase">Conta de Recebimento (Admin)</h4>
-                                <p class="text-xs text-slate-400 mb-4">Insira os dados da conta onde o dinheiro deve cair após o pagamento pelo Pagar.me.</p>
-                                <div id="receiverStatus" class="mb-4 text-sm font-bold text-yellow-500 hidden bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/30"></div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="text-xs text-slate-400 font-bold block mb-1">CPF/CNPJ do Titular</label>
-                                        <input type="text" id="recDoc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Somente números">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-slate-400 font-bold block mb-1">Nome Completo / Razão Social</label>
-                                        <input type="text" id="recName" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-slate-400 font-bold block mb-1">Banco (Código)</label>
-                                        <input type="text" id="recBank" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 341 (Itaú), 001 (BB)">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-slate-400 font-bold block mb-1">Agência (sem dígito)</label>
-                                        <input type="text" id="recAgency" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-slate-400 font-bold block mb-1">Conta (com dígito)</label>
-                                        <input type="text" id="recAccount" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: 12345-6">
-                                    </div>
-                                    <div>
-                                        <label class="text-xs text-slate-400 font-bold block mb-1">Tipo de Conta</label>
-                                        <select id="recType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                                            <option value="checking">Corrente</option>
-                                            <option value="savings">Poupança</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <button onclick="savePaymentSettings()" class="mt-4 bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm w-full sm:w-auto shadow-md">Salvar Configurações</button>
-                            </div>
-                        </div>
-
-                        <!-- TAB: DIARIA -->
-                        <div id="pay-admin-diaria" class="p-4 sm:p-6 space-y-4 hidden">
-                            <h4 class="text-sm font-bold text-white uppercase">Lançar Cobrança Diária</h4>
-                            <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                                <div class="flex-1">
-                                    <label class="text-xs text-slate-400 font-bold block mb-1">Descrição</label>
-                                    <input type="text" id="diariaDesc" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="Ex: Racha 05/10">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="text-xs text-slate-400 font-bold block mb-1">Valor (R$)</label>
-                                    <input type="number" id="diariaValue" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm" placeholder="0.00">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="text-xs text-slate-400 font-bold block mb-1">Tipo de Rateio</label>
-                                    <select id="diariaType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                                        <option value="fixed">Valor fixo por jogador</option>
-                                        <option value="split">Dividir valor total</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 max-h-60 overflow-y-auto" id="diariaPlayersList">
-                                <!-- Preenchido dinamicamente com os jogadores do grupo -->
-                            </div>
-                            
-                            <button onclick="generateDailyCharges()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg mt-2 flex justify-center items-center gap-2">
-                                <i data-lucide="send" class="w-4 h-4"></i> ENVIAR COBRANÇAS
-                            </button>
                         </div>
 
                         <!-- TAB: STATUS -->
@@ -884,40 +890,55 @@
                                 </table>
                             </div>
                         </div>
+
+                        <!-- TAB: CAIXA -->
+                        <div id="pay-admin-caixa" class="p-4 sm:p-6 space-y-6 hidden">
+                            <!-- Balance Header -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-bold text-white uppercase">Saldo Atual</h4>
+                                    <p id="caixaBalance" class="text-2xl font-black text-green-400">R$ 0,00</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-slate-400 font-bold">Visível para Jogadores?</label>
+                                    <input type="checkbox" id="caixaVisibility" onchange="toggleCaixaVisibility(this.checked)" class="w-4 h-4 accent-green-500">
+                                </div>
+                            </div>
+
+                            <!-- Manual Entry Form -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <h4 class="text-sm font-bold text-white mb-3 uppercase">Novo Registro</h4>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <input type="text" id="caixaDesc" placeholder="Descrição (Ex: Compra de Bola)" class="flex-[2] bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                    <input type="number" id="caixaValue" placeholder="Valor (R$)" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                    <select id="caixaType" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                        <option value="credit">Crédito (+)</option>
+                                        <option value="debit">Débito (-)</option>
+                                    </select>
+                                    <button onclick="addCaixaEntry()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">Adicionar</button>
+                                </div>
+                            </div>
+
+                            <!-- History Table -->
+                            <div class="overflow-x-auto w-full max-h-[400px] overflow-y-auto rounded-xl border border-slate-700">
+                                <table class="w-full text-left min-w-[500px]">
+                                    <thead class="bg-slate-900/90 text-slate-400 text-xs sticky top-0 z-10">
+                                        <tr>
+                                            <th class="px-4 py-3">Data</th>
+                                            <th class="px-4 py-3">Descrição</th>
+                                            <th class="px-4 py-3 text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="caixaTableBody" class="divide-y divide-slate-700 text-xs bg-slate-800">
+                                        <!-- Preenchido dinamicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
-
-        <!-- Modal Pix -->
-        <div id="pixModal" class="fixed inset-0 bg-slate-950/90 z-[300] hidden flex-col items-center justify-center backdrop-blur-md px-4 animate-in fade-in">
-            <div class="bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border-2 border-green-500 max-w-sm w-full text-center relative">
-                <button onclick="document.getElementById('pixModal').classList.add('hidden'); document.getElementById('pixModal').classList.remove('flex');" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-                <div class="w-16 h-16 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mx-auto mb-4 border border-green-500/30">
-                    <i data-lucide="qr-code" class="w-8 h-8"></i>
-                </div>
-                <h3 class="text-2xl font-black text-white mb-2 uppercase">Pagamento via Pix</h3>
-                <p class="text-slate-400 mb-6 text-sm" id="pixValueDesc">Escaneie o QR Code ou copie o código abaixo para pagar R$ 0,00</p>
-                
-                <div class="bg-white p-2 rounded-xl mb-6 mx-auto inline-block border-4 border-slate-700" id="pixQrCodeContainer">
-                    <img id="pixQrCodeImage" src="" alt="QR Code Pix" class="w-48 h-48 object-contain">
-                </div>
-                
-                <div class="text-left mb-6">
-                    <label class="text-xs font-bold text-slate-400 mb-1 block">Pix Copia e Cola:</label>
-                    <div class="flex bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
-                        <input type="text" id="pixCopyString" readonly class="w-full bg-transparent p-3 text-slate-300 text-xs font-mono outline-none" value="...">
-                        <button onclick="copyPixString()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 flex items-center justify-center transition-colors">
-                            <i data-lucide="copy" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <p class="text-xs text-yellow-500 font-bold bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20 animate-pulse">
-                    O status será atualizado automaticamente após o pagamento.
-                </p>
-            </div>
-        </div>
 
         <!-- Modais (Victory, Confirm, Move, Config Placar) -->
         <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4">

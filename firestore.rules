@@ -23,30 +23,40 @@ service cloud.firestore {
       // E exclui paymentSettings e charges da regra geral.
       // ====================================================================
       match /{collection}/{document=**} {
-        allow read: if (collection != 'paymentSettings' && collection != 'charges') 
-                    && (isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails));
+        allow read: if (collection != 'paymentSettings' && collection != 'charges' && collection != 'caixa') 
+                    && (isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberEmails', [])));
         
         // Se a coleção for 'teams' ou 'settings', qualquer membro pode interagir
         allow write: if (collection == 'teams' || collection == 'settings') 
-                     && (isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails));
+                     && (isMaster() || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberEmails', [])));
       }
 
       // ====================================================================
       // 1.5 PAGAMENTOS (paymentSettings e charges)
       // ====================================================================
       match /paymentSettings/{document=**} {
-        // Admin pode ler/escrever
-        allow read, write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
+        allow read: if isMaster() 
+                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])))
+                    || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberEmails', []));
+        allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])));
       }
 
       match /charges/{chargeId} {
         // Admin pode ler todas. Usuário só as suas.
         allow read: if isMaster() 
-                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails))
+                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])))
                     || (request.auth != null && resource.data.playerEmail == request.auth.token.email);
         
         // Apenas Admin pode criar/escrever cobranças pelo painel
-        allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails));
+        allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])));
+      }
+
+      match /caixa/{caixaId} {
+        allow read: if isMaster() 
+                    || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])))
+                    || (request.auth != null && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberEmails', []));
+        
+        allow write: if isMaster() || (request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) || request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])));
       }
 
       // ====================================================================
@@ -57,12 +67,12 @@ service cloud.firestore {
                      && (
                          isMaster() 
                          || (request.auth != null && (
-                              request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.adminUids ||
-                              request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.moderatorEmails
+                              request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('adminUids', []) ||
+                              request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('moderatorEmails', [])
                             ))
                          || (
                               request.auth != null 
-                              && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails 
+                              && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberEmails', []) 
                               && get(/databases/$(database)/documents/groups/$(groupId)/settings/global).data.eloEnabled == true
                             )
                      );
@@ -75,7 +85,7 @@ service cloud.firestore {
       // ====================================================================
       match /players/{playerId} {
         allow update: if request.auth != null
-                      && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.memberEmails
+                      && request.auth.token.email in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberEmails', [])
                       && resource.data.email == request.auth.token.email
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photo', 'updatedAt']);
       }
