@@ -49,6 +49,7 @@ export const renderPaymentsView = async () => {
             currentPaymentMode = data.mode || 'free';
             currentPixKey = data.pixKey || '';
             monthlyDay = data.monthlyDay || 10;
+            currentCaixaVisibility = data.caixaVisibility || false;
             
             if (isAdmin) {
             const modeRadio = document.querySelector(`input[name="paymentMode"][value="${currentPaymentMode}"]`);
@@ -71,7 +72,6 @@ export const renderPaymentsView = async () => {
             if (data.monthlyDay) document.getElementById('payMonthlyDay').value = data.monthlyDay;
             if (data.pixKey) document.getElementById('adminPixKey').value = data.pixKey;
             
-            currentCaixaVisibility = data.caixaVisibility || false;
             const cvCheck = document.getElementById('caixaVisibility');
             if(cvCheck) cvCheck.checked = currentCaixaVisibility;
 
@@ -214,11 +214,14 @@ window.addMonthlyPayment = async (playerId, playerName = '', direction = 1) => {
     const dirText = direction > 0 ? "+1 Mês" : "-1 Mês";
     
     openConfirmModal(`Confirmar ${dirText}`, `${actionText} 1 mês de pagamento para o jogador ${playerName}?`, async () => {
-        // Obter monthlyDay da config
+        // Obter monthlyDay e monthlyValue da config
         const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
         let monthlyDay = 10;
+        let monthlyValue = 0;
         if (settingsDoc.exists()) {
-            monthlyDay = settingsDoc.data().monthlyDay || 10;
+            const data = settingsDoc.data();
+            monthlyDay = data.monthlyDay || 10;
+            monthlyValue = parseFloat(data.monthlyValue) || 0;
         }
 
         const playerRef = doc(db, 'groups', state.currentGroupId, 'players', playerId);
@@ -228,6 +231,9 @@ window.addMonthlyPayment = async (playerId, playerName = '', direction = 1) => {
         const pData = playerDoc.data();
         let nextDue = getNextDueDate(pData.paidUntil, monthlyDay);
         
+        // Data do vencimento que está sendo pago/removido
+        const targetDueDateStr = nextDue.toLocaleDateString();
+        
         // Adiciona ou remove 1 mês
         nextDue.setMonth(nextDue.getMonth() + direction);
         
@@ -235,6 +241,18 @@ window.addMonthlyPayment = async (playerId, playerName = '', direction = 1) => {
             await updateDoc(playerRef, {
                 paidUntil: nextDue.getTime()
             });
+            
+            // Adiciona no caixa se tiver valor
+            if (monthlyValue > 0) {
+                const desc = `Mensalidade - ${playerName} (Venc: ${targetDueDateStr})`;
+                await addDoc(collection(db, 'groups', state.currentGroupId, 'caixa'), {
+                    description: desc,
+                    value: monthlyValue,
+                    type: direction > 0 ? 'credit' : 'debit',
+                    createdAt: Date.now()
+                });
+            }
+            
             showToast("Pagamento de 1 mês registrado com sucesso!", "success");
             // Atualiza UI local
             const pIndex = state.players.findIndex(p => p.id === playerId);
