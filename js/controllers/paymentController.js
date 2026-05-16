@@ -1,8 +1,10 @@
 import { state } from '../state.js';
-import { db, collection, addDoc, doc, setDoc, query, where, onSnapshot, functions, httpsCallable } from '../firebase.js';
+import { db, collection, addDoc, doc, setDoc, query, where, onSnapshot, getDoc, updateDoc } from '../firebase.js';
 import { showToast } from '../ui.js';
 
 let unsubscribeCharges = null;
+let currentPixKey = '';
+let currentPaymentMode = 'free';
 
 export const setPaymentAdminTab = (tab) => {
     // Esconde todas as tabs
@@ -33,6 +35,194 @@ export const renderPaymentsView = async () => {
     if (unsubscribeCharges) unsubscribeCharges();
 
     const isAdmin = state.currentUserRole === 'admin' || state.isMaster;
+
+    // Load global settings to know the mode and pix key
+    const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
+    let monthlyDay = 10;
+    if (settingsDoc.exists()) {
+        const data = settingsDoc.data();
+        currentPaymentMode = data.mode || 'free';
+        currentPixKey = data.pixKey || '';
+        monthlyDay = data.monthlyDay || 10;
+        
+        if (isAdmin) {
+            const modeRadio = document.querySelector(`input[name="paymentMode"][value="${currentPaymentMode}"]`);
+            if (modeRadio) modeRadio.checked = true;
+            
+            const ms = document.getElementById('monthlySettings');
+            if (currentPaymentMode === 'monthly') {
+                ms.classList.remove('hidden');
+                ms.classList.add('flex');
+            } else {
+                ms.classList.add('hidden');
+                ms.classList.remove('flex');
+            }
+            
+            if (data.monthlyValue) document.getElementById('payMonthlyValue').value = data.monthlyValue;
+            if (data.monthlyDay) document.getElementById('payMonthlyDay').value = data.monthlyDay;
+            if (data.pixKey) document.getElementById('adminPixKey').value = data.pixKey;
+
+            // Listener pros radios de mode
+            document.querySelectorAll('input[name="paymentMode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const msElem = document.getElementById('monthlySettings');
+                    if (e.target.value === 'monthly') {
+                        msElem.classList.remove('hidden');
+                        msElem.classList.add('flex');
+                    } else {
+                        msElem.classList.add('hidden');
+                        msElem.classList.remove('flex');
+                    }
+                });
+            });
+
+            // Carrega a lista de jogadores para a tela de diária
+            const list = document.getElementById('diariaPlayersList');
+            if (list) {
+                list.innerHTML = '';
+                state.players.forEach(p => {
+                    list.innerHTML += `
+                        <label class="flex items-center gap-3 p-2 hover:bg-slate-800 rounded-lg cursor-pointer">
+                            <input type="checkbox" class="diaria-player-cb w-4 h-4 text-blue-600 bg-slate-950 border-slate-700 rounded" value='${JSON.stringify({id: p.id, name: p.name, email: p.email})}'>
+                            <span class="text-sm font-bold text-white">${p.name} <span class="text-xs text-slate-500 font-normal">(${p.email || 'Sem e-mail'})</span></span>
+                        </label>
+                    `;
+                });
+            }
+        }
+    }
+
+    const adminTable = document.getElementById('adminPaymentsTable');
+    const userList = document.getElementById('userPendingChargesList');
+
+    if (currentPaymentMode === 'monthly') {
+        // MODO MENSALISTA
+        renderMonthlyView(isAdmin, monthlyDay, adminTable, userList);
+    } else if (currentPaymentMode === 'daily') {
+        // MODO DIARIA
+        renderDailyView(isAdmin, adminTable, userList);
+    } else {
+        // FREE MODE
+        if (adminTable) adminTable.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Modo Gratuito Ativo. Nenhuma cobrança.</td></tr>';
+        if (userList) userList.innerHTML = '<div class="text-center text-slate-400 py-8 text-sm italic">O grupo está no modo gratuito. 🎉</div>';
+    }
+};
+
+const renderMonthlyView = (isAdmin, monthlyDay, adminTable, userList) => {
+    const now = new Date();
+    
+    if (isAdmin && adminTable) {
+        adminTable.innerHTML = '';
+        // Setup table headers for monthly
+        const thead = adminTable.closest('table').querySelector('thead tr');
+        thead.innerHTML = `
+            <th class="px-4 py-3">Jogador</th>
+            <th class="px-4 py-3 text-center">Vencimento Atual</th>
+            <th class="px-4 py-3 text-center">Status</th>
+            <th class="px-4 py-3 text-right">Ação</th>
+        `;
+
+        state.players.forEach(p => {
+            let nextDue = getNextDueDate(p.paidUntil, monthlyDay);
+            let isOverdue = now > nextDue;
+            
+            const statusColor = isOverdue ? 'text-red-500' : 'text-green-500';
+            const statusText = isOverdue ? 'Atrasado' : 'Em dia';
+            
+            adminTable.innerHTML += `
+                <tr>
+                    <td class="px-4 py-3 font-bold text-white">${p.name}</td>
+                    <td class="px-4 py-3 text-center text-slate-300">${nextDue.toLocaleDateString()}</td>
+                    <td class="px-4 py-3 text-center font-bold ${statusColor}">${statusText}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="addMonthlyPayment('${p.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">+1 Mês</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    if (userList) {
+        userList.innerHTML = '';
+        const myPlayer = state.players.find(p => p.email === state.user.email);
+        
+        if (myPlayer) {
+            let nextDue = getNextDueDate(myPlayer.paidUntil, monthlyDay);
+            let isOverdue = now > nextDue;
+            
+            const statusColor = isOverdue ? 'text-red-400' : 'text-green-400';
+            const statusText = isOverdue ? 'Atrasado' : 'Em dia';
+
+            userList.innerHTML = `
+                <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col items-center text-center gap-4">
+                    <div>
+                        <h4 class="text-white font-bold text-lg mb-1">Status da Mensalidade</h4>
+                        <p class="text-sm text-slate-400">Seu vencimento é no dia <span class="font-bold text-white">${nextDue.toLocaleDateString()}</span></p>
+                        <p class="text-lg font-black ${statusColor} mt-2 uppercase">${statusText}</p>
+                    </div>
+                </div>
+            `;
+            
+            renderPixKeyInfo(userList, isOverdue ? "Faça o pagamento para ficar em dia." : "Pague antecipado se desejar.");
+        } else {
+            userList.innerHTML = `<div class="text-center text-slate-400 py-8 text-sm italic">Jogador não encontrado no grupo.</div>`;
+        }
+    }
+};
+
+const getNextDueDate = (paidUntilMillis, monthlyDay) => {
+    if (paidUntilMillis) {
+        return new Date(paidUntilMillis);
+    } else {
+        // Se não tem, o primeiro vencimento é o próximo 'monthlyDay' a partir de hoje
+        const today = new Date();
+        let nextDue = new Date(today.getFullYear(), today.getMonth(), monthlyDay);
+        if (today > nextDue) {
+            nextDue.setMonth(nextDue.getMonth() + 1);
+        }
+        return nextDue;
+    }
+};
+
+window.addMonthlyPayment = async (playerId) => {
+    if (!state.currentGroupId) return;
+    
+    // Obter monthlyDay da config
+    const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
+    let monthlyDay = 10;
+    if (settingsDoc.exists()) {
+        monthlyDay = settingsDoc.data().monthlyDay || 10;
+    }
+
+    const playerRef = doc(db, 'groups', state.currentGroupId, 'players', playerId);
+    const playerDoc = await getDoc(playerRef);
+    if (!playerDoc.exists()) return;
+    
+    const pData = playerDoc.data();
+    let nextDue = getNextDueDate(pData.paidUntil, monthlyDay);
+    
+    // Adiciona 1 mês
+    nextDue.setMonth(nextDue.getMonth() + 1);
+    
+    try {
+        await updateDoc(playerRef, {
+            paidUntil: nextDue.getTime()
+        });
+        showToast("Pagamento de 1 mês registrado com sucesso!", "success");
+        // Atualiza UI local
+        const pIndex = state.players.findIndex(p => p.id === playerId);
+        if (pIndex !== -1) {
+            state.players[pIndex].paidUntil = nextDue.getTime();
+        }
+        renderPaymentsView();
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao atualizar pagamento.", "error");
+    }
+};
+
+
+const renderDailyView = (isAdmin, adminTable, userList) => {
     let chargesQuery;
     
     if (isAdmin) {
@@ -41,12 +231,19 @@ export const renderPaymentsView = async () => {
         chargesQuery = query(collection(db, 'groups', state.currentGroupId, 'charges'), where('playerEmail', '==', state.user.email));
     }
     
+    if (adminTable) {
+        const thead = adminTable.closest('table').querySelector('thead tr');
+        thead.innerHTML = `
+            <th class="px-4 py-3">Jogador</th>
+            <th class="px-4 py-3">Descrição</th>
+            <th class="px-4 py-3">Valor</th>
+            <th class="px-4 py-3 text-center">Status</th>
+            <th class="px-4 py-3 text-right">Ações</th>
+        `;
+    }
+
     unsubscribeCharges = onSnapshot(chargesQuery, (snapshot) => {
         const charges = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // Separa as cobranças para o admin ver TODAS e para o usuário ver as SUAS
-        const adminTable = document.getElementById('adminPaymentsTable');
-        const userList = document.getElementById('userPendingChargesList');
         
         if (adminTable) adminTable.innerHTML = '';
         if (userList) userList.innerHTML = '';
@@ -56,33 +253,32 @@ export const renderPaymentsView = async () => {
         charges.forEach(charge => {
             // Renderiza na tabela do admin
             if (adminTable) {
-                const statusColor = charge.status === 'paid' ? 'text-green-500' : (charge.status === 'overdue' ? 'text-red-500' : 'text-yellow-500');
-                const statusText = charge.status === 'paid' ? 'Pago' : (charge.status === 'overdue' ? 'Atrasado' : 'Pendente');
+                const statusColor = charge.status === 'paid' ? 'text-green-500' : 'text-yellow-500';
+                const statusText = charge.status === 'paid' ? 'Pago' : 'Pendente';
                 
                 adminTable.innerHTML += `
                     <tr>
                         <td class="px-4 py-3 font-bold text-white">${charge.playerName}</td>
                         <td class="px-4 py-3 text-slate-300">${charge.description}</td>
                         <td class="px-4 py-3 text-white">R$ ${charge.value.toFixed(2)}</td>
-                        <td class="px-4 py-3 font-bold ${statusColor}">${statusText}</td>
-                        <td class="px-4 py-3 text-right text-slate-400">${new Date(charge.createdAt).toLocaleDateString()}</td>
+                        <td class="px-4 py-3 text-center font-bold ${statusColor}">${statusText}</td>
+                        <td class="px-4 py-3 text-right">
+                            ${charge.status !== 'paid' ? `<button onclick="markChargeAsPaid('${charge.id}')" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">Marcar Pago</button>` : `<span class="text-slate-500 text-xs">-</span>`}
+                        </td>
                     </tr>
                 `;
             }
 
-            // Renderiza no painel do usuário se for dele e estiver pendente ou atrasada
+            // Renderiza no painel do usuário se for dele e estiver pendente
             if (userList && charge.playerEmail === state.user.email && charge.status !== 'paid') {
                 hasPendingForUser = true;
                 userList.innerHTML += `
-                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col justify-between items-start gap-2">
                         <div>
                             <h4 class="text-white font-bold">${charge.description}</h4>
-                            <p class="text-sm text-slate-400">Vencimento: ${new Date(charge.dueDate || charge.createdAt).toLocaleDateString()}</p>
+                            <p class="text-sm text-slate-400">Data: ${new Date(charge.createdAt).toLocaleDateString()}</p>
                             <p class="text-lg font-black text-green-400 mt-1">R$ ${charge.value.toFixed(2)}</p>
                         </div>
-                        <button onclick="generatePixForCharge('${charge.id}')" class="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
-                            <i data-lucide="qr-code" class="w-4 h-4"></i> PAGAR PIX
-                        </button>
                     </div>
                 `;
             }
@@ -90,66 +286,46 @@ export const renderPaymentsView = async () => {
 
         if (!hasPendingForUser && userList) {
             userList.innerHTML = `<div class="text-center text-slate-400 py-8 text-sm italic">Nenhuma cobrança pendente. Você está em dia! 🎉</div>`;
+        } else if (hasPendingForUser && userList) {
+            renderPixKeyInfo(userList, "Faça o pagamento da sua cobrança copiando a chave Pix abaixo e envie o comprovante.");
         }
-        
-        if (typeof lucide !== 'undefined') lucide.createIcons();
     });
+};
 
-    // Se for admin, carrega as configs e a lista de jogadores
-    if (state.currentUserRole === 'admin' || state.isMaster) {
-        // Carrega config
-        const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-        const settingsDoc = await getDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'));
-        if (settingsDoc.exists()) {
-            const data = settingsDoc.data();
-            const modeRadio = document.querySelector(`input[name="paymentMode"][value="${data.mode}"]`);
-            if (modeRadio) modeRadio.checked = true;
-            
-            if (data.mode === 'monthly') {
-                document.getElementById('monthlySettings').classList.remove('hidden');
-                document.getElementById('monthlySettings').classList.add('flex');
-            } else {
-                document.getElementById('monthlySettings').classList.add('hidden');
-                document.getElementById('monthlySettings').classList.remove('flex');
-            }
-            
-            if (data.monthlyValue) document.getElementById('payMonthlyValue').value = data.monthlyValue;
-            if (data.monthlyDay) document.getElementById('payMonthlyDay').value = data.monthlyDay;
-            
-            if (data.receiverId) {
-                const rs = document.getElementById('receiverStatus');
-                rs.innerHTML = `Recebedor configurado e ativo. <br><span class="text-xs opacity-70">ID Pagar.me: ${data.receiverId}</span>`;
-                rs.classList.remove('hidden');
-            }
-        }
+const renderPixKeyInfo = (container, message) => {
+    if (currentPixKey) {
+        container.innerHTML += `
+            <div class="mt-4 bg-slate-950 p-4 rounded-xl border border-slate-700 w-full text-center">
+                <p class="text-xs text-slate-400 mb-2">${message}</p>
+                <div class="flex items-center justify-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-700">
+                    <span class="text-white font-mono text-sm break-all" id="userPixKeyDisplay">${currentPixKey}</span>
+                    <button onclick="copyAdminPixString()" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded transition-colors" title="Copiar PIX">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+};
 
-        // Listener pros radios de mode
-        document.querySelectorAll('input[name="paymentMode"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const ms = document.getElementById('monthlySettings');
-                if (e.target.value === 'monthly') {
-                    ms.classList.remove('hidden');
-                    ms.classList.add('flex');
-                } else {
-                    ms.classList.add('hidden');
-                    ms.classList.remove('flex');
-                }
-            });
+window.copyAdminPixString = () => {
+    if (!currentPixKey) return;
+    navigator.clipboard.writeText(currentPixKey);
+    showToast("Chave PIX copiada!", "success");
+};
+
+window.markChargeAsPaid = async (chargeId) => {
+    try {
+        const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
+        await updateDoc(chargeRef, {
+            status: 'paid',
+            paidAt: Date.now()
         });
-
-        // Carrega a lista de jogadores para a tela de diária
-        const list = document.getElementById('diariaPlayersList');
-        if (list) {
-            list.innerHTML = '';
-            state.players.forEach(p => {
-                list.innerHTML += `
-                    <label class="flex items-center gap-3 p-2 hover:bg-slate-800 rounded-lg cursor-pointer">
-                        <input type="checkbox" class="diaria-player-cb w-4 h-4 text-blue-600 bg-slate-950 border-slate-700 rounded" value='${JSON.stringify({id: p.id, name: p.name, email: p.email})}'>
-                        <span class="text-sm font-bold text-white">${p.name} <span class="text-xs text-slate-500 font-normal">(${p.email || 'Sem e-mail'})</span></span>
-                    </label>
-                `;
-            });
-        }
+        showToast("Cobrança marcada como paga!", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao atualizar cobrança.", "error");
     }
 };
 
@@ -159,47 +335,16 @@ export const savePaymentSettings = async () => {
     const mode = document.querySelector('input[name="paymentMode"]:checked')?.value || 'free';
     const monthlyValue = parseFloat(document.getElementById('payMonthlyValue').value) || 0;
     const monthlyDay = parseInt(document.getElementById('payMonthlyDay').value) || 1;
+    const pixKey = document.getElementById('adminPixKey').value.trim();
 
-    // Coleta dados bancários
-    const recDocStr = document.getElementById('recDoc').value.trim();
-    const recName = document.getElementById('recName').value.trim();
-    const recBank = document.getElementById('recBank').value.trim();
-    const recAgency = document.getElementById('recAgency').value.trim();
-    const recAccount = document.getElementById('recAccount').value.trim();
-    const recType = document.getElementById('recType').value;
-
-    const payload = { mode, monthlyValue, monthlyDay };
-    
-    // Se preencheu dados do banco, chama a function para criar/atualizar o recebedor no Pagar.me
-    if (recDocStr && recName && recBank && recAgency && recAccount) {
-        showToast("Criando recebedor no Pagar.me...", "info");
-        try {
-            const createReceiver = httpsCallable(functions, 'createPagarmeReceiver');
-            const res = await createReceiver({
-                groupId: state.currentGroupId,
-                document: recDocStr,
-                name: recName,
-                bank: recBank,
-                agency: recAgency,
-                account: recAccount,
-                type: recType
-            });
-            
-            if (res.data.success) {
-                payload.receiverId = res.data.recipientId;
-                showToast("Recebedor Pagar.me gerado!", "success");
-            } else {
-                throw new Error(res.data.error || 'Erro desconhecido no Pagar.me');
-            }
-        } catch (e) {
-            console.error(e);
-            return showToast("Erro no Pagar.me: " + e.message, "error");
-        }
-    }
+    const payload = { mode, monthlyValue, monthlyDay, pixKey };
 
     try {
         await setDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'), payload, { merge: true });
         showToast("Configurações de pagamento salvas!", "success");
+        currentPaymentMode = mode;
+        currentPixKey = pixKey;
+        renderPaymentsView();
     } catch (e) {
         console.error(e);
         showToast("Erro ao salvar no Firestore.", "error");
@@ -219,16 +364,13 @@ export const generateDailyCharges = async () => {
 
     const players = Array.from(checkboxes).map(cb => JSON.parse(cb.value));
     
-    // Se não tiverem email, não podemos vincular o pagamento à conta facilmente, mas vamos seguir.
-    // O ideal é que todos tenham e-mail.
-    
     let valuePerPlayer = val;
     if (type === 'split') {
         valuePerPlayer = val / players.length;
     }
 
-    if (valuePerPlayer < 1) {
-        return showToast("O valor mínimo por jogador no Pagar.me é de R$ 1,00.", "error");
+    if (valuePerPlayer <= 0) {
+        return showToast("O valor mínimo por jogador deve ser maior que 0.", "error");
     }
 
     showToast(`Gerando ${players.length} cobranças...`, "info");
@@ -260,39 +402,4 @@ export const generateDailyCharges = async () => {
         console.error(e);
         showToast("Erro ao criar cobranças.", "error");
     }
-};
-
-export const generatePixForCharge = async (chargeId) => {
-    showToast("Gerando Pix, aguarde...", "info");
-    try {
-        const createPix = httpsCallable(functions, 'createPixCharge');
-        const res = await createPix({
-            groupId: state.currentGroupId,
-            chargeId: chargeId
-        });
-        
-        if (res.data.success) {
-            document.getElementById('pixQrCodeImage').src = res.data.qr_code_url;
-            document.getElementById('pixCopyString').value = res.data.qr_code;
-            
-            const pixValueDesc = document.getElementById('pixValueDesc');
-            pixValueDesc.innerText = `Escaneie o QR Code ou copie o código abaixo para pagar a cobrança via Pix.`;
-            
-            document.getElementById('pixModal').classList.remove('hidden');
-            document.getElementById('pixModal').classList.add('flex');
-        } else {
-            throw new Error(res.data.error || "Falha ao gerar o Pix no Pagar.me");
-        }
-    } catch (e) {
-        console.error(e);
-        showToast("Erro ao gerar Pix: " + e.message, "error");
-    }
-};
-
-export const copyPixString = () => {
-    const input = document.getElementById('pixCopyString');
-    input.select();
-    input.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(input.value);
-    showToast("Código Copia e Cola copiado!", "success");
 };

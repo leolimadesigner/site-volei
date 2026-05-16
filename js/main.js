@@ -22,7 +22,7 @@ import {
 } from './controllers/adminController.js';
 import {
     setPaymentAdminTab, renderPaymentsView, savePaymentSettings,
-    generateDailyCharges, generatePixForCharge, copyPixString
+    generateDailyCharges
 } from './controllers/paymentController.js';
 
 // Importação das novas variáveis e métodos do Firebase
@@ -601,7 +601,7 @@ Object.assign(window, {
     handleAuthAction, toggleAuthMode, handlePasswordReset, handleLogout, handleGoogleLogin, 
     handleCreateGroup, selectGroup, saveUserProfile, removeUserProfilePhoto, renderAdminTable,
     // NOVOS BINDINGS DE PAGAMENTOS:
-    setPaymentAdminTab, renderPaymentsView, savePaymentSettings, generateDailyCharges, generatePixForCharge, copyPixString,
+    setPaymentAdminTab, renderPaymentsView, savePaymentSettings, generateDailyCharges,
     // NOVOS BINDINGS DE PLACAR:
     openPlacarConfigModal, closePlacarConfigModal, savePlacarConfig, toggleTimer, resetTimer, playBeepSound, checkWinCondition,
     syncDraftSettings

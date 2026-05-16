@@ -23,7 +23,7 @@
     "providers": {
       "emailPassword": true,
       "googleSignIn": {
-        "oAuthBrandDisplayName": "TimeCerto",
+        "oAuthBrandDisplayName": "Rachador",
         "supportEmail": "renato96.ram@gmail.com"
       }
     }
