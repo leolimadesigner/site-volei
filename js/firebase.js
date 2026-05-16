@@ -18,6 +18,7 @@ import {
     collection, 
     onSnapshot, 
     deleteDoc, 
+    getDocs,                        // NOVO: Para buscar múltiplos documentos
     addDoc, 
     updateDoc,
     query,
@@ -79,6 +80,7 @@ export {
     doc, 
     setDoc, 
     getDoc,
+    getDocs,
     collection, 
     onSnapshot, 
     deleteDoc, 
