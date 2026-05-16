@@ -3,12 +3,15 @@ import { db, collection, addDoc, doc, setDoc, query, where, onSnapshot, getDoc, 
 import { showToast, openConfirmModal } from '../ui.js';
 
 let unsubscribeCharges = null;
+let unsubscribeCaixa = null;
 let currentPixKey = '';
 let currentPaymentMode = 'free';
+let currentCaixaVisibility = false;
+let currentCaixaBalance = 0;
 
 export const setPaymentAdminTab = (tab) => {
     // Esconde todas as tabs
-    ['config', 'status'].forEach(t => {
+    ['config', 'status', 'caixa'].forEach(t => {
         const el = document.getElementById(`pay-admin-${t}`);
         const btn = document.getElementById(`tab-pay-${t}`);
         if(el) el.classList.add('hidden');
@@ -33,6 +36,7 @@ export const renderPaymentsView = async () => {
 
     // Remove listener antigo
     if (unsubscribeCharges) unsubscribeCharges();
+    if (unsubscribeCaixa) unsubscribeCaixa();
 
     const isAdmin = state.currentUserRole === 'admin' || state.isMaster;
 
@@ -66,6 +70,10 @@ export const renderPaymentsView = async () => {
             if (data.monthlyValue) document.getElementById('payMonthlyValue').value = data.monthlyValue;
             if (data.monthlyDay) document.getElementById('payMonthlyDay').value = data.monthlyDay;
             if (data.pixKey) document.getElementById('adminPixKey').value = data.pixKey;
+            
+            currentCaixaVisibility = data.caixaVisibility || false;
+            const cvCheck = document.getElementById('caixaVisibility');
+            if(cvCheck) cvCheck.checked = currentCaixaVisibility;
 
             // Listener pros radios de mode
             document.querySelectorAll('input[name="paymentMode"]').forEach(radio => {
@@ -118,6 +126,8 @@ export const renderPaymentsView = async () => {
         if (adminTable) adminTable.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Modo Gratuito Ativo. Nenhuma cobrança.</td></tr>';
         if (userList) userList.innerHTML = '<div class="text-center text-slate-400 py-8 text-sm italic">O grupo está no modo gratuito. 🎉</div>';
     }
+
+    renderCaixaView(isAdmin, userList);
 };
 
 const renderMonthlyView = (isAdmin, monthlyDay, adminTable, userList) => {
@@ -344,11 +354,24 @@ window.markChargeAsPaid = async (chargeId, playerName = '') => {
     openConfirmModal("Confirmar Pagamento", `Marcar a cobrança de ${playerName} como paga?`, async () => {
         try {
             const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
+            const chargeDoc = await getDoc(chargeRef);
             await updateDoc(chargeRef, {
                 status: 'paid',
                 paidAt: Date.now()
             });
             showToast("Cobrança marcada como paga!", "success");
+
+            if (chargeDoc.exists()) {
+                const cData = chargeDoc.data();
+                // Add to Caixa
+                await addDoc(collection(db, 'groups', state.currentGroupId, 'caixa'), {
+                    description: `Pagamento: ${cData.description} (${playerName})`,
+                    value: cData.value,
+                    type: 'credit',
+                    createdAt: Date.now()
+                });
+            }
+
         } catch (e) {
             console.error(e);
             showToast("Erro ao atualizar cobrança.", "error");
@@ -464,3 +487,114 @@ export const generateDailyCharges = async () => {
         showToast("Erro ao criar cobranças.", "error");
     }
 };
+
+function renderCaixaView(isAdmin, userList) {
+    if (unsubscribeCaixa) unsubscribeCaixa();
+    
+    const caixaQuery = collection(db, 'groups', state.currentGroupId, 'caixa');
+    
+    unsubscribeCaixa = onSnapshot(caixaQuery, (snapshot) => {
+        const entries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Ordenar por data mais recente
+        entries.sort((a, b) => b.createdAt - a.createdAt);
+        
+        let total = 0;
+        const tbody = document.getElementById('caixaTableBody');
+        if (isAdmin && tbody) {
+            tbody.innerHTML = '';
+        }
+
+        entries.forEach(entry => {
+            const isCredit = entry.type === 'credit';
+            const value = parseFloat(entry.value) || 0;
+            total += isCredit ? value : -value;
+
+            if (isAdmin && tbody) {
+                const dateStr = new Date(entry.createdAt).toLocaleDateString();
+                const color = isCredit ? 'text-green-500' : 'text-red-500';
+                const typeText = isCredit ? 'Crédito' : 'Débito';
+                const sign = isCredit ? '+' : '-';
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="px-4 py-3 text-slate-300">${dateStr}</td>
+                        <td class="px-4 py-3 text-white font-bold">${entry.description}</td>
+                        <td class="px-4 py-3 ${color} font-bold">${typeText}</td>
+                        <td class="px-4 py-3 text-right ${color} font-bold">${sign} R$ ${value.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+        });
+        
+        currentCaixaBalance = total;
+        
+        const balanceEl = document.getElementById('caixaBalance');
+        if (balanceEl) {
+            balanceEl.textContent = `R$ ${total.toFixed(2)}`;
+            balanceEl.className = `text-2xl font-black ${total >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        }
+
+        const playerCaixaView = document.getElementById('playerCaixaView');
+        if (playerCaixaView) {
+            if (currentCaixaVisibility || isAdmin) {
+                playerCaixaView.classList.remove('hidden');
+                const playerBalance = document.getElementById('playerCaixaBalance');
+                if (playerBalance) {
+                    playerBalance.textContent = `R$ ${total.toFixed(2)}`;
+                    playerBalance.className = `text-sm font-black ${total >= 0 ? 'text-green-400' : 'text-red-400'}`;
+                }
+            } else {
+                playerCaixaView.classList.add('hidden');
+            }
+        }
+    });
+};
+
+export const toggleCaixaVisibility = async (isVisible) => {
+    if (!state.currentGroupId) return;
+    try {
+        await setDoc(doc(db, 'groups', state.currentGroupId, 'paymentSettings', 'global'), { caixaVisibility: isVisible }, { merge: true });
+        currentCaixaVisibility = isVisible;
+        showToast("Visibilidade do caixa atualizada!", "success");
+        // Força renderização do painel do jogador se necessário, mas o snapListener de groups talvez não dispare.
+        // Vou apenas mudar a classe localmente:
+        const playerCaixaView = document.getElementById('playerCaixaView');
+        if (playerCaixaView) {
+            if (isVisible || state.currentUserRole === 'admin' || state.isMaster) {
+                playerCaixaView.classList.remove('hidden');
+            } else {
+                playerCaixaView.classList.add('hidden');
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao atualizar visibilidade.", "error");
+    }
+};
+
+export const addCaixaEntry = async () => {
+    if (!state.currentGroupId) return;
+    
+    const desc = document.getElementById('caixaDesc').value.trim();
+    const valueStr = document.getElementById('caixaValue').value;
+    const type = document.getElementById('caixaType').value;
+    
+    if (!desc) return showToast("Digite uma descrição.", "error");
+    const val = parseFloat(valueStr);
+    if (isNaN(val) || val <= 0) return showToast("Digite um valor válido.", "error");
+
+    try {
+        await addDoc(collection(db, 'groups', state.currentGroupId, 'caixa'), {
+            description: desc,
+            value: val,
+            type: type, // 'credit' ou 'debit'
+            createdAt: Date.now()
+        });
+        showToast("Registro adicionado ao Caixa!", "success");
+        document.getElementById('caixaDesc').value = '';
+        document.getElementById('caixaValue').value = '';
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao adicionar registro.", "error");
+    }
+};
+

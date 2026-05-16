@@ -758,6 +758,10 @@
                             <h3 class="text-lg font-black text-white uppercase flex items-center gap-2">
                                 <i data-lucide="receipt" class="text-green-500"></i> Minhas Cobranças
                             </h3>
+                            <div id="playerCaixaView" class="hidden text-right">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block">Caixa do Time</span>
+                                <span id="playerCaixaBalance" class="text-sm font-black text-green-400">R$ 0,00</span>
+                            </div>
                         </div>
                         <div class="p-4 sm:p-6 flex-1 flex flex-col gap-4 overflow-y-auto" id="userPendingChargesList">
                             <!-- Populated by JS -->
@@ -776,6 +780,7 @@
                             <div class="flex gap-2">
                                 <button onclick="setPaymentAdminTab('config')" id="tab-pay-config" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white">Configurações</button>
                                 <button onclick="setPaymentAdminTab('status')" id="tab-pay-status" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Relatório</button>
+                                <button onclick="setPaymentAdminTab('caixa')" id="tab-pay-caixa" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-700 text-slate-300 hover:text-white">Caixa</button>
                             </div>
                         </div>
 
@@ -863,6 +868,51 @@
                                         </tr>
                                     </thead>
                                     <tbody id="adminPaymentsTable" class="divide-y divide-slate-700 text-xs sm:text-sm bg-slate-800">
+                                        <!-- Preenchido dinamicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- TAB: CAIXA -->
+                        <div id="pay-admin-caixa" class="p-4 sm:p-6 space-y-6 hidden">
+                            <!-- Balance Header -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-bold text-white uppercase">Saldo Atual</h4>
+                                    <p id="caixaBalance" class="text-2xl font-black text-green-400">R$ 0,00</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs text-slate-400 font-bold">Visível para Jogadores?</label>
+                                    <input type="checkbox" id="caixaVisibility" onchange="toggleCaixaVisibility(this.checked)" class="w-4 h-4 accent-green-500">
+                                </div>
+                            </div>
+
+                            <!-- Manual Entry Form -->
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                <h4 class="text-sm font-bold text-white mb-3 uppercase">Novo Registro</h4>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <input type="text" id="caixaDesc" placeholder="Descrição (Ex: Compra de Bola)" class="flex-[2] bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                    <input type="number" id="caixaValue" placeholder="Valor (R$)" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                    <select id="caixaType" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                                        <option value="credit">Crédito (+)</option>
+                                        <option value="debit">Débito (-)</option>
+                                    </select>
+                                    <button onclick="addCaixaEntry()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">Adicionar</button>
+                                </div>
+                            </div>
+
+                            <!-- History Table -->
+                            <div class="overflow-x-auto w-full max-h-[400px] overflow-y-auto rounded-xl border border-slate-700">
+                                <table class="w-full text-left min-w-[500px]">
+                                    <thead class="bg-slate-900/90 text-slate-400 text-xs sticky top-0 z-10">
+                                        <tr>
+                                            <th class="px-4 py-3">Data</th>
+                                            <th class="px-4 py-3">Descrição</th>
+                                            <th class="px-4 py-3 text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="caixaTableBody" class="divide-y divide-slate-700 text-xs bg-slate-800">
                                         <!-- Preenchido dinamicamente -->
                                     </tbody>
                                 </table>
