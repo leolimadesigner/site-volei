@@ -8,7 +8,7 @@ let currentPaymentMode = 'free';
 
 export const setPaymentAdminTab = (tab) => {
     // Esconde todas as tabs
-    ['config', 'diaria', 'status'].forEach(t => {
+    ['config', 'status'].forEach(t => {
         const el = document.getElementById(`pay-admin-${t}`);
         const btn = document.getElementById(`tab-pay-${t}`);
         if(el) el.classList.add('hidden');
@@ -50,12 +50,16 @@ export const renderPaymentsView = async () => {
             if (modeRadio) modeRadio.checked = true;
             
             const ms = document.getElementById('monthlySettings');
+            const ds = document.getElementById('dailySettings');
             if (currentPaymentMode === 'monthly') {
-                ms.classList.remove('hidden');
-                ms.classList.add('flex');
+                if (ms) { ms.classList.remove('hidden'); ms.classList.add('flex'); }
+                if (ds) { ds.classList.add('hidden'); ds.classList.remove('flex'); }
+            } else if (currentPaymentMode === 'daily') {
+                if (ms) { ms.classList.add('hidden'); ms.classList.remove('flex'); }
+                if (ds) { ds.classList.remove('hidden'); ds.classList.add('flex'); }
             } else {
-                ms.classList.add('hidden');
-                ms.classList.remove('flex');
+                if (ms) { ms.classList.add('hidden'); ms.classList.remove('flex'); }
+                if (ds) { ds.classList.add('hidden'); ds.classList.remove('flex'); }
             }
             
             if (data.monthlyValue) document.getElementById('payMonthlyValue').value = data.monthlyValue;
@@ -66,12 +70,16 @@ export const renderPaymentsView = async () => {
             document.querySelectorAll('input[name="paymentMode"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     const msElem = document.getElementById('monthlySettings');
+                    const dsElem = document.getElementById('dailySettings');
                     if (e.target.value === 'monthly') {
-                        msElem.classList.remove('hidden');
-                        msElem.classList.add('flex');
+                        if (msElem) { msElem.classList.remove('hidden'); msElem.classList.add('flex'); }
+                        if (dsElem) { dsElem.classList.add('hidden'); dsElem.classList.remove('flex'); }
+                    } else if (e.target.value === 'daily') {
+                        if (msElem) { msElem.classList.add('hidden'); msElem.classList.remove('flex'); }
+                        if (dsElem) { dsElem.classList.remove('hidden'); dsElem.classList.add('flex'); }
                     } else {
-                        msElem.classList.add('hidden');
-                        msElem.classList.remove('flex');
+                        if (msElem) { msElem.classList.add('hidden'); msElem.classList.remove('flex'); }
+                        if (dsElem) { dsElem.classList.add('hidden'); dsElem.classList.remove('flex'); }
                     }
                 });
             });
@@ -263,7 +271,12 @@ const renderDailyView = (isAdmin, adminTable, userList) => {
                         <td class="px-4 py-3 text-white">R$ ${charge.value.toFixed(2)}</td>
                         <td class="px-4 py-3 text-center font-bold ${statusColor}">${statusText}</td>
                         <td class="px-4 py-3 text-right">
-                            ${charge.status !== 'paid' ? `<button onclick="markChargeAsPaid('${charge.id}')" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">Marcar Pago</button>` : `<span class="text-slate-500 text-xs">-</span>`}
+                            <div class="flex justify-end gap-2">
+                                ${charge.status !== 'paid' ? `<button onclick="markChargeAsPaid('${charge.id}')" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded text-xs font-bold transition-colors">Pago</button>` : `<span class="text-slate-500 text-xs">-</span>`}
+                                <button onclick="deleteCharge('${charge.id}')" class="bg-red-600 hover:bg-red-500 text-white p-1 rounded transition-colors" title="Excluir Cobrança">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -329,6 +342,19 @@ window.markChargeAsPaid = async (chargeId) => {
     }
 };
 
+window.deleteCharge = async (chargeId) => {
+    if (!confirm("Tem certeza que deseja excluir esta cobrança? Esta ação não pode ser desfeita.")) return;
+    try {
+        const { deleteDoc } = await import('../firebase.js');
+        const chargeRef = doc(db, 'groups', state.currentGroupId, 'charges', chargeId);
+        await deleteDoc(chargeRef);
+        showToast("Cobrança excluída com sucesso!", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("Erro ao excluir cobrança.", "error");
+    }
+};
+
 export const savePaymentSettings = async () => {
     if (!state.currentGroupId) return;
 
@@ -382,7 +408,7 @@ export const generateDailyCharges = async () => {
             return addDoc(chargesRef, {
                 playerId: p.id,
                 playerName: p.name,
-                playerEmail: p.email,
+                playerEmail: p.email || "",
                 description: desc,
                 value: valuePerPlayer,
                 status: 'pending',
