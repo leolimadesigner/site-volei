@@ -768,9 +768,30 @@
                             <div class="text-center text-slate-400 py-8 text-sm italic">Buscando cobranças...</div>
                         </div>
                     </div>
+                    
+                    <!-- EXTRATO DO CAIXA (Visível para jogadores se habilitado) -->
+                    <div id="playerCaixaExtratoPanel" class="hidden bg-slate-800/80 rounded-3xl border border-slate-700/50 shadow-xl overflow-hidden flex flex-col h-[400px]">
+                        <div class="bg-slate-900/90 p-4 border-b border-slate-700 flex justify-between items-center">
+                            <h3 class="text-sm font-black text-white uppercase flex items-center gap-2">
+                                <i data-lucide="piggy-bank" class="text-green-500 w-5 h-5"></i> Extrato do Caixa
+                            </h3>
+                        </div>
+                        <div class="p-0 overflow-y-auto flex-1">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900/90 text-slate-400 text-[10px] sm:text-xs sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-3 py-2">Data</th>
+                                        <th class="px-3 py-2">Histórico</th>
+                                        <th class="px-3 py-2 text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="playerCaixaTableBody" class="divide-y divide-slate-700 text-xs bg-slate-800">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- PAINEL DO ADMIN (Visível apenas para admins) -->
                 <div class="lg:col-span-2 flex flex-col gap-6 admin-only-section hidden">
                     <div class="bg-slate-800/80 rounded-3xl border border-slate-700/50 shadow-xl overflow-hidden">
                         <div class="bg-slate-900/90 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">

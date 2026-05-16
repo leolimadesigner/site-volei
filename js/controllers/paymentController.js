@@ -522,22 +522,38 @@ function renderCaixaView(isAdmin, userList) {
             tbody.innerHTML = '';
         }
 
+        const tbodyPlayer = document.getElementById('playerCaixaTableBody');
+        if (tbodyPlayer) {
+            tbodyPlayer.innerHTML = '';
+        }
+
         entries.forEach(entry => {
             const isCredit = entry.type === 'credit';
             const value = parseFloat(entry.value) || 0;
             total += isCredit ? value : -value;
 
+            const dateStr = new Date(entry.createdAt).toLocaleDateString();
+            const color = isCredit ? 'text-green-500' : 'text-red-500';
+            const sign = isCredit ? '+' : '-';
+
             if (isAdmin && tbody) {
-                const dateStr = new Date(entry.createdAt).toLocaleDateString();
-                const color = isCredit ? 'text-green-500' : 'text-red-500';
                 const typeText = isCredit ? 'Crédito' : 'Débito';
-                const sign = isCredit ? '+' : '-';
                 tbody.innerHTML += `
                     <tr>
                         <td class="px-4 py-3 text-slate-300">${dateStr}</td>
                         <td class="px-4 py-3 text-white font-bold">${entry.description}</td>
                         <td class="px-4 py-3 ${color} font-bold">${typeText}</td>
                         <td class="px-4 py-3 text-right ${color} font-bold">${sign} R$ ${value.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+
+            if (tbodyPlayer) {
+                tbodyPlayer.innerHTML += `
+                    <tr>
+                        <td class="px-3 py-2 text-slate-300">${dateStr}</td>
+                        <td class="px-3 py-2 text-white font-bold text-xs">${entry.description}</td>
+                        <td class="px-3 py-2 text-right ${color} font-bold whitespace-nowrap">${sign} R$ ${value.toFixed(2)}</td>
                     </tr>
                 `;
             }
@@ -552,8 +568,12 @@ function renderCaixaView(isAdmin, userList) {
         }
 
         const playerCaixaView = document.getElementById('playerCaixaView');
+        const playerCaixaExtratoPanel = document.getElementById('playerCaixaExtratoPanel');
+        
+        const shouldShow = currentCaixaVisibility || isAdmin;
+
         if (playerCaixaView) {
-            if (currentCaixaVisibility || isAdmin) {
+            if (shouldShow) {
                 playerCaixaView.classList.remove('hidden');
                 const playerBalance = document.getElementById('playerCaixaBalance');
                 if (playerBalance) {
@@ -562,6 +582,14 @@ function renderCaixaView(isAdmin, userList) {
                 }
             } else {
                 playerCaixaView.classList.add('hidden');
+            }
+        }
+
+        if (playerCaixaExtratoPanel) {
+            if (shouldShow) {
+                playerCaixaExtratoPanel.classList.remove('hidden');
+            } else {
+                playerCaixaExtratoPanel.classList.add('hidden');
             }
         }
     });
@@ -581,6 +609,14 @@ export const toggleCaixaVisibility = async (isVisible) => {
                 playerCaixaView.classList.remove('hidden');
             } else {
                 playerCaixaView.classList.add('hidden');
+            }
+        }
+        const playerCaixaExtratoPanel = document.getElementById('playerCaixaExtratoPanel');
+        if (playerCaixaExtratoPanel) {
+            if (isVisible || state.currentUserRole === 'admin' || state.isMaster) {
+                playerCaixaExtratoPanel.classList.remove('hidden');
+            } else {
+                playerCaixaExtratoPanel.classList.add('hidden');
             }
         }
     } catch (e) {
